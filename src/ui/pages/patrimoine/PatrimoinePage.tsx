@@ -234,18 +234,12 @@ const PatrimoinePage = () => {
         description={`Situation au ${formatDateFr(date)} · ${capitalize(monthLabel(month))}`}
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-3">
         <StatCard
           label="Patrimoine personnel"
           icon={Landmark}
           value={<Amount cents={snapshot.personalTotal} rounded />}
           hint={snapshot.joint.shareMissing ? 'Hors compte commun' : 'Quote-part commune incluse'}
-        />
-        <StatCard
-          label="Sommes versées"
-          icon={Landmark}
-          value={<Amount cents={snapshot.contributions} rounded />}
-          hint="Soldes d’ouverture + versements − retraits"
         />
         <StatCard
           label="Gains et pertes constatés"
