@@ -1,6 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import { Loader2, TriangleAlert } from 'lucide-react';
-import type { FinanceStore } from '@/app/FinanceStore';
+import type { Container } from '@/app/container';
 import {
   FinanceProvider,
   PeriodProvider,
@@ -63,10 +63,10 @@ const Gate = () => {
   );
 };
 
-type AppProps = { store: FinanceStore };
+type AppProps = { container: Container };
 
-const App = ({ store }: AppProps) => (
-  <FinanceProvider store={store}>
+const App = ({ container }: AppProps) => (
+  <FinanceProvider container={container}>
     <ToastProvider>
       <PeriodProvider>
         <HashRouter>

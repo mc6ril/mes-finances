@@ -1,6 +1,6 @@
 import { Check, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
-import { useFinanceState, useToast } from '@/app/FinanceContext';
+import { useFileUseCases, useFinanceState, useToast } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { formatDateFr } from '@/core/format';
 import type { Dataset } from '@/core/model';
@@ -14,7 +14,6 @@ import Text from '@/ui/design-system/Text';
 import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './FilePickerButton';
 import ImportWorkspaceModal from './ImportWorkspaceModal';
-import { readBackupFile } from './readBackupFile';
 
 type PendingImport = { dataset: Dataset; workspaceName: string | null };
 
@@ -119,6 +118,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
 };
 
 const WorkspacesCard = () => {
+  const files = useFileUseCases();
   const { workspaces, workspace: active } = useFinanceState();
   const actions = useFinanceActions();
   const { notify } = useToast();
@@ -133,7 +133,7 @@ const WorkspacesCard = () => {
   };
 
   const onFile = async (file: File) => {
-    const result = await readBackupFile(file);
+    const result = await files.readBackupFile(file);
     if (!result.ok) {
       notify(errorMessage(result.error), 'error');
       return;

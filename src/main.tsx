@@ -1,25 +1,23 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { createFinanceStore } from './app/FinanceContext';
-import { removeLegacyDemo } from './adapters/storage/workspaceRegistry';
+import { createContainer } from './app/container';
 import './index.css';
 
-const container = document.getElementById('root');
-removeLegacyDemo();
-const store = createFinanceStore();
-void store.start();
+const root = document.getElementById('root');
+const container = createContainer();
+void container.store.start();
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
-    void store.refresh();
+    void container.store.refresh();
   }
 });
 
-if (container) {
-  createRoot(container).render(
+if (root) {
+  createRoot(root).render(
     <StrictMode>
-      <App store={store} />
+      <App container={container} />
     </StrictMode>,
   );
 }

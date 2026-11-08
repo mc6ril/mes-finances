@@ -8,41 +8,33 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
-import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
-import { databaseNameFor, LocalWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
+import { randomId } from '@/adapters/ids/randomIdGenerator';
 import { monthKeyOf, todayIso } from '@/core/dates';
 import type { Dataset, MonthKey } from '@/core/model';
-import { FinanceStore, type StoreState } from './FinanceStore';
+import type { Container } from './container';
+import type { FinanceStore, StoreState } from './FinanceStore';
 
-const fallbackId = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+const ContainerContext = createContext<Container | null>(null);
 
-export const newId = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return fallbackId();
-};
+type FinanceProviderProps = { container: Container; children: ReactNode };
 
-const repositoryFor = (workspaceId: string) => new IndexedDbRepository(databaseNameFor(workspaceId));
-
-const StoreContext = createContext<FinanceStore | null>(null);
-
-export const createFinanceStore = (): FinanceStore =>
-  new FinanceStore(repositoryFor, new LocalWorkspaceRegistry(), newId);
-
-type FinanceProviderProps = { store: FinanceStore; children: ReactNode };
-
-export const FinanceProvider = ({ store, children }: FinanceProviderProps) => (
-  <StoreContext.Provider value={store}>{children}</StoreContext.Provider>
+export const FinanceProvider = ({ container, children }: FinanceProviderProps) => (
+  <ContainerContext.Provider value={container}>{children}</ContainerContext.Provider>
 );
 
-export const useFinanceStore = (): FinanceStore => {
-  const store = useContext(StoreContext);
-  if (!store) {
+const useContainer = (): Container => {
+  const container = useContext(ContainerContext);
+  if (!container) {
     throw new Error('FinanceProvider manquant');
   }
-  return store;
+  return container;
 };
+
+export const useFileUseCases = () => useContainer().files;
+
+export const newId = (): string => randomId();
+
+export const useFinanceStore = (): FinanceStore => useContainer().store;
 
 export const useFinanceState = (): StoreState => {
   const store = useFinanceStore();

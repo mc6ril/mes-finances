@@ -1,5 +1,6 @@
 import type { CollectionName, Dataset, Settings } from './model';
 import type { Result } from './errors';
+import type { WorkspaceData } from './fullBackup';
 import type { Workspace, WorkspaceRegistryState } from './workspaces';
 
 export type CollectionItem<C extends CollectionName> = Dataset[C][number];
@@ -17,4 +18,30 @@ export interface FinanceRepositoryInterface {
 export interface WorkspaceRegistryInterface {
   load(): Promise<WorkspaceRegistryState>;
   save(workspaces: Workspace[], activeId: string): void;
+}
+
+export type UserFile = { readonly name: string };
+
+export type SavedFile = { name: string; content: string; mimeType: string };
+
+export interface TextFileReaderInterface {
+  read(file: UserFile): Promise<Result<string>>;
+}
+
+export interface CsvParserInterface {
+  parse(text: string): Result<string[][]>;
+}
+
+export interface JsonParserInterface {
+  parse(text: string): Result<unknown>;
+}
+
+export interface FileSaverInterface {
+  save(file: SavedFile): Result<void>;
+}
+
+export interface WorkspaceDataSourceInterface {
+  allWorkspaceData(): Promise<Result<WorkspaceData[]>>;
+  workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
+  markShared(workspaceId: string): void;
 }

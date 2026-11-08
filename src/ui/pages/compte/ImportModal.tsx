@@ -1,8 +1,7 @@
 import { FileUp, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { newId, useDataset } from '@/app/FinanceContext';
+import { newId, useDataset, useFileUseCases } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
-import { parseCsvText, readFileText } from '@/adapters/files/files';
 import {
   findDuplicates,
   guessMapping,
@@ -49,6 +48,7 @@ type ImportModalProps = { accountId: string; onClose: () => void };
 const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
   const dataset = useDataset();
   const actions = useFinanceActions();
+  const files = useFileUseCases();
   const [step, setStep] = useState<Step>('file');
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState('');
@@ -75,12 +75,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
 
   const onFile = async (file: File) => {
     setError(null);
-    const text = await readFileText(file);
-    if (!text.ok) {
-      setError(errorMessage(text.error));
-      return;
-    }
-    const parsed = parseCsvText(text.value);
+    const parsed = await files.readCsvRows(file);
     if (!parsed.ok) {
       setError(errorMessage(parsed.error));
       return;

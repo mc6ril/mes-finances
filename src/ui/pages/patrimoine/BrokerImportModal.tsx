@@ -1,15 +1,9 @@
 import { FileUp } from 'lucide-react';
 import { useState } from 'react';
-import { newId, useDataset, usePeriod } from '@/app/FinanceContext';
+import { newId, useDataset, usePeriod, useFileUseCases } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
-import { parseCsvText, readFileText } from '@/adapters/files/files';
 import { MOVEMENT_LABELS } from '@/constants/misc';
-import {
-  parseBrokerExport,
-  planBrokerImport,
-  type BrokerDraft,
-  type BrokerRowStatus,
-} from '@/core/brokerImport';
+import { planBrokerImport, type BrokerDraft, type BrokerRowStatus } from '@/core/brokerImport';
 import { parseFlexibleDate } from '@/core/dates';
 import { formatDateFr } from '@/core/format';
 import { parseEuros } from '@/core/money';
@@ -43,6 +37,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
   const dataset = useDataset();
   const { today } = usePeriod();
   const actions = useFinanceActions();
+  const files = useFileUseCases();
   const [drafts, setDrafts] = useState<BrokerDraft[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [adjustOpening, setAdjustOpening] = useState(true);
@@ -51,17 +46,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
 
   const onFile = async (file: File) => {
     setError(null);
-    const text = await readFileText(file);
-    if (!text.ok) {
-      setError(errorMessage(text.error));
-      return;
-    }
-    const rows = parseCsvText(text.value);
-    if (!rows.ok) {
-      setError(errorMessage(rows.error));
-      return;
-    }
-    const parsed = parseBrokerExport(rows.value);
+    const parsed = await files.readBrokerExport(file);
     if (!parsed.ok) {
       setError(errorMessage(parsed.error));
       return;

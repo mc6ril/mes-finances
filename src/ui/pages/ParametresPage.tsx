@@ -15,16 +15,12 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { newId, useDataset, useFinanceState, useToast } from '@/app/FinanceContext';
+import { newId, useDataset, useFileUseCases, useFinanceState, useToast } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
-import { downloadTextFile } from '@/adapters/files/files';
 import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/constants/misc';
-import { createBackup } from '@/core/backup';
-import { createFullBackup, type WorkspaceData } from '@/core/fullBackup';
-import { transactionsToCsv } from '@/core/csvImport';
+import type { WorkspaceData } from '@/core/fullBackup';
 import { parseFlexibleDate, todayIso } from '@/core/dates';
 import { formatDateFr } from '@/core/format';
-import { workspaceFileSlug } from '@/core/workspaces';
 import type {
   Account,
   AccountGroup,
@@ -48,7 +44,6 @@ import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
 import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './parametres/FilePickerButton';
-import { readBackupFile } from './parametres/readBackupFile';
 import WorkspacesCard from './parametres/WorkspacesCard';
 
 const GROUP_BY_KIND: Record<AccountKind, AccountGroup> = {
@@ -530,6 +525,7 @@ const restoreMessage = (pending: PendingRestore, workspaceName: string): string 
 
 const BackupCard = () => {
   const dataset = useDataset();
+  const files = useFileUseCases();
   const { workspace, workspaces } = useFinanceState();
   const actions = useFinanceActions();
   const { notify } = useToast();
@@ -537,37 +533,40 @@ const BackupCard = () => {
   const [confirmReset, setConfirmReset] = useState(false);
   const [selectedSharedId, setSharedId] = useState(workspace.id);
   const sharedId = workspaces.some((item) => item.id === selectedSharedId) ? selectedSharedId : workspace.id;
-  const stamp = todayIso();
 
   const exportAll = async () => {
-    const entries = await actions.allWorkspaceData();
-    if (!entries) {
+    const saved = await files.saveFullBackup(workspace.id, new Date());
+    if (!saved.ok) {
+      notify(errorMessage(saved.error), 'error');
       return;
     }
-    downloadTextFile(
-      `mes-finances-sauvegarde-complete-${stamp}.json`,
-      JSON.stringify(createFullBackup(entries, workspace.id, new Date().toISOString()), null, 2),
-      'application/json',
-    );
-    notify(`Sauvegarde complète exportée (${entries.length} espace${entries.length > 1 ? 's' : ''})`);
+    notify(`Sauvegarde complète exportée (${saved.value} espace${saved.value > 1 ? 's' : ''})`);
   };
 
   const exportOne = async () => {
-    const entry = await actions.workspaceData(sharedId);
-    if (!entry) {
+    const shared = await files.shareWorkspace(sharedId, new Date());
+    if (!shared.ok) {
+      notify(errorMessage(shared.error), 'error');
       return;
     }
-    downloadTextFile(
-      `mes-finances-${workspaceFileSlug(entry.workspace.name)}-${stamp}.json`,
-      JSON.stringify(createBackup(entry.dataset, new Date().toISOString(), entry.workspace.name), null, 2),
-      'application/json',
-    );
-    actions.markShared(entry.workspace.id);
-    notify(`Espace « ${entry.workspace.name} » exporté`);
+    notify(`Espace « ${shared.value.name} » exporté`);
+  };
+
+  const exportOperations = () => {
+    const saved = files.exportOperationsCsv({
+      fileLabel: workspace.name,
+      period: todayIso(),
+      transactions: dataset.transactions,
+      categories: dataset.categories,
+      accounts: dataset.accounts,
+    });
+    if (!saved.ok) {
+      notify(errorMessage(saved.error), 'error');
+    }
   };
 
   const onFile = async (file: File) => {
-    const result = await readBackupFile(file);
+    const result = await files.readBackupFile(file);
     if (!result.ok) {
       notify(errorMessage(result.error), 'error');
       return;
@@ -648,13 +647,7 @@ const BackupCard = () => {
             icon={Download}
             label="Exporter en CSV"
             className="w-8 px-0"
-            onClick={() =>
-              downloadTextFile(
-                `mes-finances-${workspaceFileSlug(workspace.name)}-operations-${stamp}.csv`,
-                `\ufeff${transactionsToCsv(dataset.transactions, dataset.categories, dataset.accounts)}`,
-                'text/csv',
-              )
-            }
+            onClick={exportOperations}
           />
         </SettingRow>
       </ul>

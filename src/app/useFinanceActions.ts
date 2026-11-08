@@ -326,26 +326,6 @@ export const useFinanceActions = () => {
       deleteWorkspace: async (workspaceId: string) =>
         report(await store.deleteWorkspace(workspaceId), 'Espace supprimé'),
 
-      workspaceData: async (workspaceId: string): Promise<WorkspaceData | null> => {
-        const result = await store.workspaceData(workspaceId);
-        if (!result.ok) {
-          notify(errorMessage(result.error), 'error');
-          return null;
-        }
-        return result.value;
-      },
-
-      allWorkspaceData: async (): Promise<WorkspaceData[] | null> => {
-        const result = await store.allWorkspaceData();
-        if (!result.ok) {
-          notify(errorMessage(result.error), 'error');
-          return null;
-        }
-        return result.value;
-      },
-
-      markShared: (workspaceId: string) => store.markShared(workspaceId),
-
       restoreAll: async (entries: WorkspaceData[], activeId: string) =>
         report(await store.restoreAll(entries, activeId), 'Sauvegarde complète restaurée'),
     };

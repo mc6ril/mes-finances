@@ -12,11 +12,11 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useDataset, usePeriod } from '@/app/FinanceContext';
+import { useDataset, useFileUseCases, usePeriod, useToast } from '@/app/FinanceContext';
+import { errorMessage } from '@/ui/errorMessages';
 import { useFinanceActions } from '@/app/useFinanceActions';
-import { downloadTextFile } from '@/adapters/files/files';
 import { cashflowSummary, livePosition, periodPhase, signedEffectOn } from '@/core/balances';
-import { STATUS_LABELS, TYPE_LABELS, transactionsToCsv } from '@/core/csvImport';
+import { STATUS_LABELS, TYPE_LABELS } from '@/core/csvImport';
 import { monthEnd, monthStart } from '@/core/dates';
 import { formatDateFr, monthLabel } from '@/core/format';
 import { parseEuros } from '@/core/money';
@@ -335,6 +335,8 @@ type LedgerProps = { dataset: Dataset; account: Account; initialFilters: Filters
 
 const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
   const actions = useFinanceActions();
+  const files = useFileUseCases();
+  const { notify } = useToast();
   const { today } = usePeriod();
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [sort, setSort] = useState<SortState>({ key: 'date', direction: -1 });
@@ -376,11 +378,16 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
   const allSelected = rows.length > 0 && rows.every((row) => selection.has(row.id));
 
   const exportCsv = () => {
-    downloadTextFile(
-      `operations-${account.name.toLowerCase().replace(/\s+/g, '-')}-${filters.from}_${filters.to}.csv`,
-      `﻿${transactionsToCsv(rows, dataset.categories, dataset.accounts)}`,
-      'text/csv',
-    );
+    const saved = files.exportOperationsCsv({
+      fileLabel: account.name,
+      period: `${filters.from}_${filters.to}`,
+      transactions: rows,
+      categories: dataset.categories,
+      accounts: dataset.accounts,
+    });
+    if (!saved.ok) {
+      notify(errorMessage(saved.error), 'error');
+    }
   };
 
   return (

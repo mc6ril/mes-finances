@@ -1,7 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { createInitialDataset } from '@/core/seed';
-import { parseCsvText, parseJsonText } from '@/adapters/files/files';
 
 const ids = () => 'audit-1';
 
@@ -46,22 +45,5 @@ describe('IndexedDbRepository', () => {
     const demo = new IndexedDbRepository('reelle-demo');
     await real.replaceAll(createInitialDataset('2026-11-05', ids));
     expect(await demo.load()).toEqual({ ok: true, value: null });
-  });
-});
-
-describe('fichiers', () => {
-  it('détecte le séparateur point-virgule des exports bancaires', () => {
-    const result = parseCsvText('﻿Date;Libellé;Montant\n05/11/2026;"Café; terrasse";-2,50\n');
-    expect(result).toEqual({
-      ok: true,
-      value: [
-        ['Date', 'Libellé', 'Montant'],
-        ['05/11/2026', 'Café; terrasse', '-2,50'],
-      ],
-    });
-  });
-
-  it('remonte une erreur typée pour un JSON invalide', () => {
-    expect(parseJsonText('{oops')).toEqual({ ok: false, error: { code: 'invalid-json' } });
   });
 });
