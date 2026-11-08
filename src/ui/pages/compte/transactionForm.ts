@@ -1,7 +1,7 @@
 import { parseEuros } from '@/core/money';
 import { parseFlexibleDate } from '@/core/dates';
 import type { Category, CategoryGroup, Transaction, TransactionStatus, TransactionType } from '@/core/model';
-import type { TransactionDraft } from '@/app/useFinanceActions';
+import type { TransactionDraft } from '@/core/usecases/transactions';
 
 export type TransactionFormState = {
   date: string;

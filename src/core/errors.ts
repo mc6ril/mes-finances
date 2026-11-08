@@ -17,6 +17,7 @@ export const APP_ERROR_CODES = [
   'workspace-main-protected',
   'invalid-date',
   'invalid-amount',
+  'data-not-loaded',
 ] as const;
 
 export type AppErrorCode = (typeof APP_ERROR_CODES)[number];

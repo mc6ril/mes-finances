@@ -3,13 +3,15 @@ import { migrateDataset } from '@/core/migrate';
 import { settleDuePlanned } from '@/core/planned';
 import { syncRecurring } from '@/core/recurring';
 import { monthKeyOf, todayIso } from '@/core/dates';
-import type { AuditAction, AuditEntry, CollectionName, Dataset, Settings } from '@/core/model';
+import type { AuditEntry, CollectionName, Dataset, Settings } from '@/core/model';
 import { SCHEMA_VERSION } from '@/core/model';
 import { orderCategories } from '@/core/categoryOrder';
 import type { WorkspaceData } from '@/core/fullBackup';
 import { fail, ok, type AppError, type Result } from '@/core/errors';
 import {
+  type AuditLog,
   type CollectionItem,
+  type FinanceGatewayInterface,
   type FinanceRepositoryInterface,
   type WorkspaceRegistryInterface,
 } from '@/core/ports';
@@ -35,8 +37,6 @@ type Listener = () => void;
 type RepositoryFactory = (workspaceId: string) => FinanceRepositoryInterface;
 
 export type ImportTarget = { kind: 'new'; name: string } | { kind: 'existing'; workspaceId: string };
-
-type ChangeLog = { action: AuditAction; entity: string; summary: string };
 
 const MAX_AUDIT_ENTRIES = 500;
 
@@ -69,11 +69,11 @@ export interface FinanceStoreInterface {
   upsert<C extends CollectionName>(
     collection: C,
     items: CollectionItem<C>[],
-    log: ChangeLog,
+    log: AuditLog,
   ): Promise<Result<void>>;
-  remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<Result<void>>;
-  updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<Result<void>>;
-  restore(dataset: Dataset, log: ChangeLog): Promise<Result<void>>;
+  remove(collection: CollectionName, keys: string[], log: AuditLog): Promise<Result<void>>;
+  updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>>;
+  restore(dataset: Dataset, log: AuditLog): Promise<Result<void>>;
   switchWorkspace(workspaceId: string): Promise<void>;
   createWorkspace(name: string): Promise<Result<void>>;
   importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>>;
@@ -107,7 +107,7 @@ const withOrderedCategories = (patch: Partial<StoreState>): Partial<StoreState> 
   return { ...patch, dataset: { ...patch.dataset, categories: orderCategories(patch.dataset.categories) } };
 };
 
-export class FinanceStore implements FinanceStoreInterface {
+export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterface {
   #createRepository: RepositoryFactory;
   #repository: FinanceRepositoryInterface;
   #state: StoreState;
@@ -146,6 +146,10 @@ export class FinanceStore implements FinanceStoreInterface {
 
   getSnapshot = (): StoreState => this.#state;
 
+  currentDataset(): Dataset | null {
+    return this.#state.dataset;
+  }
+
   #set(patch: Partial<StoreState>) {
     this.#state = { ...this.#state, ...withOrderedCategories(patch) };
     this.#listeners.forEach((listener) => listener());
@@ -158,11 +162,11 @@ export class FinanceStore implements FinanceStoreInterface {
     return this.#state.dataset;
   }
 
-  #auditEntry(log: ChangeLog): AuditEntry {
+  #auditEntry(log: AuditLog): AuditEntry {
     return { id: this.#newId(), at: this.#now().toISOString(), ...log };
   }
 
-  async #appendAudit(dataset: Dataset, log: ChangeLog): Promise<Dataset> {
+  async #appendAudit(dataset: Dataset, log: AuditLog): Promise<Dataset> {
     const entry = this.#auditEntry(log);
     const audit = [entry, ...dataset.audit];
     const overflow = audit.slice(MAX_AUDIT_ENTRIES).map((item) => item.id);
@@ -328,7 +332,7 @@ export class FinanceStore implements FinanceStoreInterface {
   async upsert<C extends CollectionName>(
     collection: C,
     items: CollectionItem<C>[],
-    log: ChangeLog,
+    log: AuditLog,
   ): Promise<Result<void>> {
     const result = await this.#repository.put(collection, items);
     if (!result.ok) {
@@ -350,7 +354,7 @@ export class FinanceStore implements FinanceStoreInterface {
     return result;
   }
 
-  async remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<Result<void>> {
+  async remove(collection: CollectionName, keys: string[], log: AuditLog): Promise<Result<void>> {
     const result = await this.#repository.remove(collection, keys);
     if (!result.ok) {
       return result;
@@ -367,7 +371,7 @@ export class FinanceStore implements FinanceStoreInterface {
     return result;
   }
 
-  async updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<Result<void>> {
+  async updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>> {
     const dataset = this.#dataset();
     const settings = { ...dataset.settings, ...patch };
     const result = await this.#repository.saveSettings(settings);
@@ -386,7 +390,7 @@ export class FinanceStore implements FinanceStoreInterface {
     return result;
   }
 
-  async restore(dataset: Dataset, log: ChangeLog): Promise<Result<void>> {
+  async restore(dataset: Dataset, log: AuditLog): Promise<Result<void>> {
     const withAudit = {
       ...dataset,
       audit: [this.#auditEntry(log), ...dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
@@ -433,7 +437,7 @@ export class FinanceStore implements FinanceStoreInterface {
     if (!workspace.ok) {
       return workspace;
     }
-    const log: ChangeLog = {
+    const log: AuditLog = {
       action: 'restauration',
       entity: 'Espace',
       summary: `Import de l’espace « ${workspace.value.name} »`,
@@ -552,7 +556,7 @@ export class FinanceStore implements FinanceStoreInterface {
   }
 
   async restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>> {
-    const log: ChangeLog = {
+    const log: AuditLog = {
       action: 'restauration',
       entity: 'Sauvegarde',
       summary: 'Restauration d’une sauvegarde complète',

@@ -12,9 +12,11 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useDataset, useFileUseCases, usePeriod, useToast } from '@/app/FinanceContext';
+import { useDataset, useFileUseCases } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
+import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/ui/errorMessages';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { cashflowSummary, livePosition, periodPhase, signedEffectOn } from '@/core/balances';
 import { STATUS_LABELS, TYPE_LABELS } from '@/core/csvImport';
 import { monthEnd, monthStart } from '@/core/dates';

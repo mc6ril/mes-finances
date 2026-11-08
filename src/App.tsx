@@ -1,14 +1,11 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import type { Container } from '@/app/container';
-import {
-  FinanceProvider,
-  PeriodProvider,
-  ToastProvider,
-  useFinanceState,
-  useFinanceStore,
-} from '@/app/FinanceContext';
-import { useApplyTheme } from '@/app/theme';
+import FinanceProvider from '@/ui/providers/FinanceProvider';
+import PeriodProvider from '@/ui/providers/PeriodProvider';
+import ToastProvider from '@/ui/providers/ToastProvider';
+import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
+import { useApplyTheme } from '@/hooks/useTheme';
 import Button from '@/ui/design-system/Button';
 import Text from '@/ui/design-system/Text';
 import Title from '@/ui/design-system/Title';

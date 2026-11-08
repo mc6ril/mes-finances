@@ -14,10 +14,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useDataset, usePeriod } from '@/app/FinanceContext';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext, referenceDate } from '@/app/selectors';
-import { useChartTheme } from '@/app/theme';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useChartTheme } from '@/hooks/useTheme';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { ACCOUNT_GROUP_LABELS, ACCOUNT_KIND_LABELS } from '@/constants/misc';
 import { lastMonths, monthEnd, parseMonthKey, toMonthKey } from '@/core/dates';
 import { capitalize, formatDateFr, formatPercent, monthLabel, monthShortLabel } from '@/core/format';
@@ -120,7 +121,7 @@ const JointCard = ({ account, position }: JointCardProps) => {
   const commit = () => {
     if (share.trim() === '') {
       setError(null);
-      void actions.saveAccount({ ...account, personalSharePercent: null }, false);
+      void actions.saveAccount({ ...account, personalSharePercent: null });
       return;
     }
     const value = Number(share.replace(',', '.'));
@@ -129,7 +130,7 @@ const JointCard = ({ account, position }: JointCardProps) => {
       return;
     }
     setError(null);
-    void actions.saveAccount({ ...account, personalSharePercent: value }, false);
+    void actions.saveAccount({ ...account, personalSharePercent: value });
   };
   const personal = personalValueOf(account, position.value);
   return (

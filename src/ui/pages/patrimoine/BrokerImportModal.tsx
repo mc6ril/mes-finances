@@ -1,7 +1,9 @@
+import type { Draft } from '@/core/usecases/shared';
 import { FileUp } from 'lucide-react';
 import { useState } from 'react';
-import { newId, useDataset, usePeriod, useFileUseCases } from '@/app/FinanceContext';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useDataset, useFileUseCases } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { MOVEMENT_LABELS } from '@/constants/misc';
 import { planBrokerImport, type BrokerDraft, type BrokerRowStatus } from '@/core/brokerImport';
 import { parseFlexibleDate } from '@/core/dates';
@@ -24,11 +26,15 @@ const STATUS_BADGE: Record<BrokerRowStatus, { tone: BadgeTone; label: string } |
 
 const SIGN: Record<BrokerDraft['kind'], 1 | -1> = { versement: 1, interets: 1, retrait: -1, frais: -1 };
 
-const valuationOf = (accountId: string, value: number | null, date: string | null): Valuation | null => {
+const valuationOf = (
+  accountId: string,
+  value: number | null,
+  date: string | null,
+): Draft<Valuation> | null => {
   if (value === null || !date) {
     return null;
   }
-  return { id: newId(), accountId, date, value };
+  return { accountId, date, value };
 };
 
 type BrokerImportModalProps = { account: Account; onClose: () => void };
@@ -74,8 +80,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
       setError('Valeur actuelle invalide (ex. 1 250,00).');
       return;
     }
-    const movements: SavingsMovement[] = toImport.map(({ draft }) => ({
-      id: newId(),
+    const movements: Draft<SavingsMovement>[] = toImport.map(({ draft }) => ({
       accountId: account.id,
       date: draft.date,
       kind: draft.kind,
@@ -85,7 +90,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
     }));
     const valuation = valuationOf(account.id, valuationCents, valuationDay);
     const openingPatch = adjustOpening ? plan.openingAdjustment : null;
-    if (await actions.importBrokerExport(account, movements, openingPatch, valuation)) {
+    if (await actions.importBrokerExport({ account, movements, openingPatch, valuation })) {
       onClose();
     }
   };

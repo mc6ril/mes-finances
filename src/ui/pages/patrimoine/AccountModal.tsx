@@ -1,10 +1,11 @@
 import { FileUp, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { newId, useDataset, usePeriod } from '@/app/FinanceContext';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext } from '@/app/selectors';
-import { useChartTheme } from '@/app/theme';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useChartTheme } from '@/hooks/useTheme';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { MOVEMENT_LABELS } from '@/constants/misc';
 import { isCounted, isInternalMove } from '@/core/balances';
 import { monthEnd, parseFlexibleDate } from '@/core/dates';
@@ -118,20 +119,15 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
     }
     setError(null);
     const saveEntry = {
-      valuation: () =>
-        actions.saveValuation({ id: newId(), accountId: account.id, date: parsedDate, value: cents }, true),
+      valuation: () => actions.saveValuation({ accountId: account.id, date: parsedDate, value: cents }),
       movement: () =>
-        actions.saveMovement(
-          {
-            id: newId(),
-            accountId: account.id,
-            date: parsedDate,
-            kind,
-            amount: cents,
-            comment: comment.trim(),
-          },
-          true,
-        ),
+        actions.saveMovement({
+          accountId: account.id,
+          date: parsedDate,
+          kind,
+          amount: cents,
+          comment: comment.trim(),
+        }),
     };
     if (await saveEntry[formKind]()) {
       setAmount('');

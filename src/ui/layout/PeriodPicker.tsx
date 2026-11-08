@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { usePeriod } from '@/app/FinanceContext';
+import { usePeriod } from '@/hooks/usePeriod';
 import { addMonths, parseMonthKey, toMonthKey } from '@/core/dates';
 import { capitalize, monthLabel } from '@/core/format';
 import type { MonthKey } from '@/core/model';

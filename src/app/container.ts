@@ -10,12 +10,13 @@ import {
   removeLegacyDemo,
 } from '@/adapters/storage/workspaceRegistry';
 import { createFileUseCases, type FileUseCases } from '@/core/usecases/files';
+import { createFinanceUseCases, type FinanceUseCases } from '@/core/usecases/finance';
 import { FinanceStore } from './FinanceStore';
 
 export type Container = {
   store: FinanceStore;
   files: FileUseCases;
-  newId: () => string;
+  finance: FinanceUseCases;
 };
 
 export const createContainer = (): Container => {
@@ -32,5 +33,6 @@ export const createContainer = (): Container => {
     saver: new BrowserFileSaver(),
     workspaces: store,
   });
-  return { store, files, newId: randomId };
+  const finance = createFinanceUseCases({ gateway: store, newId: randomId, now: () => new Date() });
+  return { store, files, finance };
 };

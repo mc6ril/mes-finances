@@ -15,8 +15,9 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { newId, useDataset, useFileUseCases, useFinanceState, useToast } from '@/app/FinanceContext';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useDataset, useFileUseCases, useFinanceState } from '@/hooks/useFinance';
+import { useToast } from '@/hooks/useToast';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/constants/misc';
 import type { WorkspaceData } from '@/core/fullBackup';
 import { parseFlexibleDate, todayIso } from '@/core/dates';
@@ -152,7 +153,7 @@ const AccountRow = ({ account, isMain }: AccountRowProps) => {
   const actions = useFinanceActions();
   const [name, setName] = useState(account.name);
   const [openingDate, setOpeningDate] = useState(account.openingDate);
-  const save = (patch: Partial<Account>) => void actions.saveAccount({ ...account, ...patch }, false);
+  const save = (patch: Partial<Account>) => void actions.saveAccount({ ...account, ...patch });
   return (
     <tr className={account.archived ? 'opacity-50' : ''}>
       <td>
@@ -227,21 +228,7 @@ const AccountRow = ({ account, isMain }: AccountRowProps) => {
 const AccountsCard = () => {
   const dataset = useDataset();
   const actions = useFinanceActions();
-  const add = () => {
-    const account: Account = {
-      id: newId(),
-      name: 'Nouveau compte',
-      kind: 'livret',
-      group: 'securise',
-      openingBalance: 0,
-      openingDate: todayIso(),
-      isJoint: false,
-      personalSharePercent: null,
-      archived: false,
-      color: '#64748b',
-    };
-    void actions.saveAccount(account, true);
-  };
+  const add = () => void actions.createAccount();
   return (
     <Card
       title="Comptes"
@@ -333,7 +320,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
       return;
     }
     if (trimmed !== category.name) {
-      void actions.saveCategory({ ...category, name: trimmed }, false);
+      void actions.saveCategory({ ...category, name: trimmed });
     }
   };
 
@@ -379,7 +366,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
           <Segmented<BudgetPeriod>
             value={category.period}
             label={`Période de budget ${category.name}`}
-            onChange={(period) => void actions.saveCategory({ ...category, period }, false)}
+            onChange={(period) => void actions.saveCategory({ ...category, period })}
             options={[
               { value: 'mensuel', label: 'Mensuel' },
               { value: 'annuel', label: 'Annuel' },
@@ -392,7 +379,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
           icon={category.archived ? ArchiveRestore : Archive}
           label={category.archived ? `Réactiver ${category.name}` : `Archiver ${category.name}`}
           className="w-8 px-0"
-          onClick={() => void actions.saveCategory({ ...category, archived: !category.archived }, false)}
+          onClick={() => void actions.saveCategory({ ...category, archived: !category.archived })}
         />
       </div>
     </li>
@@ -449,10 +436,12 @@ const CategoriesCard = () => {
       return;
     }
     if (
-      await actions.saveCategory(
-        { id: newId(), name: newName.trim(), group: newGroup, period: 'mensuel', archived: false },
-        true,
-      )
+      await actions.saveCategory({
+        name: newName.trim(),
+        group: newGroup,
+        period: 'mensuel',
+        archived: false,
+      })
     ) {
       setNewName('');
     }
@@ -681,7 +670,7 @@ const BackupCard = () => {
           confirmLabel="Réinitialiser"
           onCancel={() => setConfirmReset(false)}
           onConfirm={() => {
-            void actions.resetAll();
+            void actions.resetWorkspace();
             setConfirmReset(false);
           }}
         />

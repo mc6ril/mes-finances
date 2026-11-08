@@ -1,4 +1,4 @@
-import type { CollectionName, Dataset, Settings } from './model';
+import type { AuditAction, CollectionName, Dataset, Settings } from './model';
 import type { Result } from './errors';
 import type { WorkspaceData } from './fullBackup';
 import type { Workspace, WorkspaceRegistryState } from './workspaces';
@@ -45,3 +45,21 @@ export interface WorkspaceDataSourceInterface {
   workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
   markShared(workspaceId: string): void;
 }
+
+export type AuditLog = { action: AuditAction; entity: string; summary: string };
+
+export interface FinanceGatewayInterface {
+  currentDataset(): Dataset | null;
+  upsert<C extends CollectionName>(
+    collection: C,
+    items: CollectionItem<C>[],
+    log: AuditLog,
+  ): Promise<Result<void>>;
+  remove(collection: CollectionName, keys: string[], log: AuditLog): Promise<Result<void>>;
+  updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>>;
+  restore(dataset: Dataset, log: AuditLog): Promise<Result<void>>;
+}
+
+export type IdGenerator = () => string;
+
+export type Clock = () => Date;

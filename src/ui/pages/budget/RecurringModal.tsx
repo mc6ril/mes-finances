@@ -1,7 +1,9 @@
+import type { Draft } from '@/core/usecases/shared';
 import { Pencil, Plus, Repeat, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { newId, useDataset, usePeriod } from '@/app/FinanceContext';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { TYPE_LABELS } from '@/core/csvImport';
 import { parseEuros } from '@/core/money';
 import type { Recurring, TransactionType } from '@/core/model';
@@ -99,8 +101,8 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
       setError('Choisis le compte crédité.');
       return;
     }
-    const recurring: Recurring = {
-      id: editing.id ?? newId(),
+    const recurring: Draft<Recurring> = {
+      id: editing.id ?? undefined,
       label: form.label.trim(),
       amount: Math.abs(amount) * signOf(form.type),
       type: form.type,
@@ -113,7 +115,7 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
       active: form.active,
       generatedUntil: generatedUntilFor(editing.id),
     };
-    if (await actions.saveRecurring(recurring, editing.id === null)) {
+    if (await actions.saveRecurring(recurring)) {
       setEditing(null);
       setError(null);
     }

@@ -1,8 +1,9 @@
 import { ArrowRight, History, Repeat } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useDataset, usePeriod } from '@/app/FinanceContext';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 import { budgetOf, budgetOriginOf, linesFor, visibleGroups, yearBudgetOf } from '@/app/selectors';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { GROUP_LABELS } from '@/constants/misc';
 import type { BudgetLine, LineStatus } from '@/core/budget';
 import { annualActualInMonth, groupTotal, provisionPerMonth } from '@/core/budget';

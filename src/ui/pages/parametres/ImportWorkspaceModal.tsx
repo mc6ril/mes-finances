@@ -1,6 +1,6 @@
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
-import { useFinanceState } from '@/app/FinanceContext';
+import { useFinanceState } from '@/hooks/useFinance';
 import type { ImportTarget } from '@/app/FinanceStore';
 import { formatDateFr } from '@/core/format';
 import type { Dataset } from '@/core/model';

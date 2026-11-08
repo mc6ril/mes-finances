@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import { accountBalanceAt } from '@/core/balances';
 import {
   budgetLines,
+  categoryActuals,
   monthTotals,
   plaisirAvailable,
   plaisirBudgetOf,
@@ -76,34 +76,52 @@ export const plaisirBudgetFor = (dataset: Dataset, month: MonthKey): number => {
   );
 };
 
-export const useMonthOverview = (dataset: Dataset, month: MonthKey, today: IsoDate) =>
-  useMemo(() => {
-    const budget = budgetOf(dataset, month);
-    const lines = linesFor(dataset, month);
-    const totals = monthTotals(dataset.transactions, dataset.categories, month);
-    const plaisirBudget = plaisirBudgetFor(dataset, month);
-    const spent = plaisirSpent(dataset.transactions, dataset.categories, month);
-    const date = referenceDate(month, today);
-    const mainAccount =
-      dataset.accounts.find((account) => account.id === dataset.settings.mainAccountId) ?? null;
-    const balance = mainAccount ? accountBalanceAt(mainAccount, dataset.transactions, date) : 0;
-    const projectedBalance = mainAccount
-      ? accountBalanceAt(mainAccount, dataset.transactions, monthEnd(month), { includePlanned: true })
-      : 0;
-    const context = patrimoineContext(dataset);
-    const patrimoine = patrimoineAt(dataset.accounts, context, date);
-    const previousPatrimoine = patrimoineAt(dataset.accounts, context, monthEnd(addMonths(month, -1)));
-    return {
-      budget,
-      lines,
-      totals,
-      plaisirBudget,
-      spent,
-      date,
-      mainAccount,
-      balance,
-      projectedBalance,
-      patrimoine,
-      previousPatrimoine,
-    };
-  }, [dataset, month, today]);
+export const monthOverview = (dataset: Dataset, month: MonthKey, today: IsoDate) => {
+  const budget = budgetOf(dataset, month);
+  const lines = linesFor(dataset, month);
+  const totals = monthTotals(dataset.transactions, dataset.categories, month);
+  const plaisirBudget = plaisirBudgetFor(dataset, month);
+  const spent = plaisirSpent(dataset.transactions, dataset.categories, month);
+  const date = referenceDate(month, today);
+  const mainAccount =
+    dataset.accounts.find((account) => account.id === dataset.settings.mainAccountId) ?? null;
+  const balance = mainAccount ? accountBalanceAt(mainAccount, dataset.transactions, date) : 0;
+  const projectedBalance = mainAccount
+    ? accountBalanceAt(mainAccount, dataset.transactions, monthEnd(month), { includePlanned: true })
+    : 0;
+  const context = patrimoineContext(dataset);
+  const patrimoine = patrimoineAt(dataset.accounts, context, date);
+  const previousPatrimoine = patrimoineAt(dataset.accounts, context, monthEnd(addMonths(month, -1)));
+  return {
+    budget,
+    lines,
+    totals,
+    plaisirBudget,
+    spent,
+    date,
+    mainAccount,
+    balance,
+    projectedBalance,
+    patrimoine,
+    previousPatrimoine,
+  };
+};
+
+const MAX_SLICES = 5;
+
+export type SpendingSlice = { id: string; name: string; value: number };
+
+export const spendingSlices = (dataset: Dataset, month: MonthKey): SpendingSlice[] => {
+  const actuals = categoryActuals(dataset.transactions, dataset.categories, month);
+  const entries = dataset.categories
+    .filter((category) => category.group === 'fixe' || category.group === 'plaisir')
+    .map((category) => ({ id: category.id, name: category.name, value: actuals[category.id]?.actual ?? 0 }))
+    .filter((entry) => entry.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const head = entries.slice(0, MAX_SLICES);
+  const rest = entries.slice(MAX_SLICES).reduce((total, entry) => total + entry.value, 0);
+  if (rest > 0) {
+    head.push({ id: 'autres', name: 'Autres catégories', value: rest });
+  }
+  return head;
+};

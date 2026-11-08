@@ -1,7 +1,8 @@
 import { Check, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
-import { useFileUseCases, useFinanceState, useToast } from '@/app/FinanceContext';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useFileUseCases, useFinanceState } from '@/hooks/useFinance';
+import { useToast } from '@/hooks/useToast';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { formatDateFr } from '@/core/format';
 import type { Dataset } from '@/core/model';
 import { DEFAULT_WORKSPACE, hasUnsentChanges, isShared, type Workspace } from '@/core/workspaces';

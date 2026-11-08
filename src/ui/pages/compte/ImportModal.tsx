@@ -1,7 +1,8 @@
+import type { TransactionDraft } from '@/core/usecases/transactions';
 import { FileUp, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { newId, useDataset, useFileUseCases } from '@/app/FinanceContext';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useDataset, useFileUseCases } from '@/hooks/useFinance';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import {
   findDuplicates,
   guessMapping,
@@ -12,7 +13,7 @@ import {
   type ImportError,
 } from '@/core/csvImport';
 import { formatDateFr } from '@/core/format';
-import type { Category, Transaction } from '@/core/model';
+import type { Category } from '@/core/model';
 import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
@@ -112,9 +113,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
   const included = review.filter((row) => row.include);
 
   const confirm = async () => {
-    const now = new Date().toISOString();
-    const transactions: Transaction[] = included.map((row) => ({
-      id: newId(),
+    const transactions: TransactionDraft[] = included.map((row) => ({
       date: row.draft.date,
       label: row.draft.label,
       amount: row.draft.amount,
@@ -126,8 +125,6 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       paymentMethod: '',
       comment: `Import ${fileName}`,
       recurringId: null,
-      createdAt: now,
-      updatedAt: now,
     }));
     if (await actions.importTransactions(transactions)) {
       onClose();

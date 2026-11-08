@@ -25,6 +25,7 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
     'L’espace principal ne peut être ni supprimé ni remplacé par un import : utilise « Restaurer ».',
   'invalid-date': () => 'Date illisible',
   'invalid-amount': () => 'Montant illisible',
+  'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
 };
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);

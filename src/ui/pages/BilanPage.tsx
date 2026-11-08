@@ -13,9 +13,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useDataset, usePeriod } from '@/app/FinanceContext';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext, plaisirBudgetFor } from '@/app/selectors';
-import { useChartTheme } from '@/app/theme';
+import { useChartTheme } from '@/hooks/useTheme';
 import { GROUP_LABELS } from '@/constants/misc';
 import { yearSummary, type MonthSummary } from '@/core/annual';
 import { monthsOfYear, monthKeyOf, parseMonthKey, yearOf } from '@/core/dates';

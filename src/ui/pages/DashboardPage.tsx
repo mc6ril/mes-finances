@@ -26,12 +26,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useDataset, usePeriod } from '@/app/FinanceContext';
-import { useMonthOverview } from '@/app/selectors';
-import { useChartTheme } from '@/app/theme';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
+import { useMonthOverview } from '@/hooks/useMonthOverview';
+import { useSpendingSlices } from '@/hooks/useSpendingSlices';
+import { useChartTheme } from '@/hooks/useTheme';
 import { balanceSeries } from '@/core/balances';
 import { depositsInMonth } from '@/core/annual';
-import { categoryActuals, type MonthTotals } from '@/core/budget';
+import type { MonthTotals } from '@/core/budget';
 import { addMonths, monthEnd, monthStart } from '@/core/dates';
 import { formatDateFr, formatEurosRounded, monthLabel } from '@/core/format';
 import type { Cents, Dataset, MonthKey } from '@/core/model';
@@ -55,24 +57,6 @@ const onlyWhen = (condition: boolean, value: Cents | null): Cents | null => {
   }
   return null;
 };
-
-const MAX_SLICES = 5;
-
-const useSpendingSlices = (dataset: Dataset, month: MonthKey) =>
-  useMemo(() => {
-    const actuals = categoryActuals(dataset.transactions, dataset.categories, month);
-    const entries = dataset.categories
-      .filter((category) => category.group === 'fixe' || category.group === 'plaisir')
-      .map((category) => ({ id: category.id, name: category.name, value: actuals[category.id]?.actual ?? 0 }))
-      .filter((entry) => entry.value > 0)
-      .sort((a, b) => b.value - a.value);
-    const head = entries.slice(0, MAX_SLICES);
-    const rest = entries.slice(MAX_SLICES).reduce((total, entry) => total + entry.value, 0);
-    if (rest > 0) {
-      head.push({ id: 'autres', name: 'Autres catégories', value: rest });
-    }
-    return head;
-  }, [dataset, month]);
 
 type PersonalSpendingHintProps = { totals: MonthTotals };
 

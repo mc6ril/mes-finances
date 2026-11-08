@@ -1,3 +1,4 @@
+import type { Draft } from '@/core/usecases/shared';
 import { Goal as GoalIcon, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
@@ -10,10 +11,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { newId, useDataset, usePeriod } from '@/app/FinanceContext';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext } from '@/app/selectors';
-import { useChartTheme } from '@/app/theme';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useChartTheme } from '@/hooks/useTheme';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { GOAL_RATE_HYPOTHESES } from '@/constants/misc';
 import { addMonths, monthKeyOf, parseFlexibleDate } from '@/core/dates';
 import { capitalize, formatDateFr, formatEuros, monthLabel, monthShortLabel } from '@/core/format';
@@ -96,8 +98,8 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
       setError('Renseigne un nom, un montant cible, une date cible et des montants valides.');
       return;
     }
-    const saved: Goal = {
-      id: goal?.id ?? newId(),
+    const saved: Draft<Goal> = {
+      id: goal?.id,
       name: form.name.trim(),
       targetAmount: target,
       targetDate: date,
@@ -105,7 +107,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
       monthlyContribution: monthly,
       linkedAccountIds: form.linked,
     };
-    if (await actions.saveGoal(saved, goal === null)) {
+    if (await actions.saveGoal(saved)) {
       onClose();
     }
   };

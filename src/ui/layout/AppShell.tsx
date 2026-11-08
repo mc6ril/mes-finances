@@ -1,8 +1,9 @@
 import { Menu, Send, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
-import { useFinanceState, useToast } from '@/app/FinanceContext';
-import { useFinanceActions } from '@/app/useFinanceActions';
+import { useFinanceState } from '@/hooks/useFinance';
+import { useToast } from '@/hooks/useToast';
+import { useFinanceActions } from '@/hooks/useFinanceActions';
 import { APP_VERSION } from '@/constants/misc';
 import { hasUnsentChanges } from '@/core/workspaces';
 import Button from '@/ui/design-system/Button';
