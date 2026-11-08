@@ -14,6 +14,7 @@ import { parseFlexibleDate } from '@/core/dates';
 import { formatDateFr } from '@/core/format';
 import { parseEuros } from '@/core/money';
 import type { Account, SavingsMovement, Valuation } from '@/core/model';
+import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge, { type BadgeTone } from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
@@ -52,20 +53,20 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
     setError(null);
     const text = await readFileText(file);
     if (!text.ok) {
-      setError(text.message);
+      setError(errorMessage(text.error));
       return;
     }
     const rows = parseCsvText(text.value);
     if (!rows.ok) {
-      setError(rows.message);
+      setError(errorMessage(rows.error));
       return;
     }
     const parsed = parseBrokerExport(rows.value);
     if (!parsed.ok) {
-      setError(parsed.reason);
+      setError(errorMessage(parsed.error));
       return;
     }
-    setDrafts(parsed.drafts);
+    setDrafts(parsed.value.drafts);
   };
 
   const plan = drafts

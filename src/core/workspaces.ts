@@ -1,3 +1,4 @@
+import type { AppErrorCode } from './errors';
 import { isObject, isString } from '@/utils/typeCheck';
 
 export type WorkspaceSource = 'local' | 'import';
@@ -33,16 +34,18 @@ export const hasUnsentChanges = (workspace: Workspace): boolean => {
   return workspace.modifiedAt > latestOf([workspace.importedAt, workspace.sharedAt]);
 };
 
+export type WorkspaceNameError = Extract<AppErrorCode, 'workspace-name-empty' | 'workspace-name-taken'>;
+
 export const normalizeWorkspaceName = (name: string): string => name.trim().replace(/\s+/g, ' ');
 
 export const workspaceNameError = (
   name: string,
   workspaces: Workspace[],
   ignoredId: string | null = null,
-): string | null => {
+): WorkspaceNameError | null => {
   const normalized = normalizeWorkspaceName(name);
   if (!normalized) {
-    return 'Donne un nom à l’espace.';
+    return 'workspace-name-empty';
   }
   const taken = workspaces.some(
     (workspace) =>
@@ -50,7 +53,7 @@ export const workspaceNameError = (
       workspace.name.toLocaleLowerCase('fr') === normalized.toLocaleLowerCase('fr'),
   );
   if (taken) {
-    return 'Un espace porte déjà ce nom.';
+    return 'workspace-name-taken';
   }
   return null;
 };

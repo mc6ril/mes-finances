@@ -91,7 +91,7 @@ describe('parseBrokerExport', () => {
 
   it('transforme les virements entrants en versements et sortants en retraits', () => {
     const transfers = result.ok
-      ? result.drafts.filter((draft) => draft.kind === 'versement' || draft.kind === 'retrait')
+      ? result.value.drafts.filter((draft) => draft.kind === 'versement' || draft.kind === 'retrait')
       : [];
     expect(transfers).toEqual([
       expect.objectContaining({ externalId: 't-1', date: '2026-06-15', kind: 'versement', amount: 10000 }),
@@ -101,12 +101,12 @@ describe('parseBrokerExport', () => {
   });
 
   it('compte les dividendes comme des revenus du placement', () => {
-    const dividends = result.ok ? result.drafts.filter((draft) => draft.kind === 'interets') : [];
+    const dividends = result.ok ? result.value.drafts.filter((draft) => draft.kind === 'interets') : [];
     expect(dividends.map((draft) => draft.amount)).toEqual([3, 6]);
   });
 
   it('regroupe frais et taxes de chaque opération en frais', () => {
-    const fees = result.ok ? result.drafts.filter((draft) => draft.kind === 'frais') : [];
+    const fees = result.ok ? result.value.drafts.filter((draft) => draft.kind === 'frais') : [];
     expect(fees.map((draft) => [draft.externalId, draft.amount])).toEqual([
       ['t-2:frais', 100],
       ['t-3:frais', 4],
@@ -117,7 +117,7 @@ describe('parseBrokerExport', () => {
 
   it('ignore les achats et ventes, internes au compte', () => {
     const fromTrades = result.ok
-      ? result.drafts.filter((draft) => ['t-2', 't-3', 't-5'].includes(draft.externalId))
+      ? result.value.drafts.filter((draft) => ['t-2', 't-3', 't-5'].includes(draft.externalId))
       : [];
     expect(fromTrades).toEqual([]);
   });
@@ -128,14 +128,17 @@ describe('parseBrokerExport', () => {
   });
 
   it('refuse un fichier d’un autre format', () => {
-    expect(parseBrokerExport([['Date', 'Libellé', 'Montant']])).toMatchObject({ ok: false });
+    expect(parseBrokerExport([['Date', 'Libellé', 'Montant']])).toEqual({
+      ok: false,
+      error: { code: 'broker-not-recognized' },
+    });
   });
 });
 
 describe('planBrokerImport', () => {
   const drafts = (() => {
     const parsed = parseBrokerExport(rows);
-    return parsed.ok ? parsed.drafts : [];
+    return parsed.ok ? parsed.value.drafts : [];
   })();
   const account = anAccount({
     id: 'tr',

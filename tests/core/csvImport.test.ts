@@ -52,7 +52,7 @@ describe('mapRows', () => {
 
   it('rapporte les lignes illisibles sans bloquer l’import', () => {
     const result = mapRows(rows, mapping, { accountId: 'courant', hasHeader: true });
-    expect(result.errors).toEqual([{ line: 4, reason: 'Date illisible' }]);
+    expect(result.errors).toEqual([{ line: 4, code: 'invalid-date' }]);
   });
 
   it('accepte une colonne montant signée', () => {

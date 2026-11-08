@@ -9,6 +9,7 @@ import Button from '@/ui/design-system/Button';
 import { Field, Input } from '@/ui/design-system/Field';
 import { Modal } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
+import { errorMessage } from '@/ui/errorMessages';
 
 const NEW_TARGET = 'nouveau';
 const DEFAULT_IMPORT_NAME = 'Espace importé';
@@ -104,7 +105,7 @@ const ImportWorkspaceModal = ({ dataset, workspaceName, onCancel, onConfirm }: I
           </div>
         )}
         {choice === NEW_TARGET && (
-          <Field label="Nom de l’espace" error={nameError}>
+          <Field label="Nom de l’espace" error={nameError ? errorMessage({ code: nameError }) : null}>
             <Input value={name} onChange={setName} autoFocus />
           </Field>
         )}

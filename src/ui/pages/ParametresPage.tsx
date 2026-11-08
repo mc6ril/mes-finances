@@ -46,6 +46,7 @@ import MoneyInput from '@/ui/design-system/MoneyInput';
 import Segmented from '@/ui/design-system/Segmented';
 import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
+import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './parametres/FilePickerButton';
 import { readBackupFile } from './parametres/readBackupFile';
 import WorkspacesCard from './parametres/WorkspacesCard';
@@ -568,14 +569,14 @@ const BackupCard = () => {
   const onFile = async (file: File) => {
     const result = await readBackupFile(file);
     if (!result.ok) {
-      notify(result.message, 'error');
+      notify(errorMessage(result.error), 'error');
       return;
     }
-    if (result.kind === 'complete') {
-      setPending({ kind: 'complete', entries: result.entries, activeId: result.activeId });
+    if (result.value.kind === 'complete') {
+      setPending({ kind: 'complete', entries: result.value.entries, activeId: result.value.activeId });
       return;
     }
-    setPending({ kind: 'workspace', dataset: result.dataset });
+    setPending({ kind: 'workspace', dataset: result.value.dataset });
   };
 
   const confirmRestore = (restore: PendingRestore) => {

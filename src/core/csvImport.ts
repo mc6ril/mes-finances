@@ -1,3 +1,4 @@
+import type { AppErrorCode } from './errors';
 import { daysBetween, parseFlexibleDate } from './dates';
 import { formatDateFr } from './format';
 import type {
@@ -42,7 +43,7 @@ export type ImportDraft = {
   categoryLabel: string;
 };
 
-export type ImportError = { line: number; reason: string };
+export type ImportError = { line: number; code: Extract<AppErrorCode, 'invalid-date' | 'invalid-amount'> };
 
 const simplify = (header: string): string => header.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
@@ -127,12 +128,12 @@ export const mapRows = (
     }
     const date = parseFlexibleDate(cell(row, mapping.date));
     if (!date) {
-      errors.push({ line, reason: 'Date illisible' });
+      errors.push({ line, code: 'invalid-date' });
       return;
     }
     const amount = amountFrom(row, mapping);
     if (amount === null) {
-      errors.push({ line, reason: 'Montant illisible' });
+      errors.push({ line, code: 'invalid-amount' });
       return;
     }
     drafts.push({

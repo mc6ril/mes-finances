@@ -10,9 +10,11 @@ import {
   suggestCategory,
   type ColumnMapping,
   type ImportDraft,
+  type ImportError,
 } from '@/core/csvImport';
 import { formatDateFr } from '@/core/format';
 import type { Category, Transaction } from '@/core/model';
+import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
@@ -61,7 +63,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
     category: null,
   });
   const [review, setReview] = useState<ReviewRow[]>([]);
-  const [lineErrors, setLineErrors] = useState<{ line: number; reason: string }[]>([]);
+  const [lineErrors, setLineErrors] = useState<ImportError[]>([]);
   const columnCount = Math.max(0, ...rows.slice(0, 20).map((row) => row.length));
   const columnOptions = [
     { value: '', label: '— Ignorer —' },
@@ -75,12 +77,12 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
     setError(null);
     const text = await readFileText(file);
     if (!text.ok) {
-      setError(text.message);
+      setError(errorMessage(text.error));
       return;
     }
     const parsed = parseCsvText(text.value);
     if (!parsed.ok) {
-      setError(parsed.message);
+      setError(errorMessage(parsed.error));
       return;
     }
     setFileName(file.name);
@@ -253,7 +255,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
               <TriangleAlert className="mr-1 inline h-3.5 w-3.5" aria-hidden />
               {lineErrors
                 .slice(0, 5)
-                .map((entry) => `ligne ${entry.line} (${entry.reason.toLowerCase()})`)
+                .map((entry) => `ligne ${entry.line} (${errorMessage({ code: entry.code }).toLowerCase()})`)
                 .join(', ')}
             </Text>
           )}

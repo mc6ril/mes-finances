@@ -7,12 +7,10 @@ import type { AuditAction, AuditEntry, CollectionName, Dataset, Settings } from 
 import { SCHEMA_VERSION } from '@/core/model';
 import { orderCategories } from '@/core/categoryOrder';
 import type { WorkspaceData } from '@/core/fullBackup';
+import { fail, ok, type AppError, type Result } from '@/core/errors';
 import {
-  failure,
-  success,
   type CollectionItem,
   type FinanceRepositoryInterface,
-  type PortResult,
   type WorkspaceRegistryInterface,
 } from '@/core/ports';
 import {
@@ -27,7 +25,7 @@ export type StoreStatus = 'loading' | 'ready' | 'error';
 export type StoreState = {
   status: StoreStatus;
   dataset: Dataset | null;
-  error: string | null;
+  error: AppError | null;
   workspaces: Workspace[];
   workspace: Workspace;
 };
@@ -72,19 +70,19 @@ export interface FinanceStoreInterface {
     collection: C,
     items: CollectionItem<C>[],
     log: ChangeLog,
-  ): Promise<PortResult<void>>;
-  remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<PortResult<void>>;
-  updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<PortResult<void>>;
-  restore(dataset: Dataset, log: ChangeLog): Promise<PortResult<void>>;
+  ): Promise<Result<void>>;
+  remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<Result<void>>;
+  updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<Result<void>>;
+  restore(dataset: Dataset, log: ChangeLog): Promise<Result<void>>;
   switchWorkspace(workspaceId: string): Promise<void>;
-  createWorkspace(name: string): Promise<PortResult<void>>;
-  importWorkspace(dataset: Dataset, target: ImportTarget): Promise<PortResult<void>>;
-  renameWorkspace(workspaceId: string, name: string): PortResult<void>;
-  deleteWorkspace(workspaceId: string): Promise<PortResult<void>>;
+  createWorkspace(name: string): Promise<Result<void>>;
+  importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>>;
+  renameWorkspace(workspaceId: string, name: string): Result<void>;
+  deleteWorkspace(workspaceId: string): Promise<Result<void>>;
   markShared(workspaceId: string): void;
-  workspaceData(workspaceId: string): Promise<PortResult<WorkspaceData | null>>;
-  allWorkspaceData(): Promise<PortResult<WorkspaceData[]>>;
-  restoreAll(entries: WorkspaceData[], activeId: string): Promise<PortResult<void>>;
+  workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
+  allWorkspaceData(): Promise<Result<WorkspaceData[]>>;
+  restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>>;
 }
 
 const AUTOMATIC_SETTINGS: (keyof Settings)[] = ['theme'];
@@ -226,7 +224,7 @@ export class FinanceStore implements FinanceStoreInterface {
     await this.#loadRegistry();
     const loaded = await this.#repository.load();
     if (!loaded.ok) {
-      this.#set({ status: 'error', error: loaded.message });
+      this.#set({ status: 'error', error: loaded.error });
       return;
     }
     if (loaded.value) {
@@ -238,7 +236,7 @@ export class FinanceStore implements FinanceStoreInterface {
     const seed = createInitialDataset(today, this.#newId);
     const saved = await this.#repository.replaceAll(seed);
     if (!saved.ok) {
-      this.#set({ status: 'error', error: saved.message });
+      this.#set({ status: 'error', error: saved.error });
       return;
     }
     this.#set({ status: 'ready', dataset: seed });
@@ -321,7 +319,7 @@ export class FinanceStore implements FinanceStoreInterface {
     const migrated = migrateDataset(dataset);
     const saved = await this.#repository.replaceAll(migrated);
     if (!saved.ok) {
-      this.#set({ status: 'error', error: saved.message });
+      this.#set({ status: 'error', error: saved.error });
       return;
     }
     this.#set({ status: 'ready', dataset: migrated });
@@ -331,7 +329,7 @@ export class FinanceStore implements FinanceStoreInterface {
     collection: C,
     items: CollectionItem<C>[],
     log: ChangeLog,
-  ): Promise<PortResult<void>> {
+  ): Promise<Result<void>> {
     const result = await this.#repository.put(collection, items);
     if (!result.ok) {
       return result;
@@ -352,7 +350,7 @@ export class FinanceStore implements FinanceStoreInterface {
     return result;
   }
 
-  async remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<PortResult<void>> {
+  async remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<Result<void>> {
     const result = await this.#repository.remove(collection, keys);
     if (!result.ok) {
       return result;
@@ -369,7 +367,7 @@ export class FinanceStore implements FinanceStoreInterface {
     return result;
   }
 
-  async updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<PortResult<void>> {
+  async updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<Result<void>> {
     const dataset = this.#dataset();
     const settings = { ...dataset.settings, ...patch };
     const result = await this.#repository.saveSettings(settings);
@@ -388,7 +386,7 @@ export class FinanceStore implements FinanceStoreInterface {
     return result;
   }
 
-  async restore(dataset: Dataset, log: ChangeLog): Promise<PortResult<void>> {
+  async restore(dataset: Dataset, log: ChangeLog): Promise<Result<void>> {
     const withAudit = {
       ...dataset,
       audit: [this.#auditEntry(log), ...dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
@@ -414,10 +412,10 @@ export class FinanceStore implements FinanceStoreInterface {
     await this.start();
   }
 
-  async createWorkspace(name: string): Promise<PortResult<void>> {
+  async createWorkspace(name: string): Promise<Result<void>> {
     const error = workspaceNameError(name, this.#state.workspaces);
     if (error) {
-      return failure('invalide', error);
+      return fail(error);
     }
     const workspace: Workspace = {
       id: this.#newId(),
@@ -427,10 +425,10 @@ export class FinanceStore implements FinanceStoreInterface {
     };
     this.#saveRegistry([...this.#state.workspaces, workspace], this.#state.workspace);
     await this.switchWorkspace(workspace.id);
-    return success(undefined);
+    return ok(undefined);
   }
 
-  async importWorkspace(dataset: Dataset, target: ImportTarget): Promise<PortResult<void>> {
+  async importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>> {
     const workspace = this.#importedWorkspace(target);
     if (!workspace.ok) {
       return workspace;
@@ -460,30 +458,30 @@ export class FinanceStore implements FinanceStoreInterface {
     if (isActive) {
       this.#saveRegistry(workspaces, workspace.value);
       this.#set({ dataset: withAudit });
-      return success(undefined);
+      return ok(undefined);
     }
     this.#saveRegistry(workspaces, this.#state.workspace);
     await this.switchWorkspace(workspace.value.id);
-    return success(undefined);
+    return ok(undefined);
   }
 
-  #importedWorkspace(target: ImportTarget): PortResult<Workspace> {
+  #importedWorkspace(target: ImportTarget): Result<Workspace> {
     const importedAt = this.#now().toISOString();
     if (target.kind === 'existing') {
       const existing = this.#state.workspaces.find((item) => item.id === target.workspaceId);
       if (!existing) {
-        return failure('invalide', 'Espace introuvable.');
+        return fail('workspace-not-found');
       }
       if (existing.id === DEFAULT_WORKSPACE.id) {
-        return failure('invalide', 'L’espace principal se remplace avec « Restaurer », pas par un import.');
+        return fail('workspace-main-protected');
       }
-      return success({ ...existing, source: 'import', importedAt, modifiedAt: null });
+      return ok({ ...existing, source: 'import', importedAt, modifiedAt: null });
     }
     const error = workspaceNameError(target.name, this.#state.workspaces);
     if (error) {
-      return failure('invalide', error);
+      return fail(error);
     }
-    return success({
+    return ok({
       id: this.#newId(),
       name: normalizeWorkspaceName(target.name),
       source: 'import',
@@ -493,22 +491,22 @@ export class FinanceStore implements FinanceStoreInterface {
     });
   }
 
-  renameWorkspace(workspaceId: string, name: string): PortResult<void> {
+  renameWorkspace(workspaceId: string, name: string): Result<void> {
     const error = workspaceNameError(name, this.#state.workspaces, workspaceId);
     if (error) {
-      return failure('invalide', error);
+      return fail(error);
     }
     const workspaces = this.#state.workspaces.map((item) =>
       item.id === workspaceId ? { ...item, name: normalizeWorkspaceName(name) } : item,
     );
     const active = workspaces.find((item) => item.id === this.#state.workspace.id) ?? DEFAULT_WORKSPACE;
     this.#saveRegistry(workspaces, active);
-    return success(undefined);
+    return ok(undefined);
   }
 
-  async deleteWorkspace(workspaceId: string): Promise<PortResult<void>> {
+  async deleteWorkspace(workspaceId: string): Promise<Result<void>> {
     if (workspaceId === DEFAULT_WORKSPACE.id) {
-      return failure('invalide', 'L’espace principal ne peut pas être supprimé.');
+      return fail('workspace-main-protected');
     }
     if (this.#state.workspace.id === workspaceId) {
       await this.switchWorkspace(DEFAULT_WORKSPACE.id);
@@ -519,16 +517,16 @@ export class FinanceStore implements FinanceStoreInterface {
     }
     const workspaces = this.#state.workspaces.filter((item) => item.id !== workspaceId);
     this.#saveRegistry(workspaces, this.#state.workspace);
-    return success(undefined);
+    return ok(undefined);
   }
 
-  async workspaceData(workspaceId: string): Promise<PortResult<WorkspaceData | null>> {
+  async workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>> {
     const workspace = this.#state.workspaces.find((item) => item.id === workspaceId);
     if (!workspace) {
-      return failure('invalide', 'Espace introuvable.');
+      return fail('workspace-not-found');
     }
     if (workspace.id === this.#state.workspace.id && this.#state.dataset) {
-      return success({ workspace, dataset: this.#state.dataset });
+      return ok({ workspace, dataset: this.#state.dataset });
     }
     const repository = this.#createRepository(workspace.id);
     const loaded = await repository.load();
@@ -536,10 +534,10 @@ export class FinanceStore implements FinanceStoreInterface {
     if (!loaded.ok) {
       return loaded;
     }
-    return success(loaded.value ? { workspace, dataset: loaded.value } : null);
+    return ok(loaded.value ? { workspace, dataset: loaded.value } : null);
   }
 
-  async allWorkspaceData(): Promise<PortResult<WorkspaceData[]>> {
+  async allWorkspaceData(): Promise<Result<WorkspaceData[]>> {
     const entries: WorkspaceData[] = [];
     for (const workspace of this.#state.workspaces) {
       const entry = await this.workspaceData(workspace.id);
@@ -550,10 +548,10 @@ export class FinanceStore implements FinanceStoreInterface {
         entries.push(entry.value);
       }
     }
-    return success(entries);
+    return ok(entries);
   }
 
-  async restoreAll(entries: WorkspaceData[], activeId: string): Promise<PortResult<void>> {
+  async restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>> {
     const log: ChangeLog = {
       action: 'restauration',
       entity: 'Sauvegarde',
@@ -581,6 +579,6 @@ export class FinanceStore implements FinanceStoreInterface {
     this.#saveRegistry(workspaces, active);
     this.#set({ dataset: null });
     await this.start();
-    return success(undefined);
+    return ok(undefined);
   }
 }

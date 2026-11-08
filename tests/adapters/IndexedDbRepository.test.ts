@@ -62,6 +62,6 @@ describe('fichiers', () => {
   });
 
   it('remonte une erreur typée pour un JSON invalide', () => {
-    expect(parseJsonText('{oops')).toMatchObject({ ok: false, kind: 'format' });
+    expect(parseJsonText('{oops')).toEqual({ ok: false, error: { code: 'invalid-json' } });
   });
 });

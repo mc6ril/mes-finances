@@ -17,10 +17,12 @@ import type {
   Transaction,
   Valuation,
 } from '@/core/model';
-import type { CollectionItem, PortResult } from '@/core/ports';
+import type { Result } from '@/core/errors';
+import type { CollectionItem } from '@/core/ports';
 import type { WorkspaceData } from '@/core/fullBackup';
 import type { ImportTarget } from './FinanceStore';
 import { newId, useFinanceStore, useToast } from './FinanceContext';
+import { errorMessage } from '@/ui/errorMessages';
 
 export type TransactionDraft = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -51,9 +53,9 @@ export const useFinanceActions = () => {
       return current;
     };
 
-    const report = (result: PortResult<void>, successMessage: string | null): boolean => {
+    const report = (result: Result<void>, successMessage: string | null): boolean => {
       if (!result.ok) {
-        notify(result.message, 'error');
+        notify(errorMessage(result.error), 'error');
         return false;
       }
       if (successMessage) {
@@ -327,7 +329,7 @@ export const useFinanceActions = () => {
       workspaceData: async (workspaceId: string): Promise<WorkspaceData | null> => {
         const result = await store.workspaceData(workspaceId);
         if (!result.ok) {
-          notify(result.message, 'error');
+          notify(errorMessage(result.error), 'error');
           return null;
         }
         return result.value;
@@ -336,7 +338,7 @@ export const useFinanceActions = () => {
       allWorkspaceData: async (): Promise<WorkspaceData[] | null> => {
         const result = await store.allWorkspaceData();
         if (!result.ok) {
-          notify(result.message, 'error');
+          notify(errorMessage(result.error), 'error');
           return null;
         }
         return result.value;

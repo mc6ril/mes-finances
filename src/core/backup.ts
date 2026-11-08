@@ -1,3 +1,4 @@
+import { fail, ok, type Result } from './errors';
 import type { CollectionName, Dataset } from './model';
 import { SCHEMA_VERSION } from './model';
 import { migrateDataset } from './migrate';
@@ -13,9 +14,7 @@ export type Backup = {
   data: Dataset;
 };
 
-export type BackupReadResult =
-  | { ok: true; dataset: Dataset; workspaceName: string | null }
-  | { ok: false; reason: string };
+export type BackupContent = { dataset: Dataset; workspaceName: string | null };
 
 export const createBackup = (dataset: Dataset, exportedAt: string, workspaceName?: string): Backup => ({
   app: BACKUP_APP_ID,
@@ -50,8 +49,6 @@ const ID_FIELD: Partial<Record<CollectionName, string>> = { budgets: 'month', ye
 
 const OPTIONAL_BEFORE_V2: CollectionName[] = ['yearBudgets'];
 
-const fail = (reason: string): BackupReadResult => ({ ok: false, reason });
-
 const invalidCollection = (data: Record<string, unknown>, schemaVersion: number): string | null => {
   const expected = [...COLLECTIONS, ...OPTIONAL_BEFORE_V2];
   const broken = expected.find((name) => {
@@ -82,28 +79,25 @@ const plannedListValid = (items: unknown): boolean =>
 const plannedAreIntegers = (data: Record<string, unknown>): boolean =>
   plannedListValid(data.budgets) && (data.yearBudgets === undefined || plannedListValid(data.yearBudgets));
 
-export const readBackup = (raw: unknown): BackupReadResult => {
+export const readBackup = (raw: unknown): Result<BackupContent> => {
   if (!isObject(raw) || raw.app !== BACKUP_APP_ID || !isObject(raw.data)) {
-    return fail('Ce fichier n’est pas une sauvegarde de Mes finances.');
+    return fail('backup-not-recognized');
   }
   if (!isInteger(raw.schemaVersion) || raw.schemaVersion > SCHEMA_VERSION) {
-    return fail(
-      'Cette sauvegarde provient d’une version plus récente de l’application. Mets l’application à jour avant de la restaurer.',
-    );
+    return fail('backup-too-recent');
   }
   if (!isObject(raw.data.settings)) {
-    return fail('La sauvegarde ne contient pas de paramètres valides.');
+    return fail('backup-corrupted', { detail: 'settings' });
   }
   const broken = invalidCollection(raw.data, raw.schemaVersion);
   if (broken) {
-    return fail(`La sauvegarde est corrompue (collection « ${broken} » invalide).`);
+    return fail('backup-corrupted', { detail: broken });
   }
   if (!plannedAreIntegers(raw.data)) {
-    return fail('La sauvegarde est corrompue (budgets invalides).');
+    return fail('backup-corrupted', { detail: 'budgets' });
   }
-  return {
-    ok: true,
+  return ok({
     dataset: migrateDataset({ ...(raw.data as Dataset), schemaVersion: raw.schemaVersion }),
     workspaceName: isString(raw.workspaceName) && raw.workspaceName.trim() ? raw.workspaceName.trim() : null,
-  };
+  });
 };

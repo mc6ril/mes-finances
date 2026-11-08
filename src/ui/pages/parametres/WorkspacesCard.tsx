@@ -11,6 +11,7 @@ import Card from '@/ui/design-system/Card';
 import { Input } from '@/ui/design-system/Field';
 import { ConfirmDialog } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
+import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './FilePickerButton';
 import ImportWorkspaceModal from './ImportWorkspaceModal';
 import { readBackupFile } from './readBackupFile';
@@ -134,17 +135,17 @@ const WorkspacesCard = () => {
   const onFile = async (file: File) => {
     const result = await readBackupFile(file);
     if (!result.ok) {
-      notify(result.message, 'error');
+      notify(errorMessage(result.error), 'error');
       return;
     }
-    if (result.kind === 'complete') {
+    if (result.value.kind === 'complete') {
       notify(
         'Ce fichier est une sauvegarde complète de tous les espaces : utilise « Restaurer » dans Sauvegardes.',
         'error',
       );
       return;
     }
-    setPendingImport({ dataset: result.dataset, workspaceName: result.workspaceName });
+    setPendingImport({ dataset: result.value.dataset, workspaceName: result.value.workspaceName });
   };
 
   return (

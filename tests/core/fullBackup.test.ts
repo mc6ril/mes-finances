@@ -24,27 +24,22 @@ describe('sauvegarde complète', () => {
       '2026-11-08T10:00:00.000Z',
     );
     const read = roundTrip(backup);
-    expect(read).toMatchObject({ ok: true, kind: 'complete', activeId: 'w1' });
-    expect(read.ok && read.kind === 'complete' && read.entries.map((entry) => entry.workspace)).toEqual([
-      DEFAULT_WORKSPACE,
-      commun,
-    ]);
+    expect(read).toMatchObject({ ok: true, value: { kind: 'complete', activeId: 'w1' } });
+    expect(
+      read.ok && read.value.kind === 'complete' && read.value.entries.map((entry) => entry.workspace),
+    ).toEqual([DEFAULT_WORKSPACE, commun]);
   });
 
   it('reconnaît toujours le fichier d’un seul espace', () => {
     expect(roundTrip(createBackup(dataset, '2026-11-08T10:00:00.000Z', 'Commun'))).toMatchObject({
       ok: true,
-      kind: 'workspace',
-      workspaceName: 'Commun',
+      value: { kind: 'workspace', workspaceName: 'Commun' },
     });
   });
 
   it('refuse une sauvegarde complète sans l’espace principal', () => {
     const backup = createFullBackup([{ workspace: commun, dataset }], 'w1', '2026-11-08T10:00:00.000Z');
-    expect(roundTrip(backup)).toEqual({
-      ok: false,
-      reason: 'La sauvegarde ne contient pas l’espace principal.',
-    });
+    expect(roundTrip(backup)).toEqual({ ok: false, error: { code: 'backup-missing-main' } });
   });
 
   it('signale l’espace dont les données sont corrompues', () => {
@@ -57,7 +52,6 @@ describe('sauvegarde complète', () => {
       '2026-11-08T10:00:00.000Z',
     );
     const read = roundTrip(backup);
-    expect(read.ok).toBe(false);
-    expect(!read.ok && read.reason).toMatch(/^Espace « Commun » :/);
+    expect(read).toMatchObject({ ok: false, error: { code: 'backup-corrupted', workspaceName: 'Commun' } });
   });
 });

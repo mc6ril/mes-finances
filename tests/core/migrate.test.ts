@@ -68,7 +68,7 @@ describe('migrateDataset v1 → v2', () => {
       exportedAt: '2026-11-05T10:00:00.000Z',
       data: v1Dataset(),
     });
-    expect(result.ok && result.dataset.yearBudgets).toHaveLength(1);
+    expect(result.ok && result.value.dataset.yearBudgets).toHaveLength(1);
   });
 });
 

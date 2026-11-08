@@ -15,33 +15,31 @@ describe('sauvegarde', () => {
   it('produit une sauvegarde complète relisible à l’identique', () => {
     const backup = createBackup(dataset, '2026-11-05T10:00:00.000Z');
     const restored = readBackup(JSON.parse(JSON.stringify(backup)));
-    expect(restored).toEqual({ ok: true, dataset, workspaceName: null });
+    expect(restored).toEqual({ ok: true, value: { dataset, workspaceName: null } });
   });
 
   it('transporte le nom de l’espace exporté', () => {
     const backup = createBackup(dataset, '2026-11-05T10:00:00.000Z', 'Commun');
     expect(readBackup(JSON.parse(JSON.stringify(backup)))).toMatchObject({
       ok: true,
-      workspaceName: 'Commun',
+      value: { workspaceName: 'Commun' },
     });
   });
 
   it('refuse un fichier qui n’est pas une sauvegarde de l’application', () => {
-    expect(readBackup({ foo: 'bar' })).toEqual({
-      ok: false,
-      reason: 'Ce fichier n’est pas une sauvegarde de Mes finances.',
-    });
+    expect(readBackup({ foo: 'bar' })).toEqual({ ok: false, error: { code: 'backup-not-recognized' } });
   });
 
   it('refuse une sauvegarde d’une version plus récente', () => {
     const backup = { ...createBackup(dataset, '2026-11-05T10:00:00.000Z'), schemaVersion: 99 };
-    expect(readBackup(backup)).toMatchObject({ ok: false });
+    expect(readBackup(backup)).toMatchObject({ ok: false, error: { code: 'backup-too-recent' } });
   });
 
   it('refuse une sauvegarde aux collections corrompues', () => {
     const backup = createBackup(dataset, '2026-11-05T10:00:00.000Z');
     expect(readBackup({ ...backup, data: { ...backup.data, transactions: 'oops' } })).toMatchObject({
       ok: false,
+      error: { code: 'backup-corrupted', detail: 'transactions' },
     });
   });
 

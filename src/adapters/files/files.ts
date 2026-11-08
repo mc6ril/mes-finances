@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { failure, success, type PortResult } from '@/core/ports';
+import { fail, ok, type Result } from '@/core/errors';
 
 export const downloadTextFile = (fileName: string, content: string, mimeType: string): void => {
   const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
@@ -11,36 +11,36 @@ export const downloadTextFile = (fileName: string, content: string, mimeType: st
   URL.revokeObjectURL(url);
 };
 
-export const readFileText = async (file: File): Promise<PortResult<string>> => {
+export const readFileText = async (file: File): Promise<Result<string>> => {
   try {
     const buffer = await file.arrayBuffer();
     const utf8 = new TextDecoder('utf-8', { fatal: true });
     try {
-      return success(utf8.decode(buffer));
+      return ok(utf8.decode(buffer));
     } catch {
-      return success(new TextDecoder('windows-1252').decode(buffer));
+      return ok(new TextDecoder('windows-1252').decode(buffer));
     }
   } catch {
-    return failure('lecture', `Impossible de lire le fichier « ${file.name} ».`);
+    return fail('file-unreadable', { detail: file.name });
   }
 };
 
-export const parseJsonText = (text: string): PortResult<unknown> => {
+export const parseJsonText = (text: string): Result<unknown> => {
   try {
-    return success(JSON.parse(text) as unknown);
+    return ok(JSON.parse(text) as unknown);
   } catch {
-    return failure('format', 'Le fichier n’est pas un JSON valide.');
+    return fail('invalid-json');
   }
 };
 
-export const parseCsvText = (text: string): PortResult<string[][]> => {
+export const parseCsvText = (text: string): Result<string[][]> => {
   const result = Papa.parse<string[]>(text.replace(/^﻿/, ''), {
     skipEmptyLines: 'greedy',
     delimitersToGuess: [';', ',', '\t', '|'],
   });
   const rows = result.data.filter((row) => Array.isArray(row));
   if (rows.length === 0) {
-    return failure('format', 'Le fichier CSV est vide ou illisible.');
+    return fail('empty-csv');
   }
-  return success(rows.map((row) => row.map((value) => String(value ?? ''))));
+  return ok(rows.map((row) => row.map((value) => String(value ?? ''))));
 };

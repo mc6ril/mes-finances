@@ -12,6 +12,7 @@ import { useApplyTheme } from '@/app/theme';
 import Button from '@/ui/design-system/Button';
 import Text from '@/ui/design-system/Text';
 import Title from '@/ui/design-system/Title';
+import { errorMessage } from '@/ui/errorMessages';
 import AppShell from '@/ui/layout/AppShell';
 import BilanPage from '@/ui/pages/BilanPage';
 import BudgetPage from '@/ui/pages/BudgetPage';
@@ -31,7 +32,7 @@ const Gate = () => {
         <div className="flex max-w-md flex-col items-center gap-3 text-center">
           <TriangleAlert className="h-8 w-8 text-amber-500" aria-hidden />
           <Title level={2}>Impossible d’ouvrir tes données</Title>
-          <Text variant="muted">{state.error}</Text>
+          <Text variant="muted">{state.error ? errorMessage(state.error) : ''}</Text>
           <Button variant="primary" onClick={() => void store.start()}>
             Réessayer
           </Button>

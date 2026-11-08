@@ -1,29 +1,16 @@
 import type { CollectionName, Dataset, Settings } from './model';
+import type { Result } from './errors';
 import type { Workspace, WorkspaceRegistryState } from './workspaces';
-
-export type PortFailureKind = 'indisponible' | 'quota' | 'lecture' | 'format' | 'invalide' | 'inconnu';
-
-export type PortFailure = { ok: false; kind: PortFailureKind; message: string };
-
-export type PortResult<T> = { ok: true; value: T } | PortFailure;
-
-export const success = <T>(value: T): PortResult<T> => ({ ok: true, value });
-
-export const failure = (kind: PortFailureKind, message: string): PortFailure => ({
-  ok: false,
-  kind,
-  message,
-});
 
 export type CollectionItem<C extends CollectionName> = Dataset[C][number];
 
 export interface FinanceRepositoryInterface {
-  load(): Promise<PortResult<Dataset | null>>;
-  saveSettings(settings: Settings): Promise<PortResult<void>>;
-  put<C extends CollectionName>(collection: C, items: CollectionItem<C>[]): Promise<PortResult<void>>;
-  remove(collection: CollectionName, keys: string[]): Promise<PortResult<void>>;
-  replaceAll(dataset: Dataset): Promise<PortResult<void>>;
-  destroy(): Promise<PortResult<void>>;
+  load(): Promise<Result<Dataset | null>>;
+  saveSettings(settings: Settings): Promise<Result<void>>;
+  put<C extends CollectionName>(collection: C, items: CollectionItem<C>[]): Promise<Result<void>>;
+  remove(collection: CollectionName, keys: string[]): Promise<Result<void>>;
+  replaceAll(dataset: Dataset): Promise<Result<void>>;
+  destroy(): Promise<Result<void>>;
   close(): Promise<void>;
 }
 

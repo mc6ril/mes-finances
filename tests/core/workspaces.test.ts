@@ -32,8 +32,8 @@ describe('espaces de suivi', () => {
 
   it('refuse un nom vide ou déjà pris, sans tenir compte de la casse', () => {
     const workspaces = [DEFAULT_WORKSPACE, commun];
-    expect(workspaceNameError('   ', workspaces)).toBe('Donne un nom à l’espace.');
-    expect(workspaceNameError('commun', workspaces)).toBe('Un espace porte déjà ce nom.');
+    expect(workspaceNameError('   ', workspaces)).toBe('workspace-name-empty');
+    expect(workspaceNameError('commun', workspaces)).toBe('workspace-name-taken');
     expect(workspaceNameError('Commun', workspaces, 'w1')).toBeNull();
     expect(workspaceNameError('Vacances', workspaces)).toBeNull();
   });

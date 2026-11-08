@@ -1,4 +1,5 @@
 import { BACKUP_APP_ID, readBackup } from './backup';
+import { fail, ok, type Result } from './errors';
 import type { Dataset } from './model';
 import { DEFAULT_WORKSPACE, isWorkspace, resolveActiveId, type Workspace } from './workspaces';
 import { isArray, isObject, isString } from '@/utils/typeCheck';
@@ -15,10 +16,9 @@ export type FullBackup = {
   workspaces: { workspace: Workspace; schemaVersion: number; data: Dataset }[];
 };
 
-export type AnyBackupReadResult =
-  | { ok: true; kind: 'workspace'; dataset: Dataset; workspaceName: string | null }
-  | { ok: true; kind: 'complete'; entries: WorkspaceData[]; activeId: string }
-  | { ok: false; reason: string };
+export type AnyBackupContent =
+  | { kind: 'workspace'; dataset: Dataset; workspaceName: string | null }
+  | { kind: 'complete'; entries: WorkspaceData[]; activeId: string };
 
 export const createFullBackup = (
   entries: WorkspaceData[],
@@ -36,47 +36,44 @@ export const createFullBackup = (
   })),
 });
 
-const fail = (reason: string): AnyBackupReadResult => ({ ok: false, reason });
-
-const readEntry = (raw: unknown): WorkspaceData | string => {
+const readEntry = (raw: unknown): Result<WorkspaceData> => {
   if (!isObject(raw) || !isWorkspace(raw.workspace)) {
-    return 'La sauvegarde est corrompue (espace invalide).';
+    return fail('backup-corrupted', { detail: 'workspaces' });
   }
   const read = readBackup({ app: BACKUP_APP_ID, schemaVersion: raw.schemaVersion, data: raw.data });
   if (!read.ok) {
-    return `Espace « ${raw.workspace.name} » : ${read.reason}`;
+    return fail(read.error.code, { ...read.error, workspaceName: raw.workspace.name });
   }
-  return { workspace: raw.workspace, dataset: read.dataset };
+  return ok({ workspace: raw.workspace, dataset: read.value.dataset });
 };
 
-const readFullBackup = (raw: Record<string, unknown>): AnyBackupReadResult => {
+const readFullBackup = (raw: Record<string, unknown>): Result<AnyBackupContent> => {
   if (!isArray(raw.workspaces)) {
-    return fail('La sauvegarde est corrompue (liste des espaces invalide).');
+    return fail('backup-corrupted', { detail: 'workspaces' });
   }
   const entries: WorkspaceData[] = [];
   for (const item of raw.workspaces) {
     const entry = readEntry(item);
-    if (isString(entry)) {
-      return fail(entry);
+    if (!entry.ok) {
+      return entry;
     }
-    if (entries.some((existing) => existing.workspace.id === entry.workspace.id)) {
-      return fail('La sauvegarde est corrompue (espace en double).');
+    if (entries.some((existing) => existing.workspace.id === entry.value.workspace.id)) {
+      return fail('backup-corrupted', { detail: 'workspaces' });
     }
-    entries.push(entry);
+    entries.push(entry.value);
   }
   if (!entries.some((entry) => entry.workspace.id === DEFAULT_WORKSPACE.id)) {
-    return fail('La sauvegarde ne contient pas l’espace principal.');
+    return fail('backup-missing-main');
   }
   const workspaces = entries.map((entry) => entry.workspace);
-  return {
-    ok: true,
+  return ok({
     kind: 'complete',
     entries,
     activeId: resolveActiveId(workspaces, isString(raw.activeId) ? raw.activeId : null),
-  };
+  });
 };
 
-export const readAnyBackup = (raw: unknown): AnyBackupReadResult => {
+export const readAnyBackup = (raw: unknown): Result<AnyBackupContent> => {
   if (isObject(raw) && raw.app === BACKUP_APP_ID && raw.kind === FULL_BACKUP_KIND) {
     return readFullBackup(raw);
   }
@@ -84,5 +81,5 @@ export const readAnyBackup = (raw: unknown): AnyBackupReadResult => {
   if (!single.ok) {
     return single;
   }
-  return { ok: true, kind: 'workspace', dataset: single.dataset, workspaceName: single.workspaceName };
+  return ok({ kind: 'workspace', ...single.value });
 };

@@ -1,3 +1,4 @@
+import { fail, ok, type Result } from './errors';
 import { parseFlexibleDate } from './dates';
 import { isMirrored } from './mirror';
 import type { Account, Cents, IsoDate, SavingsMovement, SavingsMovementKind, Transaction } from './model';
@@ -10,9 +11,7 @@ export type BrokerDraft = {
   comment: string;
 };
 
-export type BrokerParseResult =
-  | { ok: true; drafts: BrokerDraft[]; ignored: number }
-  | { ok: false; reason: string };
+export type BrokerExport = { drafts: BrokerDraft[]; ignored: number };
 
 const REQUIRED_COLUMNS = ['date', 'type', 'amount', 'fee', 'tax', 'transaction_id'] as const;
 
@@ -82,19 +81,18 @@ const draftsOfRow = (row: string[], read: Reader): BrokerDraft[] => {
   return drafts;
 };
 
-export const parseBrokerExport = (rows: string[][]): BrokerParseResult => {
+export const parseBrokerExport = (rows: string[][]): Result<BrokerExport> => {
   const [header, ...body] = rows;
   const columns = (header ?? []).map((name) => name.trim().toLowerCase());
   if (!REQUIRED_COLUMNS.every((column) => columns.includes(column))) {
-    return { ok: false, reason: 'Ce fichier ne ressemble pas à un export de transactions Trade Republic.' };
+    return fail('broker-not-recognized');
   }
   const read = readerFor(columns);
   const perRow = body.map((row) => draftsOfRow(row, read));
-  return {
-    ok: true,
+  return ok({
     drafts: perRow.flat().sort((a, b) => a.date.localeCompare(b.date)),
     ignored: perRow.filter((drafts) => drafts.length === 0).length,
-  };
+  });
 };
 
 export type BrokerRowStatus = 'nouveau' | 'deja-importe' | 'deja-saisi';
