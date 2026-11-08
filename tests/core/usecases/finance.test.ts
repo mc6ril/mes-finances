@@ -210,3 +210,43 @@ describe('espace', () => {
     });
   });
 });
+
+describe('notes du mois', () => {
+  it('enregistre la note du mois, sans espaces superflus', async () => {
+    const { useCases, calls } = setup();
+    expect(await useCases.setMonthNote('2026-10', '  Prime exceptionnelle  ')).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(calls).toEqual([
+      {
+        kind: 'upsert',
+        collection: 'monthNotes',
+        items: [{ month: '2026-10', text: 'Prime exceptionnelle' }],
+        log: { action: 'modification', entity: 'Note', summary: 'octobre 2026' },
+      },
+    ]);
+  });
+
+  it('supprime la note quand le texte est vidé', async () => {
+    const dataset = { ...base(), monthNotes: [{ month: '2026-10', text: 'Ancienne' }] };
+    const { useCases, calls } = setup(dataset);
+    await useCases.setMonthNote('2026-10', '   ');
+    expect(calls).toEqual([
+      {
+        kind: 'remove',
+        collection: 'monthNotes',
+        keys: ['2026-10'],
+        log: { action: 'suppression', entity: 'Note', summary: 'octobre 2026' },
+      },
+    ]);
+  });
+
+  it('ne fait rien si la note ne change pas', async () => {
+    const dataset = { ...base(), monthNotes: [{ month: '2026-10', text: 'Même texte' }] };
+    const { useCases, calls } = setup(dataset);
+    expect(await useCases.setMonthNote('2026-10', 'Même texte ')).toEqual({ ok: true, value: undefined });
+    expect(await useCases.setMonthNote('2026-09', '')).toEqual({ ok: true, value: undefined });
+    expect(calls).toEqual([]);
+  });
+});

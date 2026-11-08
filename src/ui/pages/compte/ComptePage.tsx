@@ -40,6 +40,7 @@ import { Checkbox, Input, Select } from '@/ui/design-system/Field';
 import { ConfirmDialog } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
+import MonthNote from '@/ui/common/MonthNote';
 import ImportModal from './ImportModal';
 import TransactionModal from './TransactionModal';
 
@@ -682,6 +683,7 @@ const ComptePage = () => {
           />
         }
       />
+      <MonthNote key={month} month={month} />
       <Ledger
         key={`${account.id}-${month}`}
         dataset={dataset}

@@ -172,6 +172,7 @@ export const createInitialDataset = (today: IsoDate, newId: () => string): Datas
     valuations: [],
     budgets: [{ month, planned: {}, carryOver: false }],
     yearBudgets: [{ year: month.slice(0, 4), planned: {} }],
+    monthNotes: [],
     recurrings: [],
     goals: [],
     audit: [

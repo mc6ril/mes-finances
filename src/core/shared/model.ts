@@ -80,6 +80,12 @@ export type YearBudget = {
   planned: Record<string, Cents>;
 };
 
+/** Note libre attachée à un mois, visible sur Budget et Compte courant. */
+export type MonthNote = {
+  month: MonthKey;
+  text: string;
+};
+
 export type Recurring = {
   id: string;
   label: string;
@@ -139,6 +145,7 @@ export type Dataset = {
   valuations: Valuation[];
   budgets: MonthBudget[];
   yearBudgets: YearBudget[];
+  monthNotes: MonthNote[];
   recurrings: Recurring[];
   goals: Goal[];
   audit: AuditEntry[];
@@ -146,4 +153,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;

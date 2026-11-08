@@ -85,13 +85,22 @@ export const Select = ({ value, onChange, options, className, label }: SelectPro
   </select>
 );
 
-type TextareaProps = { value: string; onChange: (value: string) => void; placeholder?: string };
+type TextareaProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+  label?: string;
+  autoFocus?: boolean;
+};
 
-export const Textarea = ({ value, onChange, placeholder }: TextareaProps) => (
+export const Textarea = ({ value, onChange, placeholder, rows = 2, label, autoFocus }: TextareaProps) => (
   <textarea
     value={value}
     placeholder={placeholder}
-    rows={2}
+    rows={rows}
+    aria-label={label}
+    autoFocus={autoFocus}
     onChange={(event) => onChange(event.target.value)}
     className={cx(CONTROL, 'h-auto py-2')}
   />

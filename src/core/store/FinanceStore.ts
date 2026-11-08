@@ -99,7 +99,7 @@ const isAutomaticSettings = (patch: Partial<Settings>): boolean =>
   (Object.keys(patch) as (keyof Settings)[]).every((key) => AUTOMATIC_SETTINGS.includes(key));
 
 const keyOf = (collection: CollectionName, item: object): string => {
-  if (collection === 'budgets') {
+  if (collection === 'budgets' || collection === 'monthNotes') {
     return (item as { month: string }).month;
   }
   if (collection === 'yearBudgets') {

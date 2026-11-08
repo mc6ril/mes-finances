@@ -181,7 +181,22 @@ describe('migrateDataset v4 → v5', () => {
         },
       ],
     });
-    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.goals[0]).toMatchObject({ startDate: '2026-09-15', startAmount: 50000 });
+  });
+});
+
+describe('migrateDataset v5 → v6', () => {
+  it('ajoute une liste de notes vide', () => {
+    const { monthNotes: _notes, ...current } = createInitialDataset('2026-11-05', ids);
+    const migrated = migrateDataset({ ...current, schemaVersion: 5 } as never);
+    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.monthNotes).toEqual([]);
+  });
+
+  it('accepte une sauvegarde v5 sans notes', () => {
+    const { monthNotes: _notes, ...data } = createInitialDataset('2026-11-05', ids);
+    const read = readBackup({ app: 'mes-finances', schemaVersion: 5, data });
+    expect(read.ok && read.value.dataset.monthNotes).toEqual([]);
   });
 });

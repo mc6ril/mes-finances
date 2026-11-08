@@ -5,9 +5,10 @@ import { ANNUAL_CATEGORY_IDS, GROCERIES_CATEGORY, HEALTH_CATEGORY, TAXES_CATEGOR
 
 type LegacyCategory = Omit<Category, 'period'> & { period?: BudgetPeriod };
 
-type LegacyDataset = Omit<Dataset, 'categories' | 'yearBudgets'> & {
+type LegacyDataset = Omit<Dataset, 'categories' | 'yearBudgets' | 'monthNotes'> & {
   categories: LegacyCategory[];
   yearBudgets?: YearBudget[];
+  monthNotes?: Dataset['monthNotes'];
 };
 
 const withPeriod = (category: LegacyCategory): Category => {
@@ -64,6 +65,7 @@ const toVersion2 = (dataset: LegacyDataset): Dataset => {
   return {
     ...dataset,
     schemaVersion: 2,
+    monthNotes: dataset.monthNotes ?? [],
     categories,
     yearBudgets: existingOrDerived(dataset, annualIds),
     budgets: dataset.budgets.map((budget) => withoutAnnual(budget, annualIds)),
@@ -109,10 +111,13 @@ const toVersion5 = (dataset: Dataset): Dataset => {
   };
 };
 
+const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
+
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 3, apply: toVersion3 },
   { version: 4, apply: toVersion4 },
   { version: 5, apply: toVersion5 },
+  { version: 6, apply: toVersion6 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

@@ -4,7 +4,7 @@ import { SCHEMA_VERSION } from '@/core/shared/model';
 import { fail, ok, type Failure, type Result } from '@/core/shared/errors';
 import type { CollectionItem, FinanceRepositoryInterface } from '@/core/shared/ports';
 
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const META_STORE = 'meta';
 
 const COLLECTION_KEYS: Record<CollectionName, string> = {
@@ -15,6 +15,7 @@ const COLLECTION_KEYS: Record<CollectionName, string> = {
   valuations: 'id',
   budgets: 'month',
   yearBudgets: 'year',
+  monthNotes: 'month',
   recurrings: 'id',
   goals: 'id',
   audit: 'id',

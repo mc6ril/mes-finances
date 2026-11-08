@@ -20,6 +20,7 @@ import ProgressBar, { type ProgressTone } from '@/ui/design-system/ProgressBar';
 import Text from '@/ui/design-system/Text';
 import { cx } from '@/ui/design-system/cx';
 import PageHeader from '@/ui/layout/PageHeader';
+import MonthNote from '@/ui/common/MonthNote';
 import AnnualBudgetCard from './AnnualBudgetCard';
 import RecurringModal from './RecurringModal';
 
@@ -418,6 +419,7 @@ const BudgetPage = () => {
         }
       />
       <MonthTabs month={month} onSelect={setMonth} />
+      <MonthNote key={month} month={month} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Checkbox
           checked={budget?.carryOver ?? false}

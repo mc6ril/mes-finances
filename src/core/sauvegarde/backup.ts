@@ -45,15 +45,20 @@ const INTEGER_FIELDS: Partial<Record<CollectionName, string[]>> = {
   goals: ['targetAmount', 'initialAmount', 'monthlyContribution'],
 };
 
-const ID_FIELD: Partial<Record<CollectionName, string>> = { budgets: 'month', yearBudgets: 'year' };
+const ID_FIELD: Partial<Record<CollectionName, string>> = {
+  budgets: 'month',
+  yearBudgets: 'year',
+  monthNotes: 'month',
+};
 
-const OPTIONAL_BEFORE_V2: CollectionName[] = ['yearBudgets'];
+/** Collections apparues après coup : absentes des sauvegardes plus anciennes que cette version. */
+const ADDED_IN: Partial<Record<CollectionName, number>> = { yearBudgets: 2, monthNotes: 6 };
 
 const invalidCollection = (data: Record<string, unknown>, schemaVersion: number): string | null => {
-  const expected = [...COLLECTIONS, ...OPTIONAL_BEFORE_V2];
+  const expected = [...COLLECTIONS, ...(Object.keys(ADDED_IN) as CollectionName[])];
   const broken = expected.find((name) => {
     const items = data[name];
-    if (items === undefined && schemaVersion < 2 && OPTIONAL_BEFORE_V2.includes(name)) {
+    if (items === undefined && schemaVersion < (ADDED_IN[name] ?? 0)) {
       return false;
     }
     if (!isArray(items)) {
