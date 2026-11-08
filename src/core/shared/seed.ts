@@ -156,7 +156,6 @@ export const initialSettings: Settings = {
   mode: 'simple',
   personalEnvelope: 0,
   plaisirBudget: 0,
-  age: null,
   theme: 'system',
   mainAccountId: MAIN_ACCOUNT_ID,
 };

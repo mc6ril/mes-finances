@@ -73,12 +73,11 @@ describe('configuration initiale', () => {
     expect(immo).toMatchObject({ isJoint: true, personalSharePercent: null, openingBalance: 0 });
   });
 
-  it('laisse l’enveloppe personnelle et l’âge vides, à saisir par l’utilisateur', () => {
+  it('laisse l’enveloppe personnelle vide, à saisir par l’utilisateur', () => {
     expect(dataset.settings).toMatchObject({
       mode: 'simple',
       personalEnvelope: 0,
       plaisirBudget: 0,
-      age: null,
     });
   });
 

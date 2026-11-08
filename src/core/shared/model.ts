@@ -125,7 +125,6 @@ export type Settings = {
   mode: TrackingMode;
   personalEnvelope: Cents;
   plaisirBudget: Cents;
-  age: number | null;
   theme: ThemePreference;
   mainAccountId: string;
 };

@@ -62,31 +62,6 @@ const GROUP_BY_KIND: Record<AccountKind, AccountGroup> = {
   autre: 'securise',
 };
 
-type AgeFieldProps = { age: number | null; onCommit: (age: number | null) => void };
-
-const parseAge = (value: string): number | null => (value.trim() === '' ? null : Number(value));
-
-const AgeField = ({ age, onCommit }: AgeFieldProps) => {
-  const [value, setValue] = useState(age === null ? '' : String(age));
-  const parsed = parseAge(value);
-  const valid = parsed === null || (Number.isInteger(parsed) && parsed > 0 && parsed < 120);
-  return (
-    <Field label="Âge" error={valid ? null : 'Âge invalide'}>
-      <Input
-        value={value}
-        inputMode="numeric"
-        placeholder="Ex. 35"
-        onChange={setValue}
-        onBlur={() => {
-          if (valid && parsed !== age) {
-            onCommit(parsed);
-          }
-        }}
-      />
-    </Field>
-  );
-};
-
 const ProfileCard = () => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
@@ -122,11 +97,6 @@ const ProfileCard = () => {
               }
             />
           </Field>
-          <AgeField
-            key={settings.age ?? 'vide'}
-            age={settings.age}
-            onCommit={(age) => void report(finance.updateSettings({ age }, null))}
-          />
         </div>
         <ThemePicker />
       </div>
