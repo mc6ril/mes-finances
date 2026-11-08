@@ -20,7 +20,7 @@ const ObjectifsPage = () => {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Objectifs financiers"
-        description={`Projections calculées à partir de tes versements prévus${dataset.settings.age === null ? '' : ` · ${dataset.settings.age} ans`}`}
+        description="Projections calculées à partir de tes versements prévus"
         actions={
           <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>
             Nouvel objectif
