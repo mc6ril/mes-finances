@@ -5,11 +5,11 @@ import { useDataset, useFileUseCases, useFinanceUseCases } from '@/hooks/useFina
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
 import { MOVEMENT_LABELS } from '@/ui/constants';
-import { planBrokerImport, type BrokerDraft, type BrokerRowStatus } from '@/core/brokerImport';
-import { parseFlexibleDate } from '@/core/dates';
-import { formatDateFr } from '@/core/format';
-import { parseEuros } from '@/core/money';
-import type { Account, SavingsMovement, Valuation } from '@/core/model';
+import { planBrokerImport, type BrokerDraft, type BrokerRowStatus } from '@/core/patrimoine/brokerImport';
+import { parseFlexibleDate } from '@/core/shared/dates';
+import { formatDateFr } from '@/core/shared/format';
+import { parseEuros } from '@/core/shared/money';
+import type { Account, SavingsMovement, Valuation } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge, { type BadgeTone } from '@/ui/design-system/Badge';

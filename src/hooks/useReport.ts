@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { Result } from '@/core/errors';
+import type { Result } from '@/core/shared/errors';
 import { errorMessage } from '@/ui/errorMessages';
 import { useToast } from './useToast';
 

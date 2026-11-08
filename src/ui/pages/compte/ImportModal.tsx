@@ -11,9 +11,9 @@ import {
   type ColumnMapping,
   type ImportDraft,
   type ImportError,
-} from '@/core/csvImport';
-import { formatDateFr } from '@/core/format';
-import type { Category } from '@/core/model';
+} from '@/core/comptes/csvImport';
+import { formatDateFr } from '@/core/shared/format';
+import type { Category } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';

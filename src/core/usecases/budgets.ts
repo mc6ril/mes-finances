@@ -1,7 +1,7 @@
-import { effectiveBudget, effectiveYearBudget, propagateBudgetLine } from '../budget';
-import { ok, type Result } from '../errors';
-import { formatEuros, monthLabel } from '../format';
-import type { Cents, MonthKey } from '../model';
+import { effectiveBudget, effectiveYearBudget, propagateBudgetLine } from '../budget/budget';
+import { ok, type Result } from '../shared/errors';
+import { formatEuros, monthLabel } from '../shared/format';
+import type { Cents, MonthKey } from '../shared/model';
 import { loadedDataset, plural, type FinanceDeps } from './shared';
 
 const followingMonths = (count: number): string =>

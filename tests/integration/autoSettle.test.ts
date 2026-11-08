@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import { createInitialDataset } from '@/core/seed';
+import { createInitialDataset } from '@/core/shared/seed';
 import { aTransaction } from '../core/fixtures';
 
 describe('bascule automatique à l’ouverture', () => {

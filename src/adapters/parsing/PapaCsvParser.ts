@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
-import { fail, ok, type Result } from '@/core/errors';
-import type { CsvParserInterface } from '@/core/ports';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { CsvParserInterface } from '@/core/shared/ports';
 
 const BOM = /^﻿/;
 

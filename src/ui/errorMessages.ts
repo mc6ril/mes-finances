@@ -1,4 +1,4 @@
-import type { AppError, AppErrorCode } from '@/core/errors';
+import type { AppError, AppErrorCode } from '@/core/shared/errors';
 
 const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'storage-unavailable': () => 'Le stockage local est indisponible (navigation privée ou stockage bloqué).',

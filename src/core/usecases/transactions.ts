@@ -1,6 +1,6 @@
-import { ok, type Result } from '../errors';
-import { formatEuros } from '../format';
-import type { Transaction } from '../model';
+import { ok, type Result } from '../shared/errors';
+import { formatEuros } from '../shared/format';
+import type { Transaction } from '../shared/model';
 import { agreed, loadedDataset, plural, type FinanceDeps } from './shared';
 
 export type TransactionDraft = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;

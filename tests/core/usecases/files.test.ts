@@ -1,6 +1,6 @@
-import { createBackup } from '@/core/backup';
-import { fail, ok, type Result } from '@/core/errors';
-import type { WorkspaceData } from '@/core/fullBackup';
+import { createBackup } from '@/core/sauvegarde/backup';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
 import type {
   CsvParserInterface,
   FileSaverInterface,
@@ -8,10 +8,10 @@ import type {
   TextFileReaderInterface,
   UserFile,
   WorkspaceDataSourceInterface,
-} from '@/core/ports';
-import { createInitialDataset } from '@/core/seed';
+} from '@/core/shared/ports';
+import { createInitialDataset } from '@/core/shared/seed';
 import { createFileUseCases } from '@/core/usecases/files';
-import { DEFAULT_WORKSPACE, type Workspace } from '@/core/workspaces';
+import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';
 import { aTransaction } from '../fixtures';
 
 const dataset = createInitialDataset('2026-11-08', () => 'audit');

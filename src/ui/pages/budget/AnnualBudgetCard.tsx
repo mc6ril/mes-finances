@@ -1,9 +1,9 @@
 import { CalendarClock } from 'lucide-react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { yearBudgetOf, yearBudgetOriginOf } from '@/core/overview';
+import { yearBudgetOf, yearBudgetOriginOf } from '@/core/budget/overview';
 import { useReport } from '@/hooks/useReport';
-import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget';
-import type { Cents } from '@/core/model';
+import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget/budget';
+import type { Cents } from '@/core/shared/model';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
 import Card from '@/ui/design-system/Card';

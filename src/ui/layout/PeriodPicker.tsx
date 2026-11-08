@@ -1,8 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePeriod } from '@/hooks/usePeriod';
-import { addMonths, parseMonthKey, toMonthKey } from '@/core/dates';
-import { capitalize, monthLabel } from '@/core/format';
-import type { MonthKey } from '@/core/model';
+import { addMonths, parseMonthKey, toMonthKey } from '@/core/shared/dates';
+import { capitalize, monthLabel } from '@/core/shared/format';
+import type { MonthKey } from '@/core/shared/model';
 import Button from '@/ui/design-system/Button';
 
 type PickerMode = 'month' | 'year';

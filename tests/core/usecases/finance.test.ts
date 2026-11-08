@@ -1,6 +1,6 @@
-import { fail } from '@/core/errors';
-import type { Dataset, MonthBudget } from '@/core/model';
-import { createInitialDataset } from '@/core/seed';
+import { fail } from '@/core/shared/errors';
+import type { Dataset, MonthBudget } from '@/core/shared/model';
+import { createInitialDataset } from '@/core/shared/seed';
 import { createFinanceUseCases } from '@/core/usecases/finance';
 import { aTransaction } from '../fixtures';
 import { fakeGateway, fixedClock, sequentialIds } from './fakeGateway';

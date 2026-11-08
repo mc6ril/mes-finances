@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { parseEuros } from '@/core/money';
-import type { Cents } from '@/core/model';
+import { parseEuros } from '@/core/shared/money';
+import type { Cents } from '@/core/shared/model';
 import { cx } from './cx';
 
 type MoneyInputProps = {

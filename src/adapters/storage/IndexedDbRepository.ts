@@ -1,8 +1,8 @@
 import { deleteDB, openDB, type IDBPDatabase } from 'idb';
-import type { CollectionName, Dataset, Settings } from '@/core/model';
-import { SCHEMA_VERSION } from '@/core/model';
-import { fail, ok, type Failure, type Result } from '@/core/errors';
-import type { CollectionItem, FinanceRepositoryInterface } from '@/core/ports';
+import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
+import { SCHEMA_VERSION } from '@/core/shared/model';
+import { fail, ok, type Failure, type Result } from '@/core/shared/errors';
+import type { CollectionItem, FinanceRepositoryInterface } from '@/core/shared/ports';
 
 const DB_VERSION = 2;
 const META_STORE = 'meta';

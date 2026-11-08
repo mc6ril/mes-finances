@@ -11,13 +11,13 @@ import Text from '@/ui/design-system/Text';
 import Title from '@/ui/design-system/Title';
 import { errorMessage } from '@/ui/errorMessages';
 import AppShell from '@/ui/layout/AppShell';
-import BilanPage from '@/ui/pages/BilanPage';
-import BudgetPage from '@/ui/pages/BudgetPage';
-import ComptePage from '@/ui/pages/ComptePage';
-import DashboardPage from '@/ui/pages/DashboardPage';
-import ObjectifsPage from '@/ui/pages/ObjectifsPage';
-import ParametresPage from '@/ui/pages/ParametresPage';
-import PatrimoinePage from '@/ui/pages/PatrimoinePage';
+import BilanPage from '@/ui/pages/bilan/BilanPage';
+import BudgetPage from '@/ui/pages/budget/BudgetPage';
+import ComptePage from '@/ui/pages/compte/ComptePage';
+import DashboardPage from '@/ui/pages/dashboard/DashboardPage';
+import ObjectifsPage from '@/ui/pages/objectifs/ObjectifsPage';
+import ParametresPage from '@/ui/pages/parametres/ParametresPage';
+import PatrimoinePage from '@/ui/pages/patrimoine/PatrimoinePage';
 
 const Gate = () => {
   const state = useFinanceState();

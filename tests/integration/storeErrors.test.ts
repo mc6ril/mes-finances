@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import { fail, ok, type Result } from '@/core/errors';
-import type { FinanceRepositoryInterface, WorkspaceRegistryInterface } from '@/core/ports';
-import type { Workspace } from '@/core/workspaces';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { FinanceRepositoryInterface, WorkspaceRegistryInterface } from '@/core/shared/ports';
+import type { Workspace } from '@/core/espaces/workspaces';
 import { aTransaction } from '../core/fixtures';
 
 let suite = 0;

@@ -1,6 +1,6 @@
-import type { Result } from '../errors';
-import { todayIso } from '../dates';
-import type { Account, Category, Goal, Recurring } from '../model';
+import type { Result } from '../shared/errors';
+import { todayIso } from '../shared/dates';
+import type { Account, Category, Goal, Recurring } from '../shared/model';
 import { withId, type Draft, type FinanceDeps } from './shared';
 
 const NEW_ACCOUNT: Omit<Account, 'id' | 'openingDate'> = {

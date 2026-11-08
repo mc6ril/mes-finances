@@ -1,12 +1,12 @@
-import { fail, ok, type Result } from '@/core/errors';
-import type { WorkspaceRegistryInterface } from '@/core/ports';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { WorkspaceRegistryInterface } from '@/core/shared/ports';
 import {
   DEFAULT_WORKSPACE,
   parseWorkspaces,
   resolveActiveId,
   type Workspace,
   type WorkspaceRegistryState,
-} from '@/core/workspaces';
+} from '@/core/espaces/workspaces';
 
 const MAIN_DATABASE = 'mes-finances';
 const REGISTRY_KEY = 'mes-finances:espaces';

@@ -1,18 +1,18 @@
-import { createBackup } from '../backup';
-import { parseBrokerExport, type BrokerExport } from '../brokerImport';
-import { transactionsToCsv } from '../csvImport';
-import { todayIso } from '../dates';
-import { fail, ok, type Result } from '../errors';
-import { createFullBackup, readAnyBackup, type AnyBackupContent } from '../fullBackup';
-import type { Account, Category, Transaction } from '../model';
+import { createBackup } from '../sauvegarde/backup';
+import { parseBrokerExport, type BrokerExport } from '../patrimoine/brokerImport';
+import { transactionsToCsv } from '../comptes/csvImport';
+import { todayIso } from '../shared/dates';
+import { fail, ok, type Result } from '../shared/errors';
+import { createFullBackup, readAnyBackup, type AnyBackupContent } from '../sauvegarde/fullBackup';
+import type { Account, Category, Transaction } from '../shared/model';
 import type {
   CsvParserInterface,
   FileSaverInterface,
   TextFileReaderInterface,
   UserFile,
   WorkspaceDataSourceInterface,
-} from '../ports';
-import { workspaceFileSlug, type Workspace } from '../workspaces';
+} from '../shared/ports';
+import { workspaceFileSlug, type Workspace } from '../espaces/workspaces';
 
 export type FilePorts = {
   reader: TextFileReaderInterface;

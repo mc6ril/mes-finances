@@ -1,7 +1,7 @@
-import { todayIso } from '../dates';
-import type { Result } from '../errors';
-import type { Dataset, Settings } from '../model';
-import { createInitialDataset } from '../seed';
+import { todayIso } from '../shared/dates';
+import type { Result } from '../shared/errors';
+import type { Dataset, Settings } from '../shared/model';
+import { createInitialDataset } from '../shared/seed';
 import type { FinanceDeps } from './shared';
 
 export const createWorkspaceUseCases = ({ gateway, newId, now }: FinanceDeps) => {

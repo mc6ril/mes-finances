@@ -1,6 +1,6 @@
-import { fail, ok, type Result } from '../errors';
-import type { Dataset } from '../model';
-import type { Clock, FinanceGatewayInterface, IdGenerator } from '../ports';
+import { fail, ok, type Result } from '../shared/errors';
+import type { Dataset } from '../shared/model';
+import type { Clock, FinanceGatewayInterface, IdGenerator } from '../shared/ports';
 
 export type FinanceDeps = { gateway: FinanceGatewayInterface; newId: IdGenerator; now: Clock };
 

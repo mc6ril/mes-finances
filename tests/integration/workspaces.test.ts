@@ -2,9 +2,9 @@ import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import type { Category, Dataset } from '@/core/model';
-import { createInitialDataset } from '@/core/seed';
-import { hasUnsentChanges } from '@/core/workspaces';
+import type { Category, Dataset } from '@/core/shared/model';
+import { createInitialDataset } from '@/core/shared/seed';
+import { hasUnsentChanges } from '@/core/espaces/workspaces';
 import { aTransaction } from '../core/fixtures';
 
 let suite = 0;

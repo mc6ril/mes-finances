@@ -1,6 +1,12 @@
-import { parseEuros } from '@/core/money';
-import { parseFlexibleDate } from '@/core/dates';
-import type { Category, CategoryGroup, Transaction, TransactionStatus, TransactionType } from '@/core/model';
+import { parseEuros } from '@/core/shared/money';
+import { parseFlexibleDate } from '@/core/shared/dates';
+import type {
+  Category,
+  CategoryGroup,
+  Transaction,
+  TransactionStatus,
+  TransactionType,
+} from '@/core/shared/model';
 import type { TransactionDraft } from '@/core/usecases/transactions';
 
 export type TransactionFormState = {

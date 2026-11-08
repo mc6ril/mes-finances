@@ -1,7 +1,7 @@
 import { useContext, useSyncExternalStore } from 'react';
 import type { Container } from '@/app/container';
 import type { FinanceStore, StoreState } from '@/core/store/FinanceStore';
-import type { Dataset } from '@/core/model';
+import type { Dataset } from '@/core/shared/model';
 import { ContainerContext } from '@/ui/providers/contexts';
 
 const useContainer = (): Container => {

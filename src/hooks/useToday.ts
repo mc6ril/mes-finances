@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { todayIso } from '@/core/dates';
+import { todayIso } from '@/core/shared/dates';
 
 export const useToday = (): string => {
   const [today, setToday] = useState(todayIso);

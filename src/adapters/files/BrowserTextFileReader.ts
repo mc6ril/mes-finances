@@ -1,5 +1,5 @@
-import { fail, ok, type Result } from '@/core/errors';
-import type { TextFileReaderInterface, UserFile } from '@/core/ports';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { TextFileReaderInterface, UserFile } from '@/core/shared/ports';
 
 type ReadableFile = UserFile & { arrayBuffer: () => Promise<ArrayBuffer> };
 

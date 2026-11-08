@@ -1,20 +1,20 @@
-import { createInitialDataset } from '@/core/seed';
-import { migrateDataset } from '@/core/migrate';
-import { settleDuePlanned } from '@/core/planned';
-import { syncRecurring } from '@/core/recurring';
-import { monthKeyOf, todayIso } from '@/core/dates';
-import type { AuditEntry, CollectionName, Dataset, Settings } from '@/core/model';
-import { SCHEMA_VERSION } from '@/core/model';
-import { orderCategories } from '@/core/categoryOrder';
-import type { WorkspaceData } from '@/core/fullBackup';
-import { fail, ok, type AppError, type Result } from '@/core/errors';
+import { createInitialDataset } from '@/core/shared/seed';
+import { migrateDataset } from '@/core/sauvegarde/migrate';
+import { settleDuePlanned } from '@/core/budget/recurring';
+import { syncRecurring } from '@/core/budget/recurring';
+import { monthKeyOf, todayIso } from '@/core/shared/dates';
+import type { AuditEntry, CollectionName, Dataset, Settings } from '@/core/shared/model';
+import { SCHEMA_VERSION } from '@/core/shared/model';
+import { orderCategories } from '@/core/budget/categoryOrder';
+import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import { fail, ok, type AppError, type Result } from '@/core/shared/errors';
 import {
   type AuditLog,
   type CollectionItem,
   type FinanceGatewayInterface,
   type FinanceRepositoryInterface,
   type WorkspaceRegistryInterface,
-} from '@/core/ports';
+} from '@/core/shared/ports';
 import {
   activeIn,
   DEFAULT_WORKSPACE,
@@ -27,7 +27,7 @@ import {
   upsertWorkspace,
   type ImportTarget,
   type Workspace,
-} from '@/core/workspaces';
+} from '@/core/espaces/workspaces';
 
 export type StoreStatus = 'loading' | 'ready' | 'error';
 
@@ -44,7 +44,7 @@ type Listener = () => void;
 
 type RepositoryFactory = (workspaceId: string) => FinanceRepositoryInterface;
 
-export type { ImportTarget } from '../workspaces';
+export type { ImportTarget } from '../espaces/workspaces';
 
 const MAX_AUDIT_ENTRIES = 500;
 

@@ -1,0 +1,242 @@
+import type { AppErrorCode } from '../shared/errors';
+import { daysBetween, parseFlexibleDate } from '../shared/dates';
+import { formatDateFr } from '../shared/format';
+import type {
+  Account,
+  Category,
+  Cents,
+  IsoDate,
+  Transaction,
+  TransactionStatus,
+  TransactionType,
+} from '../shared/model';
+import { parseEuros } from '../shared/money';
+
+export const normalizeLabel = (label: string): string =>
+  label
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter((word) => word.length > 1)
+    .slice(0, 3)
+    .join(' ');
+
+export type ColumnMapping = {
+  date: number | null;
+  label: number | null;
+  amount: number | null;
+  debit: number | null;
+  credit: number | null;
+  category: number | null;
+};
+
+export type ImportDraft = {
+  line: number;
+  date: IsoDate;
+  label: string;
+  amount: Cents;
+  accountId: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  categoryLabel: string;
+};
+
+export type ImportError = { line: number; code: Extract<AppErrorCode, 'invalid-date' | 'invalid-amount'> };
+
+const simplify = (header: string): string => header.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+const HEADER_PATTERNS: Record<keyof ColumnMapping, RegExp> = {
+  date: /^date/,
+  label: /libelle|description|intitule|wording|label|nature/,
+  amount: /^montant|amount|valeur$/,
+  debit: /debit/,
+  credit: /credit/,
+  category: /categ/,
+};
+
+export const guessMapping = (headers: string[]): ColumnMapping => {
+  const simplified = headers.map(simplify);
+  const find = (key: keyof ColumnMapping): number | null => {
+    const index = simplified.findIndex((header) => HEADER_PATTERNS[key].test(header));
+    if (index < 0) {
+      return null;
+    }
+    return index;
+  };
+  return {
+    date: find('date'),
+    label: find('label'),
+    amount: find('amount'),
+    debit: find('debit'),
+    credit: find('credit'),
+    category: find('category'),
+  };
+};
+
+const cell = (row: string[], index: number | null): string => {
+  if (index === null) {
+    return '';
+  }
+  return (row[index] ?? '').trim();
+};
+
+const amountFrom = (row: string[], mapping: ColumnMapping): Cents | null => {
+  if (mapping.amount !== null) {
+    return parseEuros(cell(row, mapping.amount));
+  }
+  const debit = cell(row, mapping.debit);
+  const credit = cell(row, mapping.credit);
+  if (debit) {
+    return withSign(parseEuros(debit), -1);
+  }
+  if (credit) {
+    return withSign(parseEuros(credit), 1);
+  }
+  return null;
+};
+
+const withSign = (value: Cents | null, sign: 1 | -1): Cents | null => {
+  if (value === null) {
+    return null;
+  }
+  return sign * Math.abs(value);
+};
+
+const typeFor = (amount: Cents): TransactionType => {
+  if (amount >= 0) {
+    return 'revenu';
+  }
+  return 'depense';
+};
+
+type MapOptions = { accountId: string; hasHeader: boolean };
+
+export const mapRows = (
+  rows: string[][],
+  mapping: ColumnMapping,
+  { accountId, hasHeader }: MapOptions,
+): { drafts: ImportDraft[]; errors: ImportError[] } => {
+  const drafts: ImportDraft[] = [];
+  const errors: ImportError[] = [];
+  const offset = hasHeader ? 1 : 0;
+  rows.slice(offset).forEach((row, index) => {
+    const line = index + offset + 1;
+    if (row.every((value) => value.trim() === '')) {
+      return;
+    }
+    const date = parseFlexibleDate(cell(row, mapping.date));
+    if (!date) {
+      errors.push({ line, code: 'invalid-date' });
+      return;
+    }
+    const amount = amountFrom(row, mapping);
+    if (amount === null) {
+      errors.push({ line, code: 'invalid-amount' });
+      return;
+    }
+    drafts.push({
+      line,
+      date,
+      label: cell(row, mapping.label) || 'Sans libellé',
+      amount,
+      accountId,
+      type: typeFor(amount),
+      status: 'realise',
+      categoryLabel: cell(row, mapping.category),
+    });
+  });
+  return { drafts, errors };
+};
+
+const DUPLICATE_DAY_WINDOW = 2;
+
+type Comparable = { date: IsoDate; label: string; amount: Cents; accountId: string };
+
+const looksSame = (a: Comparable, b: Comparable): boolean =>
+  a.accountId === b.accountId &&
+  a.amount === b.amount &&
+  Math.abs(daysBetween(a.date, b.date)) <= DUPLICATE_DAY_WINDOW &&
+  normalizeLabel(a.label) === normalizeLabel(b.label);
+
+export const findDuplicates = (drafts: ImportDraft[], existing: Transaction[]): number[] =>
+  drafts.flatMap((draft, index) => {
+    const inExisting = existing.some((transaction) => looksSame(draft, transaction));
+    const inFile = drafts.slice(0, index).some((previous) => looksSame(draft, previous));
+    if (inExisting || inFile) {
+      return [index];
+    }
+    return [];
+  });
+
+export const suggestCategory = (label: string, history: Transaction[]): string | null => {
+  const key = normalizeLabel(label);
+  if (!key) {
+    return null;
+  }
+  const match = history
+    .filter((transaction) => transaction.categoryId !== null && normalizeLabel(transaction.label) === key)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  return match?.categoryId ?? null;
+};
+
+export const TYPE_LABELS: Record<TransactionType, string> = {
+  revenu: 'Revenu',
+  depense: 'Dépense',
+  virement: 'Virement interne',
+  investissement: 'Investissement',
+};
+
+export const STATUS_LABELS: Record<TransactionStatus, string> = {
+  prevu: 'Prévu',
+  realise: 'Réalisé',
+  rapproche: 'Rapproché',
+};
+
+const escapeCsv = (value: string): string => {
+  if (/[;"\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+};
+
+const decimalFr = (cents: Cents): string => (cents / 100).toFixed(2).replace('.', ',');
+
+export const transactionsToCsv = (
+  transactions: Transaction[],
+  categories: Category[],
+  accounts: Account[],
+): string => {
+  const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
+  const accountNames = new Map(accounts.map((account) => [account.id, account.name]));
+  const header = [
+    'Date',
+    'Libellé',
+    'Montant',
+    'Catégorie',
+    'Compte',
+    'Type',
+    'Statut',
+    'Moyen de paiement',
+    'Commentaire',
+  ];
+  const lines = [...transactions]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((transaction) =>
+      [
+        formatDateFr(transaction.date),
+        transaction.label,
+        decimalFr(transaction.amount),
+        categoryNames.get(transaction.categoryId ?? '') ?? '',
+        accountNames.get(transaction.accountId) ?? '',
+        TYPE_LABELS[transaction.type],
+        STATUS_LABELS[transaction.status],
+        transaction.paymentMethod,
+        transaction.comment,
+      ]
+        .map(escapeCsv)
+        .join(';'),
+    );
+  return [header.join(';'), ...lines].join('\n');
+};

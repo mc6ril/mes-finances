@@ -1,4 +1,4 @@
-import type { AccountGroup, AccountKind, CategoryGroup, SavingsMovementKind } from '@/core/model';
+import type { AccountGroup, AccountKind, CategoryGroup, SavingsMovementKind } from '@/core/shared/model';
 
 export const APP_VERSION = __APP_VERSION__;
 

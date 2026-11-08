@@ -1,6 +1,6 @@
-import { ok, type Result } from '../errors';
-import { formatEuros } from '../format';
-import type { Account, SavingsMovement, Valuation } from '../model';
+import { ok, type Result } from '../shared/errors';
+import { formatEuros } from '../shared/format';
+import type { Account, SavingsMovement, Valuation } from '../shared/model';
 import { plural, withId, type Draft, type FinanceDeps } from './shared';
 
 export type BrokerImport = {

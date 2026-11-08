@@ -1,4 +1,4 @@
-import { formatEuros } from '@/core/format';
+import { formatEuros } from '@/core/shared/format';
 
 type TooltipEntry = {
   name?: string | number;

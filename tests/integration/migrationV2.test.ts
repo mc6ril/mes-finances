@@ -3,8 +3,8 @@ import { openDB } from 'idb';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import { createInitialDataset } from '@/core/seed';
-import { SCHEMA_VERSION } from '@/core/model';
+import { createInitialDataset } from '@/core/shared/seed';
+import { SCHEMA_VERSION } from '@/core/shared/model';
 
 const V1_STORES = [
   'accounts',

@@ -1,4 +1,4 @@
-import { APP_ERROR_CODES, type AppError } from '@/core/errors';
+import { APP_ERROR_CODES, type AppError } from '@/core/shared/errors';
 import { errorMessage } from '@/ui/errorMessages';
 
 describe('messages d’erreur', () => {

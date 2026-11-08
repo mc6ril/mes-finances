@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
-import { createInitialDataset } from '@/core/seed';
+import { createInitialDataset } from '@/core/shared/seed';
 
 const ids = () => 'audit-1';
 

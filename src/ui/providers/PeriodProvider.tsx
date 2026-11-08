@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { monthKeyOf } from '@/core/dates';
-import type { MonthKey } from '@/core/model';
+import { monthKeyOf } from '@/core/shared/dates';
+import type { MonthKey } from '@/core/shared/model';
 import { useToday } from '@/hooks/useToday';
 import { PeriodContext } from './contexts';
 

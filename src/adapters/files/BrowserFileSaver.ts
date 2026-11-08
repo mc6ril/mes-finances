@@ -1,5 +1,5 @@
-import { fail, ok, type Result } from '@/core/errors';
-import type { FileSaverInterface, SavedFile } from '@/core/ports';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { FileSaverInterface, SavedFile } from '@/core/shared/ports';
 
 export class BrowserFileSaver implements FileSaverInterface {
   save({ name, content, mimeType }: SavedFile): Result<void> {

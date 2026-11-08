@@ -6,7 +6,7 @@ import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
 import { APP_VERSION } from '@/ui/constants';
-import { hasUnsentChanges } from '@/core/workspaces';
+import { hasUnsentChanges } from '@/core/espaces/workspaces';
 import Button from '@/ui/design-system/Button';
 import { Select } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';

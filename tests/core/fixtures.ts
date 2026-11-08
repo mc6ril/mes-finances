@@ -1,4 +1,4 @@
-import type { Account, Category, SavingsMovement, Transaction, Valuation } from '@/core/model';
+import type { Account, Category, SavingsMovement, Transaction, Valuation } from '@/core/shared/model';
 
 export const anAccount = (overrides: Partial<Account> = {}): Account => ({
   id: 'courant',

@@ -1,4 +1,4 @@
-import { formatEurosRounded } from '@/core/format';
+import { formatEurosRounded } from '@/core/shared/format';
 
 const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
 
