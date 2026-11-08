@@ -4,7 +4,6 @@ import type { WorkspaceData } from '@/core/fullBackup';
 import type {
   CsvParserInterface,
   FileSaverInterface,
-  JsonParserInterface,
   SavedFile,
   TextFileReaderInterface,
   UserFile,
@@ -22,7 +21,6 @@ const file: UserFile = { name: 'fichier.json' };
 type Fakes = {
   text?: Result<string>;
   rows?: Result<string[][]>;
-  json?: Result<unknown>;
   saveResult?: Result<void>;
   entries?: Result<WorkspaceData[]>;
 };
@@ -32,7 +30,6 @@ const setup = (fakes: Fakes = {}) => {
   const shared: string[] = [];
   const reader: TextFileReaderInterface = { read: async () => fakes.text ?? ok('contenu') };
   const csv: CsvParserInterface = { parse: () => fakes.rows ?? ok([['a']]) };
-  const json: JsonParserInterface = { parse: (text) => fakes.json ?? ok(JSON.parse(text)) };
   const saver: FileSaverInterface = {
     save: (savedFile) => {
       saved.push(savedFile);
@@ -52,7 +49,7 @@ const setup = (fakes: Fakes = {}) => {
       return ok(undefined);
     },
   };
-  const useCases = createFileUseCases({ reader, csv, json, saver, workspaces });
+  const useCases = createFileUseCases({ reader, csv, saver, workspaces });
   return { useCases, saved, shared };
 };
 
@@ -68,7 +65,7 @@ describe('lecture d’un fichier de sauvegarde', () => {
   });
 
   it('fait remonter un JSON invalide', async () => {
-    const { useCases } = setup({ json: fail('invalid-json') });
+    const { useCases } = setup({ text: ok('{ pas du json') });
     expect(await useCases.readBackupFile(file)).toEqual({ ok: false, error: { code: 'invalid-json' } });
   });
 

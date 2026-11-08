@@ -32,10 +32,6 @@ export interface CsvParserInterface {
   parse(text: string): Result<string[][]>;
 }
 
-export interface JsonParserInterface {
-  parse(text: string): Result<unknown>;
-}
-
 export interface FileSaverInterface {
   save(file: SavedFile): Result<void>;
 }

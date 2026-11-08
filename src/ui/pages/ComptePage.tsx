@@ -12,11 +12,11 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useDataset, useFileUseCases } from '@/hooks/useFinance';
+import { useDataset, useFileUseCases, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/ui/errorMessages';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { cashflowSummary, livePosition, periodPhase, signedEffectOn } from '@/core/balances';
 import { STATUS_LABELS, TYPE_LABELS } from '@/core/csvImport';
 import { monthEnd, monthStart } from '@/core/dates';
@@ -158,7 +158,8 @@ type BulkBarProps = {
 };
 
 const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [categoryId, setCategoryId] = useState('');
   if (selected.length === 0) {
     return null;
@@ -172,12 +173,13 @@ const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
         size="sm"
         icon={CheckCheck}
         onClick={() =>
-          void actions
-            .updateTransactions(
+          void report(
+            finance.updateTransactions(
               selected.map((transaction) => ({ ...transaction, status: 'rapproche' })),
               'Opérations rapprochées',
-            )
-            .then(onClear)
+            ),
+            'Opérations rapprochées',
+          ).then(onClear)
         }
       >
         Marquer rapprochées
@@ -200,12 +202,13 @@ const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
           icon={Tag}
           disabled={!categoryId}
           onClick={() =>
-            void actions
-              .updateTransactions(
+            void report(
+              finance.updateTransactions(
                 selected.map((transaction) => ({ ...transaction, categoryId })),
                 'Catégorie mise à jour',
-              )
-              .then(onClear)
+              ),
+              'Catégorie mise à jour',
+            ).then(onClear)
           }
         >
           Appliquer
@@ -336,7 +339,8 @@ type EditingState = { transaction: Transaction | null; template: Transaction | n
 type LedgerProps = { dataset: Dataset; account: Account; initialFilters: Filters };
 
 const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const files = useFileUseCases();
   const { notify } = useToast();
   const { today } = usePeriod();
@@ -619,7 +623,10 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
           confirmLabel="Supprimer"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => {
-            void actions.deleteTransactions(pendingDelete);
+            void report(
+              finance.deleteTransactions(pendingDelete),
+              `${pendingDelete.length} opération${pendingDelete.length > 1 ? 's supprimées' : ' supprimée'}`,
+            );
             setSelection(new Set());
             setPendingDelete(null);
           }}

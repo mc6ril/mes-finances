@@ -11,11 +11,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useDataset } from '@/hooks/useFinance';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext } from '@/core/overview';
 import { useChartTheme } from '@/hooks/useTheme';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { addMonths, monthKeyOf, parseFlexibleDate } from '@/core/dates';
 import { capitalize, formatDateFr, formatEuros, monthLabel, monthShortLabel } from '@/core/format';
 import { GOAL_RATE_HYPOTHESES, goalProgress, projectionScenarios } from '@/core/goals';
@@ -70,7 +70,8 @@ type GoalModalProps = { goal: Goal | null; onClose: () => void };
 
 const GoalModal = ({ goal, onClose }: GoalModalProps) => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [form, setForm] = useState<GoalForm>({
     name: goal?.name ?? '',
     target: goal ? String(goal.targetAmount / 100).replace('.', ',') : '',
@@ -106,7 +107,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
       monthlyContribution: monthly,
       linkedAccountIds: form.linked,
     };
-    if (await actions.saveGoal(saved)) {
+    if (await report(finance.saveGoal(saved), 'Objectif enregistré')) {
       onClose();
     }
   };
@@ -319,7 +320,8 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
 
 const ObjectifsPage = () => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [editing, setEditing] = useState<Goal | null | 'new'>(null);
   const [toDelete, setToDelete] = useState<Goal | null>(null);
   return (
@@ -364,7 +366,7 @@ const ObjectifsPage = () => {
           confirmLabel="Supprimer"
           onCancel={() => setToDelete(null)}
           onConfirm={() => {
-            void actions.deleteGoal(toDelete);
+            void report(finance.deleteGoal(toDelete), 'Objectif supprimé');
             setToDelete(null);
           }}
         />

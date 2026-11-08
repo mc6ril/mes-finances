@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useDataset } from '@/hooks/useFinance';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import { PAYMENT_METHODS } from '@/ui/constants';
 import { STATUS_LABELS, TYPE_LABELS } from '@/core/csvImport';
 import type { Transaction, TransactionStatus, TransactionType } from '@/core/model';
@@ -49,7 +49,8 @@ const modalTitle = (transaction: Transaction | null, template: Transaction | nul
 
 const TransactionModal = ({ transaction, template, defaultDate, onClose }: TransactionModalProps) => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [form, setForm] = useState<TransactionFormState>(() =>
     initialForm(transaction ?? template, defaultDate, dataset.settings.mainAccountId),
   );
@@ -71,7 +72,7 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
     if (!result.draft) {
       return;
     }
-    if (await actions.saveTransaction(result.draft, transaction)) {
+    if (await report(finance.saveTransaction(result.draft, transaction), 'Opération enregistrée')) {
       onClose();
     }
   };

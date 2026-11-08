@@ -1,9 +1,9 @@
 import { ArrowRight, History, Repeat } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useDataset } from '@/hooks/useFinance';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { budgetOf, budgetOriginOf, linesFor, visibleGroups, yearBudgetOf } from '@/core/overview';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { GROUP_LABELS } from '@/ui/constants';
 import type { BudgetLine, LineStatus } from '@/core/budget';
 import { annualActualInMonth, groupTotal, provisionPerMonth } from '@/core/budget';
@@ -109,7 +109,8 @@ const Trend = ({ line }: TrendProps) => {
 type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: string };
 
 const GroupTable = ({ group, lines, month }: GroupTableProps) => {
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const rows = lines.filter((line) => line.group === group);
   const planned = groupTotal(rows, group, 'available');
   const actual = groupTotal(rows, group, 'actual');
@@ -160,7 +161,7 @@ const GroupTable = ({ group, lines, month }: GroupTableProps) => {
                     cents={line.planned}
                     label={`Budget prévu ${line.name}`}
                     onCommit={(cents: Cents) =>
-                      void actions.setBudgetLine(month, line.categoryId, cents, line.name)
+                      void report(finance.setBudgetLine(month, line.categoryId, cents, line.name))
                     }
                     className="ml-auto w-28"
                   />
@@ -392,7 +393,8 @@ const BudgetOrigin = ({ month, origin, isDefined }: BudgetOriginProps) => {
 const BudgetPage = () => {
   const dataset = useDataset();
   const { month, setMonth } = usePeriod();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [recurringOpen, setRecurringOpen] = useState(false);
   const lines = useMemo(() => linesFor(dataset, month), [dataset, month]);
   const budget = budgetOf(dataset, month);
@@ -419,7 +421,7 @@ const BudgetPage = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Checkbox
           checked={budget?.carryOver ?? false}
-          onChange={(checked) => void actions.setCarryOver(month, checked)}
+          onChange={(checked) => void report(finance.setCarryOver(month, checked))}
         >
           Reporter les budgets plaisir non utilisés du mois précédent
         </Checkbox>

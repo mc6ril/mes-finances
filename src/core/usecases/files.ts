@@ -8,7 +8,6 @@ import type { Account, Category, Transaction } from '../model';
 import type {
   CsvParserInterface,
   FileSaverInterface,
-  JsonParserInterface,
   TextFileReaderInterface,
   UserFile,
   WorkspaceDataSourceInterface,
@@ -18,7 +17,6 @@ import { workspaceFileSlug, type Workspace } from '../workspaces';
 export type FilePorts = {
   reader: TextFileReaderInterface;
   csv: CsvParserInterface;
-  json: JsonParserInterface;
   saver: FileSaverInterface;
   workspaces: WorkspaceDataSourceInterface;
 };
@@ -32,12 +30,20 @@ export type OperationsExport = {
 };
 
 const JSON_TYPE = 'application/json';
+
+const parseJson = (text: string): Result<unknown> => {
+  try {
+    return ok(JSON.parse(text) as unknown);
+  } catch {
+    return fail('invalid-json');
+  }
+};
 const CSV_TYPE = 'text/csv';
 const UTF8_BOM = '﻿';
 
 const toJson = (value: unknown): string => JSON.stringify(value, null, 2);
 
-export const createFileUseCases = ({ reader, csv, json, saver, workspaces }: FilePorts) => {
+export const createFileUseCases = ({ reader, csv, saver, workspaces }: FilePorts) => {
   const readCsvRows = async (file: UserFile): Promise<Result<string[][]>> => {
     const text = await reader.read(file);
     if (!text.ok) {
@@ -51,7 +57,7 @@ export const createFileUseCases = ({ reader, csv, json, saver, workspaces }: Fil
     if (!text.ok) {
       return text;
     }
-    const parsed = json.parse(text.value);
+    const parsed = parseJson(text.value);
     if (!parsed.ok) {
       return parsed;
     }

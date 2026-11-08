@@ -1,8 +1,8 @@
 import type { TransactionDraft } from '@/core/usecases/transactions';
 import { FileUp, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useDataset, useFileUseCases } from '@/hooks/useFinance';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useDataset, useFileUseCases, useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import {
   findDuplicates,
   guessMapping,
@@ -48,7 +48,8 @@ type ImportModalProps = { accountId: string; onClose: () => void };
 
 const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const files = useFileUseCases();
   const [step, setStep] = useState<Step>('file');
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +127,12 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       comment: `Import ${fileName}`,
       recurringId: null,
     }));
-    if (await actions.importTransactions(transactions)) {
+    if (
+      await report(
+        finance.importTransactions(transactions),
+        (count) => `${count} opération${count > 1 ? 's importées' : ' importée'}`,
+      )
+    ) {
       onClose();
     }
   };

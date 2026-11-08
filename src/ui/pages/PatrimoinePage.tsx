@@ -14,11 +14,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { useDataset } from '@/hooks/useFinance';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext, referenceDate } from '@/core/overview';
 import { useChartTheme } from '@/hooks/useTheme';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { ACCOUNT_GROUP_LABELS, ACCOUNT_KIND_LABELS } from '@/ui/constants';
 import { lastMonths, monthEnd, parseMonthKey, toMonthKey } from '@/core/dates';
 import { capitalize, formatDateFr, formatPercent, monthLabel, monthShortLabel } from '@/core/format';
@@ -113,7 +113,8 @@ const AccountCard = ({ account, position, color, onOpen }: AccountCardProps) => 
 type JointCardProps = { account: Account; position: AccountPosition };
 
 const JointCard = ({ account, position }: JointCardProps) => {
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [share, setShare] = useState(
     account.personalSharePercent === null ? '' : String(account.personalSharePercent),
   );
@@ -121,7 +122,7 @@ const JointCard = ({ account, position }: JointCardProps) => {
   const commit = () => {
     if (share.trim() === '') {
       setError(null);
-      void actions.saveAccount({ ...account, personalSharePercent: null });
+      void report(finance.saveAccount({ ...account, personalSharePercent: null }), 'Compte enregistré');
       return;
     }
     const value = Number(share.replace(',', '.'));
@@ -130,7 +131,7 @@ const JointCard = ({ account, position }: JointCardProps) => {
       return;
     }
     setError(null);
-    void actions.saveAccount({ ...account, personalSharePercent: value });
+    void report(finance.saveAccount({ ...account, personalSharePercent: value }), 'Compte enregistré');
   };
   const personal = personalValueOf(account, position.value);
   return (

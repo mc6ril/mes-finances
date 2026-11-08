@@ -1,11 +1,11 @@
 import { FileUp, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useDataset } from '@/hooks/useFinance';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext } from '@/core/overview';
 import { useChartTheme } from '@/hooks/useTheme';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { MOVEMENT_LABELS } from '@/ui/constants';
 import { isCounted, isInternalMove } from '@/core/balances';
 import { monthEnd, parseFlexibleDate } from '@/core/dates';
@@ -49,7 +49,8 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
   const account = dataset.accounts.find((item) => item.id === initial.id) ?? initial;
   const [importOpen, setImportOpen] = useState(false);
   const { today } = usePeriod();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const { series, ink } = useChartTheme();
   const [formKind, setFormKind] = useState<FormKind>(
     account.group === 'investissement' ? 'valuation' : 'movement',
@@ -81,7 +82,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         label: `${MOVEMENT_LABELS[movement.kind]}${movement.comment ? ` · ${movement.comment}` : ''}`,
         amount: MOVEMENT_SIGN[movement.kind] * movement.amount,
         kind: 'movement' as const,
-        onDelete: () => void actions.deleteMovement(movement),
+        onDelete: () => void report(finance.deleteMovement(movement), 'Mouvement supprimé'),
       })),
     ...dataset.valuations
       .filter((valuation) => valuation.accountId === account.id)
@@ -91,7 +92,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         label: 'Valorisation',
         amount: valuation.value,
         kind: 'valuation' as const,
-        onDelete: () => void actions.deleteValuation(valuation),
+        onDelete: () => void report(finance.deleteValuation(valuation), 'Valorisation supprimée'),
       })),
     ...dataset.transactions
       .filter(
@@ -119,15 +120,22 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
     }
     setError(null);
     const saveEntry = {
-      valuation: () => actions.saveValuation({ accountId: account.id, date: parsedDate, value: cents }),
+      valuation: () =>
+        report(
+          finance.saveValuation({ accountId: account.id, date: parsedDate, value: cents }),
+          'Valorisation enregistrée',
+        ),
       movement: () =>
-        actions.saveMovement({
-          accountId: account.id,
-          date: parsedDate,
-          kind,
-          amount: cents,
-          comment: comment.trim(),
-        }),
+        report(
+          finance.saveMovement({
+            accountId: account.id,
+            date: parsedDate,
+            kind,
+            amount: cents,
+            comment: comment.trim(),
+          }),
+          'Mouvement enregistré',
+        ),
     };
     if (await saveEntry[formKind]()) {
       setAmount('');

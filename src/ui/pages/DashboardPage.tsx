@@ -28,8 +28,6 @@ import {
 } from 'recharts';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { useMonthOverview } from '@/hooks/useMonthOverview';
-import { useSpendingSlices } from '@/hooks/useSpendingSlices';
 import { useChartTheme } from '@/hooks/useTheme';
 import { balanceSeries } from '@/core/balances';
 import { depositsInMonth } from '@/core/annual';
@@ -37,6 +35,7 @@ import type { MonthTotals } from '@/core/budget';
 import { addMonths, monthEnd, monthStart } from '@/core/dates';
 import { formatDateFr, formatEurosRounded, monthLabel } from '@/core/format';
 import type { Cents, Dataset, MonthKey } from '@/core/model';
+import { monthOverview, spendingSlices } from '@/core/overview';
 import Amount from '@/ui/design-system/Amount';
 import Card from '@/ui/design-system/Card';
 import EmptyState from '@/ui/design-system/EmptyState';
@@ -84,9 +83,9 @@ const PersonalSpendingHint = ({ totals }: PersonalSpendingHintProps) => {
 const DashboardPage = () => {
   const dataset = useDataset();
   const { currentMonth: month, today } = usePeriod();
-  const overview = useMonthOverview(dataset, month, today);
+  const overview = useMemo(() => monthOverview(dataset, month, today), [dataset, month, today]);
   const { series, ink } = useChartTheme();
-  const slices = useSpendingSlices(dataset, month);
+  const slices = useMemo(() => spendingSlices(dataset, month), [dataset, month]);
   const isSimple = dataset.settings.mode === 'simple';
   const saved = savedInMonth(dataset, month, overview.totals.epargne);
   const variable = overview.totals.plaisir + overview.totals.nonCategorise;

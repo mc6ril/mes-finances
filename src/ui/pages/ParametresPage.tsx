@@ -15,9 +15,15 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { useDataset, useFileUseCases, useFinanceState } from '@/hooks/useFinance';
+import {
+  useDataset,
+  useFileUseCases,
+  useFinanceState,
+  useFinanceStore,
+  useFinanceUseCases,
+} from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/ui/constants';
 import type { WorkspaceData } from '@/core/fullBackup';
 import { parseFlexibleDate, todayIso } from '@/core/dates';
@@ -83,7 +89,8 @@ const AgeField = ({ age, onCommit }: AgeFieldProps) => {
 
 const ProfileCard = () => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const { settings } = dataset;
   return (
     <Card title="Mode de suivi et budget de départ">
@@ -92,7 +99,7 @@ const ProfileCard = () => {
           <Segmented<TrackingMode>
             value={settings.mode}
             label="Mode de suivi"
-            onChange={(mode) => void actions.updateSettings({ mode }, `Mode de suivi : ${mode}`)}
+            onChange={(mode) => void report(finance.updateSettings({ mode }, `Mode de suivi : ${mode}`))}
             options={[
               { value: 'simple', label: 'Simplifié (enveloppe personnelle)' },
               { value: 'complet', label: 'Complet' },
@@ -111,14 +118,14 @@ const ProfileCard = () => {
               cents={settings.personalEnvelope}
               label="Enveloppe personnelle"
               onCommit={(personalEnvelope) =>
-                void actions.updateSettings({ personalEnvelope }, 'Enveloppe personnelle modifiée')
+                void report(finance.updateSettings({ personalEnvelope }, 'Enveloppe personnelle modifiée'))
               }
             />
           </Field>
           <AgeField
             key={settings.age ?? 'vide'}
             age={settings.age}
-            onCommit={(age) => void actions.updateSettings({ age }, null)}
+            onCommit={(age) => void report(finance.updateSettings({ age }, null))}
           />
         </div>
         <ThemePicker />
@@ -129,14 +136,15 @@ const ProfileCard = () => {
 
 const ThemePicker = () => {
   const { settings } = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   return (
     <div className="flex flex-wrap items-center gap-3">
       <Text variant="label">Thème</Text>
       <Segmented<ThemePreference>
         value={settings.theme}
         label="Thème"
-        onChange={(theme) => void actions.updateSettings({ theme }, null)}
+        onChange={(theme) => void report(finance.updateSettings({ theme }, null))}
         options={[
           { value: 'system', label: 'Système' },
           { value: 'light', label: 'Clair' },
@@ -150,10 +158,12 @@ const ThemePicker = () => {
 type AccountRowProps = { account: Account; isMain: boolean };
 
 const AccountRow = ({ account, isMain }: AccountRowProps) => {
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [name, setName] = useState(account.name);
   const [openingDate, setOpeningDate] = useState(account.openingDate);
-  const save = (patch: Partial<Account>) => void actions.saveAccount({ ...account, ...patch });
+  const save = (patch: Partial<Account>) =>
+    void report(finance.saveAccount({ ...account, ...patch }), 'Compte enregistré');
   return (
     <tr className={account.archived ? 'opacity-50' : ''}>
       <td>
@@ -227,8 +237,9 @@ const AccountRow = ({ account, isMain }: AccountRowProps) => {
 
 const AccountsCard = () => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
-  const add = () => void actions.createAccount();
+  const finance = useFinanceUseCases();
+  const report = useReport();
+  const add = () => void report(finance.createAccount(), 'Compte ajouté');
   return (
     <Card
       title="Comptes"
@@ -268,7 +279,7 @@ const AccountsCard = () => {
         <Select
           value={dataset.settings.mainAccountId}
           onChange={(mainAccountId) =>
-            void actions.updateSettings({ mainAccountId }, 'Compte principal modifié')
+            void report(finance.updateSettings({ mainAccountId }, 'Compte principal modifié'))
           }
           className="w-56"
           label="Compte principal"
@@ -309,7 +320,8 @@ type CategoryRowProps = { category: Category };
 const PERIOD_GROUPS: CategoryGroup[] = ['fixe', 'plaisir'];
 
 const CategoryRow = ({ category }: CategoryRowProps) => {
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [name, setName] = useState(category.name);
   const hasPeriod = PERIOD_GROUPS.includes(category.group);
 
@@ -320,7 +332,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
       return;
     }
     if (trimmed !== category.name) {
-      void actions.saveCategory({ ...category, name: trimmed });
+      void report(finance.saveCategory({ ...category, name: trimmed }), 'Catégorie enregistrée');
     }
   };
 
@@ -366,7 +378,9 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
           <Segmented<BudgetPeriod>
             value={category.period}
             label={`Période de budget ${category.name}`}
-            onChange={(period) => void actions.saveCategory({ ...category, period })}
+            onChange={(period) =>
+              void report(finance.saveCategory({ ...category, period }), 'Catégorie enregistrée')
+            }
             options={[
               { value: 'mensuel', label: 'Mensuel' },
               { value: 'annuel', label: 'Annuel' },
@@ -379,7 +393,12 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
           icon={category.archived ? ArchiveRestore : Archive}
           label={category.archived ? `Réactiver ${category.name}` : `Archiver ${category.name}`}
           className="w-8 px-0"
-          onClick={() => void actions.saveCategory({ ...category, archived: !category.archived })}
+          onClick={() =>
+            void report(
+              finance.saveCategory({ ...category, archived: !category.archived }),
+              'Catégorie enregistrée',
+            )
+          }
         />
       </div>
     </li>
@@ -428,7 +447,8 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
 
 const CategoriesCard = () => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState<CategoryGroup>('plaisir');
   const add = async () => {
@@ -436,12 +456,15 @@ const CategoriesCard = () => {
       return;
     }
     if (
-      await actions.saveCategory({
-        name: newName.trim(),
-        group: newGroup,
-        period: 'mensuel',
-        archived: false,
-      })
+      await report(
+        finance.saveCategory({
+          name: newName.trim(),
+          group: newGroup,
+          period: 'mensuel',
+          archived: false,
+        }),
+        'Catégorie enregistrée',
+      )
     ) {
       setNewName('');
     }
@@ -516,7 +539,9 @@ const BackupCard = () => {
   const dataset = useDataset();
   const files = useFileUseCases();
   const { workspace, workspaces } = useFinanceState();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const store = useFinanceStore();
+  const report = useReport();
   const { notify } = useToast();
   const [pending, setPending] = useState<PendingRestore | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -569,10 +594,10 @@ const BackupCard = () => {
 
   const confirmRestore = (restore: PendingRestore) => {
     if (restore.kind === 'complete') {
-      void actions.restoreAll(restore.entries, restore.activeId);
+      void report(store.restoreAll(restore.entries, restore.activeId), 'Sauvegarde complète restaurée');
       return;
     }
-    void actions.restore(restore.dataset);
+    void report(finance.restore(restore.dataset), 'Sauvegarde restaurée');
   };
 
   return (
@@ -670,7 +695,7 @@ const BackupCard = () => {
           confirmLabel="Réinitialiser"
           onCancel={() => setConfirmReset(false)}
           onConfirm={() => {
-            void actions.resetWorkspace();
+            void report(finance.resetWorkspace(), 'Espace réinitialisé');
             setConfirmReset(false);
           }}
         />

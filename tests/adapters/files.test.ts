@@ -1,5 +1,4 @@
 import { BrowserTextFileReader } from '@/adapters/files/BrowserTextFileReader';
-import { JsonTextParser } from '@/adapters/parsing/JsonTextParser';
 import { PapaCsvParser } from '@/adapters/parsing/PapaCsvParser';
 
 const fileOf = (name: string, bytes: Uint8Array) => ({
@@ -56,17 +55,5 @@ describe('analyse CSV', () => {
 
   it('signale un CSV vide', () => {
     expect(parser.parse('   \n')).toEqual({ ok: false, error: { code: 'empty-csv' } });
-  });
-});
-
-describe('analyse JSON', () => {
-  const parser = new JsonTextParser();
-
-  it('lit un JSON valide', () => {
-    expect(parser.parse('{"a":1}')).toEqual({ ok: true, value: { a: 1 } });
-  });
-
-  it('remonte une erreur typée pour un JSON invalide', () => {
-    expect(parser.parse('{oops')).toEqual({ ok: false, error: { code: 'invalid-json' } });
   });
 });

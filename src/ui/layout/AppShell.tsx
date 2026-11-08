@@ -1,10 +1,10 @@
 import { Menu, Send, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
-import { useFinanceState } from '@/hooks/useFinance';
+import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
 import { useToast } from '@/hooks/useToast';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { APP_VERSION } from '@/ui/constants';
 import { hasUnsentChanges } from '@/core/workspaces';
 import Button from '@/ui/design-system/Button';
@@ -69,7 +69,8 @@ const SidebarFooter = () => (
 
 const WorkspaceSwitcher = () => {
   const { workspaces, workspace } = useFinanceState();
-  const actions = useFinanceActions();
+  const store = useFinanceStore();
+  const report = useReport();
   if (workspaces.length < 2) {
     return null;
   }
@@ -80,7 +81,7 @@ const WorkspaceSwitcher = () => {
       </Text>
       <Select
         value={workspace.id}
-        onChange={(workspaceId) => void actions.switchWorkspace(workspaceId)}
+        onChange={(workspaceId) => void report(store.switchWorkspace(workspaceId))}
         label="Espace affiché"
         className="h-9"
         options={workspaces.map((item) => ({

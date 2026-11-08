@@ -1,9 +1,9 @@
 import type { Draft } from '@/core/usecases/shared';
 import { Pencil, Plus, Repeat, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useDataset } from '@/hooks/useFinance';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { TYPE_LABELS } from '@/core/csvImport';
 import { parseEuros } from '@/core/money';
 import type { Recurring, TransactionType } from '@/core/model';
@@ -54,7 +54,8 @@ type RecurringModalProps = { onClose: () => void };
 const RecurringModal = ({ onClose }: RecurringModalProps) => {
   const dataset = useDataset();
   const { month } = usePeriod();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const blank: RecurringForm = {
     label: '',
     amount: '',
@@ -115,7 +116,7 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
       active: form.active,
       generatedUntil: generatedUntilFor(editing.id),
     };
-    if (await actions.saveRecurring(recurring)) {
+    if (await report(finance.saveRecurring(recurring), 'Récurrence enregistrée')) {
       setEditing(null);
       setError(null);
     }
@@ -268,7 +269,7 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
           confirmLabel="Supprimer"
           onCancel={() => setToDelete(null)}
           onConfirm={() => {
-            void actions.deleteRecurring(toDelete);
+            void report(finance.deleteRecurring(toDelete), 'Récurrence supprimée');
             setToDelete(null);
           }}
         />

@@ -1,7 +1,7 @@
 import { CalendarClock } from 'lucide-react';
-import { useDataset } from '@/hooks/useFinance';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { yearBudgetOf, yearBudgetOriginOf } from '@/core/overview';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget';
 import type { Cents } from '@/core/model';
 import Amount from '@/ui/design-system/Amount';
@@ -48,7 +48,8 @@ type AnnualBudgetCardProps = { year: number };
 
 const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
   const dataset = useDataset();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const yearKey = String(year);
   const lines = annualLines({
     yearBudget: yearBudgetOf(dataset, yearKey),
@@ -112,7 +113,7 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
                       cents={line.planned}
                       label={`Budget annuel ${line.name}`}
                       onCommit={(cents: Cents) =>
-                        void actions.setYearBudgetLine(yearKey, line.categoryId, cents, line.name)
+                        void report(finance.setYearBudgetLine(yearKey, line.categoryId, cents, line.name))
                       }
                       className="ml-auto w-28"
                     />

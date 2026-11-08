@@ -1,8 +1,8 @@
 import { Check, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
-import { useFileUseCases, useFinanceState } from '@/hooks/useFinance';
+import { useFileUseCases, useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { formatDateFr } from '@/core/format';
 import type { Dataset } from '@/core/model';
 import { DEFAULT_WORKSPACE, hasUnsentChanges, isShared, type Workspace } from '@/core/workspaces';
@@ -38,21 +38,25 @@ const SharingDates = ({ workspace }: { workspace: Workspace }) => {
 };
 
 const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
-  const actions = useFinanceActions();
+  const store = useFinanceStore();
+  const report = useReport();
   const [draft, setDraft] = useState<string | null>(null);
 
-  const saveName = () => {
+  const saveName = async () => {
     if (draft === null) {
       return;
     }
-    if (draft.trim() === workspace.name || actions.renameWorkspace(workspace.id, draft)) {
+    if (
+      draft.trim() === workspace.name ||
+      (await report(store.renameWorkspace(workspace.id, draft), 'Espace renommé'))
+    ) {
       setDraft(null);
     }
   };
 
   const onKey = (key: string) => {
     if (key === 'Enter') {
-      saveName();
+      void saveName();
     }
     if (key === 'Escape') {
       setDraft(null);
@@ -78,7 +82,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
           <Input
             value={draft}
             onChange={setDraft}
-            onBlur={saveName}
+            onBlur={() => void saveName()}
             onKeyDown={onKey}
             label="Nom de l’espace"
             autoFocus
@@ -89,7 +93,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
       </div>
       <div className="flex items-center gap-1">
         {!isActive && draft === null && (
-          <Button size="sm" onClick={() => void actions.switchWorkspace(workspace.id)}>
+          <Button size="sm" onClick={() => void report(store.switchWorkspace(workspace.id))}>
             Ouvrir
           </Button>
         )}
@@ -102,7 +106,13 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
             onClick={() => setDraft(workspace.name)}
           />
         ) : (
-          <Button size="sm" variant="ghost" icon={Check} label="Enregistrer le nom" onClick={saveName} />
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={Check}
+            label="Enregistrer le nom"
+            onClick={() => void saveName()}
+          />
         )}
         {workspace.id !== DEFAULT_WORKSPACE.id && (
           <Button
@@ -121,14 +131,15 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
 const WorkspacesCard = () => {
   const files = useFileUseCases();
   const { workspaces, workspace: active } = useFinanceState();
-  const actions = useFinanceActions();
+  const store = useFinanceStore();
+  const report = useReport();
   const { notify } = useToast();
   const [newName, setNewName] = useState('');
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [toDelete, setToDelete] = useState<Workspace | null>(null);
 
   const create = async () => {
-    if (await actions.createWorkspace(newName)) {
+    if (await report(store.createWorkspace(newName), 'Espace créé')) {
       setNewName('');
     }
   };
@@ -184,7 +195,10 @@ const WorkspacesCard = () => {
           workspaceName={pendingImport.workspaceName}
           onCancel={() => setPendingImport(null)}
           onConfirm={(target) => {
-            void actions.importWorkspace(pendingImport.dataset, target);
+            void report(
+              store.importWorkspace(pendingImport.dataset, target),
+              target.kind === 'new' ? 'Espace importé' : 'Espace mis à jour',
+            );
             setPendingImport(null);
           }}
         />
@@ -196,7 +210,7 @@ const WorkspacesCard = () => {
           confirmLabel="Supprimer"
           onCancel={() => setToDelete(null)}
           onConfirm={() => {
-            void actions.deleteWorkspace(toDelete.id);
+            void report(store.deleteWorkspace(toDelete.id), 'Espace supprimé');
             setToDelete(null);
           }}
         />

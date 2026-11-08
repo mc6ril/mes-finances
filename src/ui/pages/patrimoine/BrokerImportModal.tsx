@@ -1,9 +1,9 @@
 import type { Draft } from '@/core/usecases/shared';
 import { FileUp } from 'lucide-react';
 import { useState } from 'react';
-import { useDataset, useFileUseCases } from '@/hooks/useFinance';
+import { useDataset, useFileUseCases, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { useFinanceActions } from '@/hooks/useFinanceActions';
+import { useReport } from '@/hooks/useReport';
 import { MOVEMENT_LABELS } from '@/ui/constants';
 import { planBrokerImport, type BrokerDraft, type BrokerRowStatus } from '@/core/brokerImport';
 import { parseFlexibleDate } from '@/core/dates';
@@ -42,7 +42,8 @@ type BrokerImportModalProps = { account: Account; onClose: () => void };
 const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
   const dataset = useDataset();
   const { today } = usePeriod();
-  const actions = useFinanceActions();
+  const finance = useFinanceUseCases();
+  const report = useReport();
   const files = useFileUseCases();
   const [drafts, setDrafts] = useState<BrokerDraft[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,11 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
     }));
     const valuation = valuationOf(account.id, valuationCents, valuationDay);
     const openingPatch = adjustOpening ? plan.openingAdjustment : null;
-    if (await actions.importBrokerExport({ account, movements, openingPatch, valuation })) {
+    if (
+      await report(finance.importBrokerExport({ account, movements, openingPatch, valuation }), (count) =>
+        count === 0 ? 'Compte mis à jour' : `${count} mouvement${count > 1 ? 's importés' : ' importé'}`,
+      )
+    ) {
       onClose();
     }
   };

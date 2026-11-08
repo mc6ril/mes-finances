@@ -1,7 +1,6 @@
 import { BrowserFileSaver } from '@/adapters/files/BrowserFileSaver';
 import { BrowserTextFileReader } from '@/adapters/files/BrowserTextFileReader';
 import { randomId } from '@/adapters/ids/randomIdGenerator';
-import { JsonTextParser } from '@/adapters/parsing/JsonTextParser';
 import { PapaCsvParser } from '@/adapters/parsing/PapaCsvParser';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import {
@@ -29,7 +28,6 @@ export const createContainer = (): Container => {
   const files = createFileUseCases({
     reader: new BrowserTextFileReader(),
     csv: new PapaCsvParser(),
-    json: new JsonTextParser(),
     saver: new BrowserFileSaver(),
     workspaces: store,
   });
