@@ -9,6 +9,8 @@ const goal: Goal = {
   initialAmount: 0,
   monthlyContribution: 20000,
   linkedAccountIds: [],
+  startDate: '2026-11-05',
+  startAmount: 0,
 };
 
 describe('goalProgress', () => {

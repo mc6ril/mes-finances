@@ -103,6 +103,9 @@ export type Goal = {
   initialAmount: Cents;
   monthlyContribution: Cents;
   linkedAccountIds: string[];
+  /** Point de départ de la trajectoire prévue, figé à la création. */
+  startDate: IsoDate;
+  startAmount: Cents;
 };
 
 export type AuditAction = 'creation' | 'modification' | 'suppression' | 'import' | 'restauration';
@@ -144,4 +147,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;

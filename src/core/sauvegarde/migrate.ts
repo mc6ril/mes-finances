@@ -1,4 +1,5 @@
-import type { BudgetPeriod, Category, Dataset, MonthBudget, YearBudget } from '../shared/model';
+import { goalStartFor } from '../patrimoine/goalTracking';
+import type { BudgetPeriod, Category, Dataset, Goal, MonthBudget, YearBudget } from '../shared/model';
 import { SCHEMA_VERSION } from '../shared/model';
 import { ANNUAL_CATEGORY_IDS, GROCERIES_CATEGORY, HEALTH_CATEGORY, TAXES_CATEGORY } from '../shared/seed';
 
@@ -86,9 +87,32 @@ const toVersion4 = (dataset: Dataset): Dataset => ({
   categories: withCategory(withCategory(dataset.categories, GROCERIES_CATEGORY), HEALTH_CATEGORY),
 });
 
+type LegacyGoal = Omit<Goal, 'startDate' | 'startAmount'> & Partial<Pick<Goal, 'startDate' | 'startAmount'>>;
+
+const toVersion5 = (dataset: Dataset): Dataset => {
+  const sources = {
+    accounts: dataset.accounts,
+    context: {
+      transactions: dataset.transactions,
+      movements: dataset.savingsMovements,
+      valuations: dataset.valuations,
+    },
+    audit: dataset.audit,
+  };
+  return {
+    ...dataset,
+    goals: (dataset.goals as LegacyGoal[]).map((goal) =>
+      goal.startDate !== undefined && goal.startAmount !== undefined
+        ? (goal as Goal)
+        : { ...goal, ...goalStartFor(goal, sources) },
+    ),
+  };
+};
+
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 3, apply: toVersion3 },
   { version: 4, apply: toVersion4 },
+  { version: 5, apply: toVersion5 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

@@ -31,6 +31,8 @@ describe('IndexedDbRepository', () => {
       initialAmount: 0,
       monthlyContribution: 10000,
       linkedAccountIds: [],
+      startDate: '2026-11-01',
+      startAmount: 0,
     };
     await repository.put('goals', [goal]);
     const afterPut = await repository.load();

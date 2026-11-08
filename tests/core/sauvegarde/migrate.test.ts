@@ -154,3 +154,34 @@ describe('migrateDataset v3 → v4', () => {
     expect(migrated.categories.some((category) => category.id === 'cat-courses')).toBe(true);
   });
 });
+
+describe('migrateDataset v4 → v5', () => {
+  it('donne un point de départ aux objectifs existants', () => {
+    const current = createInitialDataset('2026-11-05', ids);
+    const legacyGoal = {
+      id: 'g1',
+      name: 'Voyage',
+      targetAmount: 300000,
+      targetDate: '2027-12-31',
+      initialAmount: 50000,
+      monthlyContribution: 10000,
+      linkedAccountIds: [],
+    };
+    const migrated = migrateDataset({
+      ...current,
+      schemaVersion: 4,
+      goals: [legacyGoal as never],
+      audit: [
+        {
+          id: 'a1',
+          at: '2026-09-15T08:00:00.000Z',
+          action: 'creation',
+          entity: 'Objectif',
+          summary: 'Voyage',
+        },
+      ],
+    });
+    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.goals[0]).toMatchObject({ startDate: '2026-09-15', startAmount: 50000 });
+  });
+});
