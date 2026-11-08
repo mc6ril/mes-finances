@@ -4,6 +4,7 @@ import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/app/FinanceStore';
 import type { Category, Dataset } from '@/core/model';
 import { createInitialDataset } from '@/core/seed';
+import { hasUnsentChanges } from '@/core/workspaces';
 import { aTransaction } from '../core/fixtures';
 
 let suite = 0;
@@ -13,6 +14,7 @@ const setup = () => {
   const prefix = `espaces-${suite}`;
   const registry = new MemoryWorkspaceRegistry();
   let counter = 0;
+  let ticks = -1;
   const store = new FinanceStore(
     (workspaceId) => new IndexedDbRepository(`${prefix}-${workspaceId}`),
     registry,
@@ -20,7 +22,10 @@ const setup = () => {
       counter += 1;
       return `id-${counter}`;
     },
-    () => new Date('2026-11-08T10:00:00.000Z'),
+    () => {
+      ticks += 1;
+      return new Date(Date.UTC(2026, 10, 8, 10, 0, ticks));
+    },
   );
   return { store, registry };
 };
@@ -59,7 +64,7 @@ describe('espaces de suivi', () => {
     expect(archived(store.getSnapshot().dataset?.categories ?? [], 'cat-divers')).toBe(true);
   });
 
-  it('importe un espace en lecture seule, sans toucher à l’espace principal', async () => {
+  it('importe un espace partagé modifiable, sans toucher à l’espace principal', async () => {
     const { store, registry } = setup();
     await store.start();
     const result = await store.importWorkspace(communFile(), { kind: 'new', name: 'Commun' });
@@ -68,17 +73,20 @@ describe('espaces de suivi', () => {
     expect(workspace).toMatchObject({
       name: 'Commun',
       source: 'import',
-      importedAt: '2026-11-08T10:00:00.000Z',
+      importedAt: expect.stringMatching(/^2026-11-08T10:00/),
     });
     expect(dataset?.transactions.map((transaction) => transaction.id)).toEqual(['courses']);
     expect(registry.state.activeId).toBe(workspace.id);
+    expect(hasUnsentChanges(workspace)).toBe(false);
     const write = await store.upsert('transactions', [aTransaction({ id: 'ajout' })], {
       action: 'creation',
       entity: 'Opération',
       summary: 'Ajout',
     });
-    expect(write).toMatchObject({ ok: false, kind: 'lecture-seule' });
-    expect((await store.updateSettings({ theme: 'dark' }, null)).ok).toBe(true);
+    expect(write.ok).toBe(true);
+    expect(hasUnsentChanges(store.getSnapshot().workspace)).toBe(true);
+    store.markShared(workspace.id);
+    expect(hasUnsentChanges(store.getSnapshot().workspace)).toBe(false);
     await store.switchWorkspace('perso');
     expect(store.getSnapshot().dataset?.transactions).toEqual([]);
   });
@@ -101,7 +109,7 @@ describe('espaces de suivi', () => {
     expect(store.getSnapshot().dataset?.transactions.map((transaction) => transaction.id)).toEqual(['loyer']);
   });
 
-  it('refuse de mettre à jour par fichier un espace créé localement', async () => {
+  it('refuse de remplacer l’espace principal par un import', async () => {
     const { store } = setup();
     await store.start();
     expect(
@@ -191,5 +199,48 @@ describe('espaces de suivi', () => {
     });
     await store.refresh();
     expect(mobiles()).toEqual([]);
+  });
+
+  it('met à jour un espace créé localement avec le fichier reçu, qui devient partagé', async () => {
+    const { store } = setup();
+    await store.start();
+    await store.createWorkspace('Commun');
+    const communId = store.getSnapshot().workspace.id;
+    await store.switchWorkspace('perso');
+    expect((await store.importWorkspace(communFile(), { kind: 'existing', workspaceId: communId })).ok).toBe(
+      true,
+    );
+    expect(store.getSnapshot().workspace).toMatchObject({ id: communId, source: 'import', modifiedAt: null });
+    expect(store.getSnapshot().dataset?.transactions.map((transaction) => transaction.id)).toEqual([
+      'courses',
+    ]);
+  });
+
+  it('ne compte pas la génération automatique comme une modification à envoyer', async () => {
+    const { store } = setup();
+    await store.start();
+    const file = {
+      ...communFile(),
+      recurrings: [
+        {
+          id: 'r-loyer',
+          label: 'Loyer',
+          amount: -90000,
+          type: 'depense' as const,
+          categoryId: null,
+          accountId: 'acc-courant',
+          counterpartAccountId: null,
+          dayOfMonth: 1,
+          startMonth: '2026-11',
+          endMonth: null,
+          active: true,
+        },
+      ],
+    };
+    await store.importWorkspace(file, { kind: 'new', name: 'Commun' });
+    expect(
+      store.getSnapshot().dataset?.transactions.some((transaction) => transaction.recurringId === 'r-loyer'),
+    ).toBe(true);
+    expect(hasUnsentChanges(store.getSnapshot().workspace)).toBe(false);
   });
 });

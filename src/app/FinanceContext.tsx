@@ -11,7 +11,6 @@ import {
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { databaseNameFor, LocalWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { monthKeyOf, todayIso } from '@/core/dates';
-import { isReadOnly } from '@/core/workspaces';
 import type { Dataset, MonthKey } from '@/core/model';
 import { FinanceStore, type StoreState } from './FinanceStore';
 
@@ -49,8 +48,6 @@ export const useFinanceState = (): StoreState => {
   const store = useFinanceStore();
   return useSyncExternalStore(store.subscribe, store.getSnapshot);
 };
-
-export const useReadOnly = (): boolean => isReadOnly(useFinanceState().workspace);
 
 export const useDataset = (): Dataset => {
   const { dataset } = useFinanceState();

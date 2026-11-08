@@ -342,6 +342,8 @@ export const useFinanceActions = () => {
         return result.value;
       },
 
+      markShared: (workspaceId: string) => store.markShared(workspaceId),
+
       restoreAll: async (entries: WorkspaceData[], activeId: string) =>
         report(await store.restoreAll(entries, activeId), 'Sauvegarde complète restaurée'),
     };

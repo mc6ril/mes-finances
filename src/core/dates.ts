@@ -4,7 +4,7 @@ const pad = (value: number): string => String(value).padStart(2, '0');
 
 export const isLeapYear = (year: number): boolean => (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 
-const DAYS_PER_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const DAYS_IN_NON_LEAP_YEAR = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 export const parseMonthKey = (month: MonthKey): { year: number; month: number } => {
   const [year = '1970', monthNumber = '1'] = month.split('-');
@@ -18,7 +18,7 @@ export const daysInMonth = (month: MonthKey): number => {
   if (parsed.month === 2 && isLeapYear(parsed.year)) {
     return 29;
   }
-  return DAYS_PER_MONTH[parsed.month - 1] ?? 30;
+  return DAYS_IN_NON_LEAP_YEAR[parsed.month - 1] ?? 30;
 };
 
 export const monthKeyOf = (date: IsoDate): MonthKey => date.slice(0, 7);

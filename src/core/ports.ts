@@ -1,14 +1,7 @@
 import type { CollectionName, Dataset, Settings } from './model';
 import type { Workspace, WorkspaceRegistryState } from './workspaces';
 
-export type PortFailureKind =
-  | 'indisponible'
-  | 'quota'
-  | 'lecture'
-  | 'format'
-  | 'lecture-seule'
-  | 'invalide'
-  | 'inconnu';
+export type PortFailureKind = 'indisponible' | 'quota' | 'lecture' | 'format' | 'invalide' | 'inconnu';
 
 export type PortFailure = { ok: false; kind: PortFailureKind; message: string };
 

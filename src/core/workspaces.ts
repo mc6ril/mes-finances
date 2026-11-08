@@ -7,6 +7,8 @@ export type Workspace = {
   name: string;
   source: WorkspaceSource;
   importedAt: string | null;
+  modifiedAt?: string | null;
+  sharedAt?: string | null;
 };
 
 export type WorkspaceRegistryState = { workspaces: Workspace[]; activeId: string };
@@ -18,7 +20,18 @@ export const DEFAULT_WORKSPACE: Workspace = {
   importedAt: null,
 };
 
-export const isReadOnly = (workspace: Workspace): boolean => workspace.source === 'import';
+export const isShared = (workspace: Workspace): boolean =>
+  workspace.source === 'import' || Boolean(workspace.sharedAt);
+
+const latestOf = (dates: (string | null | undefined)[]): string =>
+  dates.reduce<string>((latest, date) => (date && date > latest ? date : latest), '');
+
+export const hasUnsentChanges = (workspace: Workspace): boolean => {
+  if (!isShared(workspace) || !workspace.modifiedAt) {
+    return false;
+  }
+  return workspace.modifiedAt > latestOf([workspace.importedAt, workspace.sharedAt]);
+};
 
 export const normalizeWorkspaceName = (name: string): string => name.trim().replace(/\s+/g, ' ');
 
@@ -48,7 +61,9 @@ export const isWorkspace = (value: unknown): value is Workspace =>
   value.id.length > 0 &&
   isString(value.name) &&
   (value.source === 'local' || value.source === 'import') &&
-  (value.importedAt === null || isString(value.importedAt));
+  (value.importedAt === null || isString(value.importedAt)) &&
+  (value.modifiedAt === undefined || value.modifiedAt === null || isString(value.modifiedAt)) &&
+  (value.sharedAt === undefined || value.sharedAt === null || isString(value.sharedAt));
 
 export const withDefaultWorkspace = (workspaces: Workspace[]): Workspace[] => {
   const others = workspaces.filter((workspace) => workspace.id !== DEFAULT_WORKSPACE.id);

@@ -15,7 +15,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { newId, useDataset, useFinanceState, useReadOnly, useToast } from '@/app/FinanceContext';
+import { newId, useDataset, useFinanceState, useToast } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { downloadTextFile } from '@/adapters/files/files';
 import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/constants/misc';
@@ -24,7 +24,7 @@ import { createFullBackup, type WorkspaceData } from '@/core/fullBackup';
 import { transactionsToCsv } from '@/core/csvImport';
 import { parseFlexibleDate, todayIso } from '@/core/dates';
 import { formatDateFr } from '@/core/format';
-import { isReadOnly, workspaceFileSlug } from '@/core/workspaces';
+import { workspaceFileSlug } from '@/core/workspaces';
 import type {
   Account,
   AccountGroup,
@@ -147,18 +147,6 @@ const ThemePicker = () => {
         ]}
       />
     </div>
-  );
-};
-
-const ReadOnlyNotice = () => {
-  const { workspace } = useFinanceState();
-  return (
-    <Card
-      title={`Espace « ${workspace.name} » en lecture seule`}
-      subtitle="Ses comptes, catégories et réglages sont gérés par la personne qui te l’envoie. Pour le mettre à jour, importe son nouveau fichier dans Espaces de suivi."
-    >
-      <ThemePicker />
-    </Card>
   );
 };
 
@@ -549,7 +537,6 @@ const BackupCard = () => {
   const [selectedSharedId, setSharedId] = useState(workspace.id);
   const sharedId = workspaces.some((item) => item.id === selectedSharedId) ? selectedSharedId : workspace.id;
   const stamp = todayIso();
-  const readOnly = isReadOnly(workspace);
 
   const exportAll = async () => {
     const entries = await actions.allWorkspaceData();
@@ -574,6 +561,7 @@ const BackupCard = () => {
       JSON.stringify(createBackup(entry.dataset, new Date().toISOString(), entry.workspace.name), null, 2),
       'application/json',
     );
+    actions.markShared(entry.workspace.id);
     notify(`Espace « ${entry.workspace.name} » exporté`);
   };
 
@@ -585,10 +573,6 @@ const BackupCard = () => {
     }
     if (result.kind === 'complete') {
       setPending({ kind: 'complete', entries: result.entries, activeId: result.activeId });
-      return;
-    }
-    if (readOnly) {
-      notify('Cet espace est importé : pour le mettre à jour, utilise « Importer un espace ».', 'error');
       return;
     }
     setPending({ kind: 'workspace', dataset: result.dataset });
@@ -678,11 +662,9 @@ const BackupCard = () => {
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
           Aucune donnée transmise à un serveur · aucune connexion bancaire
         </Text>
-        {!readOnly && (
-          <Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => setConfirmReset(true)}>
-            Réinitialiser « {workspace.name} »
-          </Button>
-        )}
+        <Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => setConfirmReset(true)}>
+          Réinitialiser « {workspace.name} »
+        </Button>
       </div>
       {pending && (
         <ConfirmDialog
@@ -735,19 +717,16 @@ const AuditCard = () => {
   );
 };
 
-const ParametresPage = () => {
-  const readOnly = useReadOnly();
-  return (
-    <div className="flex flex-col gap-5">
-      <PageHeader title="Paramètres et sauvegardes" />
-      <WorkspacesCard />
-      {readOnly ? <ReadOnlyNotice /> : <ProfileCard />}
-      <BackupCard />
-      {!readOnly && <AccountsCard />}
-      {!readOnly && <CategoriesCard />}
-      <AuditCard />
-    </div>
-  );
-};
+const ParametresPage = () => (
+  <div className="flex flex-col gap-5">
+    <PageHeader title="Paramètres et sauvegardes" />
+    <WorkspacesCard />
+    <ProfileCard />
+    <BackupCard />
+    <AccountsCard />
+    <CategoriesCard />
+    <AuditCard />
+  </div>
+);
 
 export default ParametresPage;

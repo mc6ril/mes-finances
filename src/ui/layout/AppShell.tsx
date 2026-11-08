@@ -1,11 +1,10 @@
-import { Lock, Menu, X } from 'lucide-react';
+import { Menu, Send, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { useFinanceState, useToast } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { APP_VERSION } from '@/constants/misc';
-import { formatDateFr } from '@/core/format';
-import { isReadOnly } from '@/core/workspaces';
+import { hasUnsentChanges } from '@/core/workspaces';
 import Button from '@/ui/design-system/Button';
 import { Select } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';
@@ -57,10 +56,13 @@ const NavList = ({ onNavigate }: NavListProps) => (
   </nav>
 );
 
-const AppVersion = () => (
-  <Text variant="caption" className="mt-auto px-3">
-    Version {APP_VERSION}
-  </Text>
+const SidebarFooter = () => (
+  <div className="mt-auto flex flex-col gap-3">
+    <WorkspaceSwitcher />
+    <Text variant="caption" className="px-3">
+      Version {APP_VERSION}
+    </Text>
+  </div>
 );
 
 const WorkspaceSwitcher = () => {
@@ -70,7 +72,10 @@ const WorkspaceSwitcher = () => {
     return null;
   }
   return (
-    <div className="px-2">
+    <div className="flex flex-col gap-1.5 border-t border-stone-200/80 px-2 pt-4 dark:border-stone-800">
+      <Text variant="label" className="px-1">
+        Espace
+      </Text>
       <Select
         value={workspace.id}
         onChange={(workspaceId) => void actions.switchWorkspace(workspaceId)}
@@ -78,25 +83,24 @@ const WorkspaceSwitcher = () => {
         className="h-9"
         options={workspaces.map((item) => ({
           value: item.id,
-          label: isReadOnly(item) ? `${item.name} (importé)` : item.name,
+          label: item.name,
         }))}
       />
     </div>
   );
 };
 
-const ReadOnlyBanner = () => {
+const UnsentChangesBanner = () => {
   const { workspace } = useFinanceState();
-  if (!isReadOnly(workspace)) {
+  if (!hasUnsentChanges(workspace)) {
     return null;
   }
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-sky-50 px-4 py-2 text-center text-xs font-medium text-sky-900 dark:bg-sky-500/15 dark:text-sky-200">
-      <Lock className="h-3.5 w-3.5" aria-hidden />
-      Espace « {workspace.name} » importé
-      {workspace.importedAt ? ` le ${formatDateFr(workspace.importedAt.slice(0, 10))}` : ''} · lecture seule.
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
+      <Send className="h-3.5 w-3.5" aria-hidden />
+      Tu as modifié l’espace partagé « {workspace.name} » : pense à l’exporter pour l’envoyer.
       <Link to="/parametres" className="underline underline-offset-2">
-        Mettre à jour
+        Exporter
       </Link>
     </div>
   );
@@ -142,13 +146,11 @@ const AppShell = ({ children }: AppShellProps) => {
   }, [location.pathname]);
   return (
     <div className="min-h-screen">
-      <ReadOnlyBanner />
       <div className="flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-stone-200/80 bg-white/70 px-3 py-5 backdrop-blur dark:border-stone-800 dark:bg-[#161615] lg:flex">
           <Brand />
-          <WorkspaceSwitcher />
           <NavList />
-          <AppVersion />
+          <SidebarFooter />
         </aside>
         {menuOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
@@ -168,13 +170,13 @@ const AppShell = ({ children }: AppShellProps) => {
                   label="Fermer le menu"
                 />
               </div>
-              <WorkspaceSwitcher />
               <NavList onNavigate={() => setMenuOpen(false)} />
-              <AppVersion />
+              <SidebarFooter />
             </aside>
           </div>
         )}
         <div className="min-w-0 flex-1">
+          <UnsentChangesBanner />
           <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#f6f6f3]/85 backdrop-blur dark:border-stone-800 dark:bg-[#121211]/85">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
               <div className="flex items-center gap-2">

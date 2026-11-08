@@ -1,6 +1,6 @@
 import { ArrowRight, History, Repeat } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useDataset, usePeriod, useReadOnly } from '@/app/FinanceContext';
+import { useDataset, usePeriod } from '@/app/FinanceContext';
 import { budgetOf, budgetOriginOf, linesFor, visibleGroups, yearBudgetOf } from '@/app/selectors';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { GROUP_LABELS } from '@/constants/misc';
@@ -109,7 +109,6 @@ type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: strin
 
 const GroupTable = ({ group, lines, month }: GroupTableProps) => {
   const actions = useFinanceActions();
-  const readOnly = useReadOnly();
   const rows = lines.filter((line) => line.group === group);
   const planned = groupTotal(rows, group, 'available');
   const actual = groupTotal(rows, group, 'actual');
@@ -155,21 +154,15 @@ const GroupTable = ({ group, lines, month }: GroupTableProps) => {
                   )}
                 </td>
                 <td>
-                  {readOnly ? (
-                    <div className="text-right">
-                      <Amount cents={line.planned} />
-                    </div>
-                  ) : (
-                    <MoneyInput
-                      key={`${month}-${line.categoryId}-${line.planned}`}
-                      cents={line.planned}
-                      label={`Budget prévu ${line.name}`}
-                      onCommit={(cents: Cents) =>
-                        void actions.setBudgetLine(month, line.categoryId, cents, line.name)
-                      }
-                      className="ml-auto w-28"
-                    />
-                  )}
+                  <MoneyInput
+                    key={`${month}-${line.categoryId}-${line.planned}`}
+                    cents={line.planned}
+                    label={`Budget prévu ${line.name}`}
+                    onCommit={(cents: Cents) =>
+                      void actions.setBudgetLine(month, line.categoryId, cents, line.name)
+                    }
+                    className="ml-auto w-28"
+                  />
                 </td>
                 <td className="text-right">
                   <Amount cents={line.actual} />
@@ -396,7 +389,6 @@ const BudgetOrigin = ({ month, origin, isDefined }: BudgetOriginProps) => {
 };
 
 const BudgetPage = () => {
-  const readOnly = useReadOnly();
   const dataset = useDataset();
   const { month, setMonth } = usePeriod();
   const actions = useFinanceActions();
@@ -417,25 +409,19 @@ const BudgetPage = () => {
         title="Budget"
         description={`${capitalize(monthLabel(month))} · ${isSimple ? 'mode simplifié (enveloppe personnelle)' : 'mode complet'}`}
         actions={
-          readOnly ? undefined : (
-            <Button icon={Repeat} onClick={() => setRecurringOpen(true)}>
-              Récurrences
-            </Button>
-          )
+          <Button icon={Repeat} onClick={() => setRecurringOpen(true)}>
+            Récurrences
+          </Button>
         }
       />
       <MonthTabs month={month} onSelect={setMonth} />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {readOnly ? (
-          <span />
-        ) : (
-          <Checkbox
-            checked={budget?.carryOver ?? false}
-            onChange={(checked) => void actions.setCarryOver(month, checked)}
-          >
-            Reporter les budgets plaisir non utilisés du mois précédent
-          </Checkbox>
-        )}
+        <Checkbox
+          checked={budget?.carryOver ?? false}
+          onChange={(checked) => void actions.setCarryOver(month, checked)}
+        >
+          Reporter les budgets plaisir non utilisés du mois précédent
+        </Checkbox>
         <BudgetOrigin month={month} origin={origin} isDefined={budget !== null} />
       </div>
       <Summary

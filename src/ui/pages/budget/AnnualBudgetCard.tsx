@@ -1,5 +1,5 @@
 import { CalendarClock } from 'lucide-react';
-import { useDataset, useReadOnly } from '@/app/FinanceContext';
+import { useDataset } from '@/app/FinanceContext';
 import { yearBudgetOf, yearBudgetOriginOf } from '@/app/selectors';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget';
@@ -49,7 +49,6 @@ type AnnualBudgetCardProps = { year: number };
 const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
   const dataset = useDataset();
   const actions = useFinanceActions();
-  const readOnly = useReadOnly();
   const yearKey = String(year);
   const lines = annualLines({
     yearBudget: yearBudgetOf(dataset, yearKey),
@@ -108,21 +107,15 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
                     </div>
                   </td>
                   <td>
-                    {readOnly ? (
-                      <div className="text-right">
-                        <Amount cents={line.planned} />
-                      </div>
-                    ) : (
-                      <MoneyInput
-                        key={`${yearKey}-${line.categoryId}-${line.planned}`}
-                        cents={line.planned}
-                        label={`Budget annuel ${line.name}`}
-                        onCommit={(cents: Cents) =>
-                          void actions.setYearBudgetLine(yearKey, line.categoryId, cents, line.name)
-                        }
-                        className="ml-auto w-28"
-                      />
-                    )}
+                    <MoneyInput
+                      key={`${yearKey}-${line.categoryId}-${line.planned}`}
+                      cents={line.planned}
+                      label={`Budget annuel ${line.name}`}
+                      onCommit={(cents: Cents) =>
+                        void actions.setYearBudgetLine(yearKey, line.categoryId, cents, line.name)
+                      }
+                      className="ml-auto w-28"
+                    />
                   </td>
                   <td className="text-right">
                     <Amount cents={line.actual} />

@@ -17,7 +17,6 @@ import {
 } from '@/core/ports';
 import {
   DEFAULT_WORKSPACE,
-  isReadOnly,
   normalizeWorkspaceName,
   workspaceNameError,
   type Workspace,
@@ -82,15 +81,16 @@ export interface FinanceStoreInterface {
   importWorkspace(dataset: Dataset, target: ImportTarget): Promise<PortResult<void>>;
   renameWorkspace(workspaceId: string, name: string): PortResult<void>;
   deleteWorkspace(workspaceId: string): Promise<PortResult<void>>;
+  markShared(workspaceId: string): void;
   workspaceData(workspaceId: string): Promise<PortResult<WorkspaceData | null>>;
   allWorkspaceData(): Promise<PortResult<WorkspaceData[]>>;
   restoreAll(entries: WorkspaceData[], activeId: string): Promise<PortResult<void>>;
 }
 
-const READ_ONLY_MESSAGE =
-  'Cet espace est importé : il est en lecture seule. Pour le mettre à jour, importe le nouveau fichier dans Paramètres.';
+const AUTOMATIC_SETTINGS: (keyof Settings)[] = ['theme'];
 
-const onlyTheme = (patch: Partial<Settings>): boolean => Object.keys(patch).every((key) => key === 'theme');
+const isAutomaticSettings = (patch: Partial<Settings>): boolean =>
+  (Object.keys(patch) as (keyof Settings)[]).every((key) => AUTOMATIC_SETTINGS.includes(key));
 
 const keyOf = (collection: CollectionName, item: object): string => {
   if (collection === 'budgets') {
@@ -119,6 +119,7 @@ export class FinanceStore implements FinanceStoreInterface {
   #registry: WorkspaceRegistryInterface;
   #registryLoaded = false;
   #syncing = false;
+  #automatic = false;
 
   constructor(
     createRepository: RepositoryFactory,
@@ -191,8 +192,33 @@ export class FinanceStore implements FinanceStoreInterface {
     this.#set({ workspaces, workspace: active });
   }
 
-  #readOnly(): boolean {
-    return isReadOnly(this.#state.workspace);
+  #touch(): void {
+    if (this.#automatic) {
+      return;
+    }
+    const modifiedAt = this.#now().toISOString();
+    const active = { ...this.#state.workspace, modifiedAt };
+    const workspaces = this.#state.workspaces.map((item) => (item.id === active.id ? active : item));
+    this.#saveRegistry(workspaces, active);
+  }
+
+  async #automatically(task: () => Promise<void>): Promise<void> {
+    const previous = this.#automatic;
+    this.#automatic = true;
+    try {
+      await task();
+    } finally {
+      this.#automatic = previous;
+    }
+  }
+
+  markShared(workspaceId: string): void {
+    const sharedAt = this.#now().toISOString();
+    const workspaces = this.#state.workspaces.map((item) =>
+      item.id === workspaceId ? { ...item, sharedAt } : item,
+    );
+    const active = workspaces.find((item) => item.id === this.#state.workspace.id) ?? DEFAULT_WORKSPACE;
+    this.#saveRegistry(workspaces, active);
   }
 
   async start(): Promise<void> {
@@ -225,7 +251,7 @@ export class FinanceStore implements FinanceStoreInterface {
 
   async syncRecurring(): Promise<void> {
     const dataset = this.#state.dataset;
-    if (!dataset || this.#readOnly() || this.#syncing) {
+    if (!dataset || this.#syncing) {
       return;
     }
     const now = this.#now();
@@ -240,6 +266,7 @@ export class FinanceStore implements FinanceStoreInterface {
       return;
     }
     this.#syncing = true;
+    this.#automatic = true;
     try {
       const transactions = [...sync.created, ...sync.linked];
       if (transactions.length > 0) {
@@ -252,6 +279,7 @@ export class FinanceStore implements FinanceStoreInterface {
       await this.#saveQuietly('recurrings', sync.recurrings);
     } finally {
       this.#syncing = false;
+      this.#automatic = false;
     }
   }
 
@@ -269,17 +297,19 @@ export class FinanceStore implements FinanceStoreInterface {
 
   async settleDue(): Promise<void> {
     const dataset = this.#state.dataset;
-    if (!dataset || this.#readOnly()) {
+    if (!dataset) {
       return;
     }
     const settled = settleDuePlanned(dataset.transactions, todayIso(this.#now()), this.#now().toISOString());
     if (settled.length === 0) {
       return;
     }
-    await this.upsert('transactions', settled, {
-      action: 'modification',
-      entity: 'Opérations',
-      summary: `Bascule automatique : ${settledSummary(settled.length)}`,
+    await this.#automatically(async () => {
+      await this.upsert('transactions', settled, {
+        action: 'modification',
+        entity: 'Opérations',
+        summary: `Bascule automatique : ${settledSummary(settled.length)}`,
+      });
     });
   }
 
@@ -302,9 +332,6 @@ export class FinanceStore implements FinanceStoreInterface {
     items: CollectionItem<C>[],
     log: ChangeLog,
   ): Promise<PortResult<void>> {
-    if (this.#readOnly()) {
-      return failure('lecture-seule', READ_ONLY_MESSAGE);
-    }
     const result = await this.#repository.put(collection, items);
     if (!result.ok) {
       return result;
@@ -315,6 +342,7 @@ export class FinanceStore implements FinanceStoreInterface {
     const kept = current.filter((item) => !keys.has(keyOf(collection, item)));
     const updated = { ...dataset, [collection]: [...kept, ...items] } as Dataset;
     this.#set({ dataset: await this.#appendAudit(updated, log) });
+    this.#touch();
     if (collection === 'recurrings') {
       await this.syncRecurring();
     }
@@ -325,9 +353,6 @@ export class FinanceStore implements FinanceStoreInterface {
   }
 
   async remove(collection: CollectionName, keys: string[], log: ChangeLog): Promise<PortResult<void>> {
-    if (this.#readOnly()) {
-      return failure('lecture-seule', READ_ONLY_MESSAGE);
-    }
     const result = await this.#repository.remove(collection, keys);
     if (!result.ok) {
       return result;
@@ -340,18 +365,19 @@ export class FinanceStore implements FinanceStoreInterface {
       [collection]: current.filter((item) => !removed.has(keyOf(collection, item))),
     } as Dataset;
     this.#set({ dataset: await this.#appendAudit(updated, log) });
+    this.#touch();
     return result;
   }
 
   async updateSettings(patch: Partial<Settings>, log: ChangeLog | null): Promise<PortResult<void>> {
-    if (this.#readOnly() && !onlyTheme(patch)) {
-      return failure('lecture-seule', READ_ONLY_MESSAGE);
-    }
     const dataset = this.#dataset();
     const settings = { ...dataset.settings, ...patch };
     const result = await this.#repository.saveSettings(settings);
     if (!result.ok) {
       return result;
+    }
+    if (!isAutomaticSettings(patch)) {
+      this.#touch();
     }
     const updated = { ...dataset, settings };
     if (!log) {
@@ -363,9 +389,6 @@ export class FinanceStore implements FinanceStoreInterface {
   }
 
   async restore(dataset: Dataset, log: ChangeLog): Promise<PortResult<void>> {
-    if (this.#readOnly()) {
-      return failure('lecture-seule', READ_ONLY_MESSAGE);
-    }
     const withAudit = {
       ...dataset,
       audit: [this.#auditEntry(log), ...dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
@@ -373,6 +396,7 @@ export class FinanceStore implements FinanceStoreInterface {
     const result = await this.#repository.replaceAll(withAudit);
     if (result.ok) {
       this.#set({ dataset: withAudit });
+      this.#touch();
       await this.refresh();
     }
     return result;
@@ -447,10 +471,13 @@ export class FinanceStore implements FinanceStoreInterface {
     const importedAt = this.#now().toISOString();
     if (target.kind === 'existing') {
       const existing = this.#state.workspaces.find((item) => item.id === target.workspaceId);
-      if (!existing || !isReadOnly(existing)) {
-        return failure('invalide', 'Seul un espace déjà importé peut être mis à jour par un fichier.');
+      if (!existing) {
+        return failure('invalide', 'Espace introuvable.');
       }
-      return success({ ...existing, importedAt });
+      if (existing.id === DEFAULT_WORKSPACE.id) {
+        return failure('invalide', 'L’espace principal se remplace avec « Restaurer », pas par un import.');
+      }
+      return success({ ...existing, source: 'import', importedAt, modifiedAt: null });
     }
     const error = workspaceNameError(target.name, this.#state.workspaces);
     if (error) {
@@ -461,6 +488,8 @@ export class FinanceStore implements FinanceStoreInterface {
       name: normalizeWorkspaceName(target.name),
       source: 'import',
       importedAt,
+      modifiedAt: null,
+      sharedAt: null,
     });
   }
 

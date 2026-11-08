@@ -1,10 +1,10 @@
-import { Check, Lock, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Check, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useFinanceState, useToast } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { formatDateFr } from '@/core/format';
 import type { Dataset } from '@/core/model';
-import { DEFAULT_WORKSPACE, isReadOnly, type Workspace } from '@/core/workspaces';
+import { DEFAULT_WORKSPACE, hasUnsentChanges, isShared, type Workspace } from '@/core/workspaces';
 import Badge from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
 import Card from '@/ui/design-system/Card';
@@ -21,6 +21,19 @@ type WorkspaceRowProps = {
   workspace: Workspace;
   isActive: boolean;
   onDelete: (workspace: Workspace) => void;
+};
+
+const dayOf = (date: string): string => formatDateFr(date.slice(0, 10));
+
+const SharingDates = ({ workspace }: { workspace: Workspace }) => {
+  const parts = [
+    workspace.importedAt ? `reçu le ${dayOf(workspace.importedAt)}` : null,
+    workspace.sharedAt ? `envoyé le ${dayOf(workspace.sharedAt)}` : null,
+  ].filter(Boolean);
+  if (parts.length === 0) {
+    return null;
+  }
+  return <Text variant="small">{`Dernier fichier ${parts.join(' · ')}`}</Text>;
 };
 
 const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
@@ -52,12 +65,13 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
           <div className="flex flex-wrap items-center gap-2">
             <Text variant="strong">{workspace.name}</Text>
             {isActive && <Badge tone="info">Affiché</Badge>}
-            {isReadOnly(workspace) && (
+            {isShared(workspace) && (
               <Badge tone="neutral">
-                <Lock className="mr-1 inline h-3 w-3" aria-hidden />
-                Importé · lecture seule
+                <Users className="mr-1 inline h-3 w-3" aria-hidden />
+                Partagé
               </Badge>
             )}
+            {hasUnsentChanges(workspace) && <Badge tone="warning">Modifications non envoyées</Badge>}
           </div>
         ) : (
           <Input
@@ -70,9 +84,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
             className="h-9 max-w-xs"
           />
         )}
-        {workspace.importedAt && (
-          <Text variant="small">Dernier import le {formatDateFr(workspace.importedAt.slice(0, 10))}</Text>
-        )}
+        <SharingDates workspace={workspace} />
       </div>
       <div className="flex items-center gap-1">
         {!isActive && draft === null && (
@@ -138,7 +150,7 @@ const WorkspacesCard = () => {
   return (
     <Card
       title="Espaces de suivi"
-      subtitle="Chaque espace est indépendant : comptes, catégories, budgets et réglages propres. Un espace importé (par exemple le compte commun envoyé par un proche) est en lecture seule."
+      subtitle="Chaque espace est indépendant : comptes, catégories, budgets et réglages propres. Un espace partagé (par exemple le compte commun) passe de l’un à l’autre : celui qui fait les comptes l’exporte et l’envoie, l’autre l’importe."
     >
       <ul className="flex flex-col gap-2">
         {workspaces.map((workspace) => (

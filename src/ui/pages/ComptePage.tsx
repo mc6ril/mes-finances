@@ -12,7 +12,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useDataset, usePeriod, useReadOnly } from '@/app/FinanceContext';
+import { useDataset, usePeriod } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
 import { downloadTextFile } from '@/adapters/files/files';
 import { cashflowSummary, livePosition, periodPhase, signedEffectOn } from '@/core/balances';
@@ -335,7 +335,6 @@ type LedgerProps = { dataset: Dataset; account: Account; initialFilters: Filters
 
 const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
   const actions = useFinanceActions();
-  const readOnly = useReadOnly();
   const { today } = usePeriod();
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [sort, setSort] = useState<SortState>({ key: 'date', direction: -1 });
@@ -412,23 +411,19 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              {!readOnly && (
-                <Button icon={FileUp} onClick={() => setImportOpen(true)}>
-                  Importer CSV
-                </Button>
-              )}
+              <Button icon={FileUp} onClick={() => setImportOpen(true)}>
+                Importer CSV
+              </Button>
               <Button icon={Download} onClick={exportCsv} disabled={rows.length === 0}>
                 Exporter CSV
               </Button>
-              {!readOnly && (
-                <Button
-                  variant="primary"
-                  icon={Plus}
-                  onClick={() => setEditing({ transaction: null, template: null })}
-                >
-                  Nouvelle opération
-                </Button>
-              )}
+              <Button
+                variant="primary"
+                icon={Plus}
+                onClick={() => setEditing({ transaction: null, template: null })}
+              >
+                Nouvelle opération
+              </Button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
@@ -478,7 +473,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
             />
           </div>
           <BulkBar
-            selected={readOnly ? [] : selected}
+            selected={selected}
             categories={dataset.categories}
             onClear={() => setSelection(new Set())}
             onDelete={() => setPendingDelete(selected.map((row) => row.id))}
@@ -492,15 +487,13 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
               title="Aucune opération sur cette période"
               description="Ajoute une opération manuellement ou importe le relevé CSV de ta banque."
               action={
-                readOnly ? undefined : (
-                  <Button
-                    variant="primary"
-                    icon={Plus}
-                    onClick={() => setEditing({ transaction: null, template: null })}
-                  >
-                    Ajouter une opération
-                  </Button>
-                )
+                <Button
+                  variant="primary"
+                  icon={Plus}
+                  onClick={() => setEditing({ transaction: null, template: null })}
+                >
+                  Ajouter une opération
+                </Button>
               }
             />
           </div>
@@ -509,17 +502,15 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
             <table className="table-base min-w-[860px]">
               <thead>
                 <tr>
-                  {!readOnly && (
-                    <th className="w-10">
-                      <Checkbox
-                        checked={allSelected}
-                        label="Tout sélectionner"
-                        onChange={(checked) =>
-                          setSelection(checked ? new Set(rows.map((row) => row.id)) : new Set())
-                        }
-                      />
-                    </th>
-                  )}
+                  <th className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      label="Tout sélectionner"
+                      onChange={(checked) =>
+                        setSelection(checked ? new Set(rows.map((row) => row.id)) : new Set())
+                      }
+                    />
+                  </th>
                   <SortHeader label="Date" sortKey="date" sort={sort} onSort={toggleSort} />
                   <SortHeader label="Libellé" sortKey="label" sort={sort} onSort={toggleSort} />
                   <SortHeader label="Catégorie" sortKey="category" sort={sort} onSort={toggleSort} />
@@ -532,21 +523,19 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                     onSort={toggleSort}
                     align="right"
                   />
-                  {!readOnly && <th className="w-28 text-right">Actions</th>}
+                  <th className="w-28 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className={row.status === 'prevu' ? 'opacity-70' : ''}>
-                    {!readOnly && (
-                      <td>
-                        <Checkbox
-                          checked={selection.has(row.id)}
-                          label={`Sélectionner ${row.label}`}
-                          onChange={() => toggle(row.id)}
-                        />
-                      </td>
-                    )}
+                    <td>
+                      <Checkbox
+                        checked={selection.has(row.id)}
+                        label={`Sélectionner ${row.label}`}
+                        onChange={() => toggle(row.id)}
+                      />
+                    </td>
                     <td className="whitespace-nowrap tabular-nums">{formatDateFr(row.date)}</td>
                     <td className="max-w-[260px]">
                       <Text className="truncate font-medium" title={row.label}>
@@ -572,33 +561,31 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                     <td className="text-right font-medium">
                       <Amount cents={signedEffectOn(account.id, row)} colored />
                     </td>
-                    {!readOnly && (
-                      <td>
-                        <div className="flex justify-end gap-0.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={Pencil}
-                            label="Modifier"
-                            onClick={() => setEditing({ transaction: row, template: null })}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={Copy}
-                            label="Dupliquer"
-                            onClick={() => setEditing({ transaction: null, template: row })}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            icon={Trash2}
-                            label="Supprimer"
-                            onClick={() => setPendingDelete([row.id])}
-                          />
-                        </div>
-                      </td>
-                    )}
+                    <td>
+                      <div className="flex justify-end gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Pencil}
+                          label="Modifier"
+                          onClick={() => setEditing({ transaction: row, template: null })}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Copy}
+                          label="Dupliquer"
+                          onClick={() => setEditing({ transaction: null, template: row })}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Trash2}
+                          label="Supprimer"
+                          onClick={() => setPendingDelete([row.id])}
+                        />
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
