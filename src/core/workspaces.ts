@@ -1,4 +1,4 @@
-import type { AppErrorCode } from './errors';
+import { fail, ok, type AppErrorCode, type Result } from './errors';
 import { isObject, isString } from '@/utils/typeCheck';
 
 export type WorkspaceSource = 'local' | 'import';
@@ -103,3 +103,85 @@ export const workspaceFileSlug = (name: string): string =>
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || 'espace';
+
+export type ImportTarget = { kind: 'new'; name: string } | { kind: 'existing'; workspaceId: string };
+
+export const activeIn = (workspaces: Workspace[], activeId: string): Workspace =>
+  workspaces.find((item) => item.id === activeId) ?? workspaces[0] ?? DEFAULT_WORKSPACE;
+
+export const replaceWorkspace = (workspaces: Workspace[], updated: Workspace): Workspace[] =>
+  workspaces.map((item) => (item.id === updated.id ? updated : item));
+
+export const upsertWorkspace = (workspaces: Workspace[], updated: Workspace): Workspace[] =>
+  workspaces.some((item) => item.id === updated.id)
+    ? replaceWorkspace(workspaces, updated)
+    : [...workspaces, updated];
+
+export const touchedWorkspace = (workspace: Workspace, now: Date): Workspace => ({
+  ...workspace,
+  modifiedAt: now.toISOString(),
+});
+
+export const sharedWorkspace = (workspace: Workspace, now: Date): Workspace => ({
+  ...workspace,
+  sharedAt: now.toISOString(),
+});
+
+export const newLocalWorkspace = (
+  name: string,
+  workspaces: Workspace[],
+  newId: () => string,
+): Result<Workspace> => {
+  const error = workspaceNameError(name, workspaces);
+  if (error) {
+    return fail(error);
+  }
+  return ok({ id: newId(), name: normalizeWorkspaceName(name), source: 'local', importedAt: null });
+};
+
+export const renamedWorkspaces = (
+  workspaces: Workspace[],
+  workspaceId: string,
+  name: string,
+): Result<Workspace[]> => {
+  const error = workspaceNameError(name, workspaces, workspaceId);
+  if (error) {
+    return fail(error);
+  }
+  return ok(
+    workspaces.map((item) =>
+      item.id === workspaceId ? { ...item, name: normalizeWorkspaceName(name) } : item,
+    ),
+  );
+};
+
+export const importedWorkspace = (
+  target: ImportTarget,
+  workspaces: Workspace[],
+  now: Date,
+  newId: () => string,
+): Result<Workspace> => {
+  const importedAt = now.toISOString();
+  if (target.kind === 'existing') {
+    const existing = workspaces.find((item) => item.id === target.workspaceId);
+    if (!existing) {
+      return fail('workspace-not-found');
+    }
+    if (existing.id === DEFAULT_WORKSPACE.id) {
+      return fail('workspace-main-protected');
+    }
+    return ok({ ...existing, source: 'import', importedAt, modifiedAt: null });
+  }
+  const error = workspaceNameError(target.name, workspaces);
+  if (error) {
+    return fail(error);
+  }
+  return ok({
+    id: newId(),
+    name: normalizeWorkspaceName(target.name),
+    source: 'import',
+    importedAt,
+    modifiedAt: null,
+    sharedAt: null,
+  });
+};

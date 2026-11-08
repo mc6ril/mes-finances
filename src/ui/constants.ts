@@ -1,6 +1,5 @@
 import type { AccountGroup, AccountKind, CategoryGroup, SavingsMovementKind } from '@/core/model';
 
-export const DB_NAME_REAL = 'mes-finances';
 export const APP_VERSION = __APP_VERSION__;
 
 export const SERIES_LIGHT = [
@@ -23,8 +22,6 @@ export const SERIES_DARK = [
   '#9085e9',
   '#e66767',
 ];
-
-export const STATUS_COLORS = { good: '#0ca30c', warning: '#fab219', serious: '#ec835a', critical: '#d03b3b' };
 
 export const CHART_INK = {
   light: { grid: '#e7e6e2', axis: '#77766f', text: '#52514e', surface: '#ffffff' },
@@ -61,5 +58,3 @@ export const MOVEMENT_LABELS: Record<SavingsMovementKind, string> = {
 };
 
 export const PAYMENT_METHODS = ['Carte', 'Virement', 'Prélèvement', 'Espèces', 'Chèque', 'Autre'];
-
-export const GOAL_RATE_HYPOTHESES = [0, 0.02, 0.04];

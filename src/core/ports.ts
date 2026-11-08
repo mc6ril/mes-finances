@@ -17,7 +17,7 @@ export interface FinanceRepositoryInterface {
 
 export interface WorkspaceRegistryInterface {
   load(): Promise<WorkspaceRegistryState>;
-  save(workspaces: Workspace[], activeId: string): void;
+  save(workspaces: Workspace[], activeId: string): Result<void>;
 }
 
 export type UserFile = { readonly name: string };
@@ -43,7 +43,7 @@ export interface FileSaverInterface {
 export interface WorkspaceDataSourceInterface {
   allWorkspaceData(): Promise<Result<WorkspaceData[]>>;
   workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
-  markShared(workspaceId: string): void;
+  markShared(workspaceId: string): Result<void>;
 }
 
 export type AuditLog = { action: AuditAction; entity: string; summary: string };

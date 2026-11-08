@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ImportTarget } from '@/app/FinanceStore';
+import type { ImportTarget } from '@/core/store/FinanceStore';
 import type { Result } from '@/core/errors';
 import type { WorkspaceData } from '@/core/fullBackup';
 import type {
@@ -95,9 +95,7 @@ export const useFinanceActions = () => {
       restore: async (dataset: Dataset) => report(await finance.restore(dataset), 'Sauvegarde restaurée'),
       resetWorkspace: async () => report(await finance.resetWorkspace(), 'Espace réinitialisé'),
 
-      switchWorkspace: async (workspaceId: string) => {
-        await store.switchWorkspace(workspaceId);
-      },
+      switchWorkspace: async (workspaceId: string) => report(await store.switchWorkspace(workspaceId), null),
       createWorkspace: async (name: string) => report(await store.createWorkspace(name), 'Espace créé'),
       importWorkspace: async (imported: Dataset, target: ImportTarget) =>
         report(

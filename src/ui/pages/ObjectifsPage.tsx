@@ -13,13 +13,12 @@ import {
 } from 'recharts';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { patrimoineContext } from '@/app/selectors';
+import { patrimoineContext } from '@/core/overview';
 import { useChartTheme } from '@/hooks/useTheme';
 import { useFinanceActions } from '@/hooks/useFinanceActions';
-import { GOAL_RATE_HYPOTHESES } from '@/constants/misc';
 import { addMonths, monthKeyOf, parseFlexibleDate } from '@/core/dates';
 import { capitalize, formatDateFr, formatEuros, monthLabel, monthShortLabel } from '@/core/format';
-import { goalProgress, projectionScenarios } from '@/core/goals';
+import { GOAL_RATE_HYPOTHESES, goalProgress, projectionScenarios } from '@/core/goals';
 import { parseEuros } from '@/core/money';
 import type { Cents, Dataset, Goal } from '@/core/model';
 import { accountPosition, personalValueOf } from '@/core/patrimoine';

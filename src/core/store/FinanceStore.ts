@@ -16,9 +16,16 @@ import {
   type WorkspaceRegistryInterface,
 } from '@/core/ports';
 import {
+  activeIn,
   DEFAULT_WORKSPACE,
-  normalizeWorkspaceName,
-  workspaceNameError,
+  importedWorkspace,
+  newLocalWorkspace,
+  renamedWorkspaces,
+  replaceWorkspace,
+  sharedWorkspace,
+  touchedWorkspace,
+  upsertWorkspace,
+  type ImportTarget,
   type Workspace,
 } from '@/core/workspaces';
 
@@ -28,6 +35,7 @@ export type StoreState = {
   status: StoreStatus;
   dataset: Dataset | null;
   error: AppError | null;
+  syncError: AppError | null;
   workspaces: Workspace[];
   workspace: Workspace;
 };
@@ -36,7 +44,7 @@ type Listener = () => void;
 
 type RepositoryFactory = (workspaceId: string) => FinanceRepositoryInterface;
 
-export type ImportTarget = { kind: 'new'; name: string } | { kind: 'existing'; workspaceId: string };
+export type { ImportTarget } from '../workspaces';
 
 const MAX_AUDIT_ENTRIES = 500;
 
@@ -63,9 +71,9 @@ export interface FinanceStoreInterface {
   subscribe(listener: Listener): () => void;
   getSnapshot(): StoreState;
   start(): Promise<void>;
-  settleDue(): Promise<void>;
-  refresh(): Promise<void>;
-  syncRecurring(): Promise<void>;
+  settleDue(): Promise<Result<void>>;
+  refresh(): Promise<Result<void>>;
+  syncRecurring(): Promise<Result<void>>;
   upsert<C extends CollectionName>(
     collection: C,
     items: CollectionItem<C>[],
@@ -74,12 +82,12 @@ export interface FinanceStoreInterface {
   remove(collection: CollectionName, keys: string[], log: AuditLog): Promise<Result<void>>;
   updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>>;
   restore(dataset: Dataset, log: AuditLog): Promise<Result<void>>;
-  switchWorkspace(workspaceId: string): Promise<void>;
+  switchWorkspace(workspaceId: string): Promise<Result<void>>;
   createWorkspace(name: string): Promise<Result<void>>;
   importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>>;
   renameWorkspace(workspaceId: string, name: string): Result<void>;
   deleteWorkspace(workspaceId: string): Promise<Result<void>>;
-  markShared(workspaceId: string): void;
+  markShared(workspaceId: string): Result<void>;
   workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
   allWorkspaceData(): Promise<Result<WorkspaceData[]>>;
   restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>>;
@@ -132,6 +140,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       status: 'loading',
       dataset: null,
       error: null,
+      syncError: null,
       workspaces: [DEFAULT_WORKSPACE],
       workspace: DEFAULT_WORKSPACE,
     };
@@ -166,15 +175,30 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     return { id: this.#newId(), at: this.#now().toISOString(), ...log };
   }
 
-  async #appendAudit(dataset: Dataset, log: AuditLog): Promise<Dataset> {
+  async #appendAudit(dataset: Dataset, log: AuditLog): Promise<Result<Dataset>> {
     const entry = this.#auditEntry(log);
     const audit = [entry, ...dataset.audit];
     const overflow = audit.slice(MAX_AUDIT_ENTRIES).map((item) => item.id);
-    await this.#repository.put('audit', [entry]);
-    if (overflow.length > 0) {
-      await this.#repository.remove('audit', overflow);
+    const written = await this.#repository.put('audit', [entry]);
+    if (!written.ok) {
+      return written;
     }
-    return { ...dataset, audit: audit.slice(0, MAX_AUDIT_ENTRIES) };
+    if (overflow.length > 0) {
+      const trimmed = await this.#repository.remove('audit', overflow);
+      if (!trimmed.ok) {
+        return trimmed;
+      }
+    }
+    return ok({ ...dataset, audit: audit.slice(0, MAX_AUDIT_ENTRIES) });
+  }
+
+  async #commit(updated: Dataset, log: AuditLog, touches: boolean): Promise<Result<void>> {
+    const audited = await this.#appendAudit(updated, log);
+    if (!audited.ok) {
+      return audited;
+    }
+    this.#set({ dataset: audited.value });
+    return touches ? this.#touch() : ok(undefined);
   }
 
   async #loadRegistry(): Promise<void> {
@@ -189,38 +213,39 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     this.#set({ workspaces, workspace });
   }
 
-  #saveRegistry(workspaces: Workspace[], active: Workspace): void {
-    this.#registry.save(workspaces, active.id);
-    this.#set({ workspaces, workspace: active });
-  }
-
-  #touch(): void {
-    if (this.#automatic) {
-      return;
+  #saveRegistry(workspaces: Workspace[], active: Workspace): Result<void> {
+    const saved = this.#registry.save(workspaces, active.id);
+    if (saved.ok) {
+      this.#set({ workspaces, workspace: active });
     }
-    const modifiedAt = this.#now().toISOString();
-    const active = { ...this.#state.workspace, modifiedAt };
-    const workspaces = this.#state.workspaces.map((item) => (item.id === active.id ? active : item));
-    this.#saveRegistry(workspaces, active);
+    return saved;
   }
 
-  async #automatically(task: () => Promise<void>): Promise<void> {
+  #touch(): Result<void> {
+    if (this.#automatic) {
+      return ok(undefined);
+    }
+    const active = touchedWorkspace(this.#state.workspace, this.#now());
+    return this.#saveRegistry(replaceWorkspace(this.#state.workspaces, active), active);
+  }
+
+  async #automatically<T>(task: () => Promise<T>): Promise<T> {
     const previous = this.#automatic;
     this.#automatic = true;
     try {
-      await task();
+      return await task();
     } finally {
       this.#automatic = previous;
     }
   }
 
-  markShared(workspaceId: string): void {
-    const sharedAt = this.#now().toISOString();
-    const workspaces = this.#state.workspaces.map((item) =>
-      item.id === workspaceId ? { ...item, sharedAt } : item,
-    );
-    const active = workspaces.find((item) => item.id === this.#state.workspace.id) ?? DEFAULT_WORKSPACE;
-    this.#saveRegistry(workspaces, active);
+  markShared(workspaceId: string): Result<void> {
+    const target = this.#state.workspaces.find((item) => item.id === workspaceId);
+    if (!target) {
+      return fail('workspace-not-found');
+    }
+    const workspaces = replaceWorkspace(this.#state.workspaces, sharedWorkspace(target, this.#now()));
+    return this.#saveRegistry(workspaces, activeIn(workspaces, this.#state.workspace.id));
   }
 
   async start(): Promise<void> {
@@ -246,15 +271,17 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     this.#set({ status: 'ready', dataset: seed });
   }
 
-  async refresh(): Promise<void> {
-    await this.syncRecurring();
-    await this.settleDue();
+  async refresh(): Promise<Result<void>> {
+    const synced = await this.syncRecurring();
+    const result = synced.ok ? await this.settleDue() : synced;
+    this.#set({ syncError: result.ok ? null : result.error });
+    return result;
   }
 
-  async syncRecurring(): Promise<void> {
+  async syncRecurring(): Promise<Result<void>> {
     const dataset = this.#state.dataset;
     if (!dataset || this.#syncing) {
-      return;
+      return ok(undefined);
     }
     const now = this.#now();
     const sync = syncRecurring(
@@ -265,54 +292,61 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       now.toISOString(),
     );
     if (sync.recurrings.length === 0) {
-      return;
+      return ok(undefined);
     }
     this.#syncing = true;
-    this.#automatic = true;
     try {
-      const transactions = [...sync.created, ...sync.linked];
-      if (transactions.length > 0) {
-        await this.upsert('transactions', transactions, {
-          action: 'creation',
-          entity: 'Récurrences',
-          summary: recurringSummary(sync.created.length, sync.linked.length),
-        });
-      }
-      await this.#saveQuietly('recurrings', sync.recurrings);
+      return await this.#automatically(async () => {
+        const transactions = [...sync.created, ...sync.linked];
+        if (transactions.length > 0) {
+          const saved = await this.upsert('transactions', transactions, {
+            action: 'creation',
+            entity: 'Récurrences',
+            summary: recurringSummary(sync.created.length, sync.linked.length),
+          });
+          if (!saved.ok) {
+            return saved;
+          }
+        }
+        return this.#saveWithoutAudit('recurrings', sync.recurrings);
+      });
     } finally {
       this.#syncing = false;
-      this.#automatic = false;
     }
   }
 
-  async #saveQuietly<C extends CollectionName>(collection: C, items: CollectionItem<C>[]): Promise<void> {
+  async #saveWithoutAudit<C extends CollectionName>(
+    collection: C,
+    items: CollectionItem<C>[],
+  ): Promise<Result<void>> {
     const result = await this.#repository.put(collection, items);
     if (!result.ok) {
-      return;
+      return result;
     }
     const dataset = this.#dataset();
     const keys = new Set(items.map((item) => keyOf(collection, item)));
     const current = dataset[collection] as CollectionItem<C>[];
     const kept = current.filter((item) => !keys.has(keyOf(collection, item)));
     this.#set({ dataset: { ...dataset, [collection]: [...kept, ...items] } as Dataset });
+    return result;
   }
 
-  async settleDue(): Promise<void> {
+  async settleDue(): Promise<Result<void>> {
     const dataset = this.#state.dataset;
     if (!dataset) {
-      return;
+      return ok(undefined);
     }
     const settled = settleDuePlanned(dataset.transactions, todayIso(this.#now()), this.#now().toISOString());
     if (settled.length === 0) {
-      return;
+      return ok(undefined);
     }
-    await this.#automatically(async () => {
-      await this.upsert('transactions', settled, {
+    return this.#automatically(() =>
+      this.upsert('transactions', settled, {
         action: 'modification',
         entity: 'Opérations',
         summary: `Bascule automatique : ${settledSummary(settled.length)}`,
-      });
-    });
+      }),
+    );
   }
 
   async #openExisting(dataset: Dataset): Promise<void> {
@@ -343,15 +377,17 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     const current = dataset[collection] as CollectionItem<C>[];
     const kept = current.filter((item) => !keys.has(keyOf(collection, item)));
     const updated = { ...dataset, [collection]: [...kept, ...items] } as Dataset;
-    this.#set({ dataset: await this.#appendAudit(updated, log) });
-    this.#touch();
+    const committed = await this.#commit(updated, log, true);
+    if (!committed.ok) {
+      return committed;
+    }
     if (collection === 'recurrings') {
-      await this.syncRecurring();
+      return this.syncRecurring();
     }
     if (collection === 'transactions') {
-      await this.settleDue();
+      return this.settleDue();
     }
-    return result;
+    return committed;
   }
 
   async remove(collection: CollectionName, keys: string[], log: AuditLog): Promise<Result<void>> {
@@ -366,9 +402,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       ...dataset,
       [collection]: current.filter((item) => !removed.has(keyOf(collection, item))),
     } as Dataset;
-    this.#set({ dataset: await this.#appendAudit(updated, log) });
-    this.#touch();
-    return result;
+    return this.#commit(updated, log, true);
   }
 
   async updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>> {
@@ -378,16 +412,13 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     if (!result.ok) {
       return result;
     }
-    if (!isAutomaticSettings(patch)) {
-      this.#touch();
-    }
     const updated = { ...dataset, settings };
+    const touches = !isAutomaticSettings(patch);
     if (!log) {
       this.#set({ dataset: updated });
-      return result;
+      return touches ? this.#touch() : result;
     }
-    this.#set({ dataset: await this.#appendAudit(updated, log) });
-    return result;
+    return this.#commit(updated, log, touches);
   }
 
   async restore(dataset: Dataset, log: AuditLog): Promise<Result<void>> {
@@ -396,116 +427,94 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       audit: [this.#auditEntry(log), ...dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
     };
     const result = await this.#repository.replaceAll(withAudit);
-    if (result.ok) {
-      this.#set({ dataset: withAudit });
-      this.#touch();
-      await this.refresh();
+    if (!result.ok) {
+      return result;
     }
-    return result;
+    this.#set({ dataset: withAudit });
+    const touched = this.#touch();
+    if (!touched.ok) {
+      return touched;
+    }
+    return this.refresh();
   }
 
-  async switchWorkspace(workspaceId: string): Promise<void> {
+  async switchWorkspace(workspaceId: string): Promise<Result<void>> {
     const workspace = this.#state.workspaces.find((item) => item.id === workspaceId);
-    if (!workspace || workspace.id === this.#state.workspace.id) {
-      return;
+    if (!workspace) {
+      return fail('workspace-not-found');
     }
-    await this.#repository.close();
-    this.#repository = this.#createRepository(workspace.id);
-    this.#saveRegistry(this.#state.workspaces, workspace);
-    this.#set({ dataset: null });
-    await this.start();
-  }
-
-  async createWorkspace(name: string): Promise<Result<void>> {
-    const error = workspaceNameError(name, this.#state.workspaces);
-    if (error) {
-      return fail(error);
+    if (workspace.id === this.#state.workspace.id) {
+      return ok(undefined);
     }
-    const workspace: Workspace = {
-      id: this.#newId(),
-      name: normalizeWorkspaceName(name),
-      source: 'local',
-      importedAt: null,
-    };
-    this.#saveRegistry([...this.#state.workspaces, workspace], this.#state.workspace);
-    await this.switchWorkspace(workspace.id);
-    return ok(undefined);
-  }
-
-  async importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>> {
-    const workspace = this.#importedWorkspace(target);
-    if (!workspace.ok) {
-      return workspace;
-    }
-    const log: AuditLog = {
-      action: 'restauration',
-      entity: 'Espace',
-      summary: `Import de l’espace « ${workspace.value.name} »`,
-    };
-    const withAudit = {
-      ...dataset,
-      audit: [this.#auditEntry(log), ...dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
-    };
-    const isActive = this.#state.workspace.id === workspace.value.id;
-    const repository = isActive ? this.#repository : this.#createRepository(workspace.value.id);
-    const saved = await repository.replaceAll(withAudit);
-    if (!isActive) {
-      await repository.close();
-    }
+    const saved = this.#saveRegistry(this.#state.workspaces, workspace);
     if (!saved.ok) {
       return saved;
     }
-    const workspaces = [
-      ...this.#state.workspaces.filter((item) => item.id !== workspace.value.id),
-      workspace.value,
-    ];
-    if (isActive) {
-      this.#saveRegistry(workspaces, workspace.value);
-      this.#set({ dataset: withAudit });
-      return ok(undefined);
-    }
-    this.#saveRegistry(workspaces, this.#state.workspace);
-    await this.switchWorkspace(workspace.value.id);
+    await this.#repository.close();
+    this.#repository = this.#createRepository(workspace.id);
+    this.#set({ dataset: null });
+    await this.start();
     return ok(undefined);
   }
 
-  #importedWorkspace(target: ImportTarget): Result<Workspace> {
-    const importedAt = this.#now().toISOString();
-    if (target.kind === 'existing') {
-      const existing = this.#state.workspaces.find((item) => item.id === target.workspaceId);
-      if (!existing) {
-        return fail('workspace-not-found');
-      }
-      if (existing.id === DEFAULT_WORKSPACE.id) {
-        return fail('workspace-main-protected');
-      }
-      return ok({ ...existing, source: 'import', importedAt, modifiedAt: null });
+  async createWorkspace(name: string): Promise<Result<void>> {
+    const workspace = newLocalWorkspace(name, this.#state.workspaces, this.#newId);
+    if (!workspace.ok) {
+      return workspace;
     }
-    const error = workspaceNameError(target.name, this.#state.workspaces);
-    if (error) {
-      return fail(error);
+    const saved = this.#saveRegistry([...this.#state.workspaces, workspace.value], this.#state.workspace);
+    if (!saved.ok) {
+      return saved;
     }
-    return ok({
-      id: this.#newId(),
-      name: normalizeWorkspaceName(target.name),
-      source: 'import',
-      importedAt,
-      modifiedAt: null,
-      sharedAt: null,
-    });
+    return this.switchWorkspace(workspace.value.id);
+  }
+
+  async importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>> {
+    const workspace = importedWorkspace(target, this.#state.workspaces, this.#now(), this.#newId);
+    if (!workspace.ok) {
+      return workspace;
+    }
+    const withAudit = {
+      ...dataset,
+      audit: [
+        this.#auditEntry({
+          action: 'restauration',
+          entity: 'Espace',
+          summary: `Import de l’espace « ${workspace.value.name} »`,
+        }),
+        ...dataset.audit,
+      ].slice(0, MAX_AUDIT_ENTRIES),
+    };
+    const isActive = this.#state.workspace.id === workspace.value.id;
+    const repository = isActive ? this.#repository : this.#createRepository(workspace.value.id);
+    const written = await repository.replaceAll(withAudit);
+    if (!isActive) {
+      await repository.close();
+    }
+    if (!written.ok) {
+      return written;
+    }
+    const workspaces = upsertWorkspace(this.#state.workspaces, workspace.value);
+    if (isActive) {
+      const saved = this.#saveRegistry(workspaces, workspace.value);
+      if (saved.ok) {
+        this.#set({ dataset: withAudit });
+      }
+      return saved;
+    }
+    const saved = this.#saveRegistry(workspaces, this.#state.workspace);
+    if (!saved.ok) {
+      return saved;
+    }
+    return this.switchWorkspace(workspace.value.id);
   }
 
   renameWorkspace(workspaceId: string, name: string): Result<void> {
-    const error = workspaceNameError(name, this.#state.workspaces, workspaceId);
-    if (error) {
-      return fail(error);
+    const workspaces = renamedWorkspaces(this.#state.workspaces, workspaceId, name);
+    if (!workspaces.ok) {
+      return workspaces;
     }
-    const workspaces = this.#state.workspaces.map((item) =>
-      item.id === workspaceId ? { ...item, name: normalizeWorkspaceName(name) } : item,
-    );
-    const active = workspaces.find((item) => item.id === this.#state.workspace.id) ?? DEFAULT_WORKSPACE;
-    this.#saveRegistry(workspaces, active);
-    return ok(undefined);
+    return this.#saveRegistry(workspaces.value, activeIn(workspaces.value, this.#state.workspace.id));
   }
 
   async deleteWorkspace(workspaceId: string): Promise<Result<void>> {
@@ -513,15 +522,17 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return fail('workspace-main-protected');
     }
     if (this.#state.workspace.id === workspaceId) {
-      await this.switchWorkspace(DEFAULT_WORKSPACE.id);
+      const switched = await this.switchWorkspace(DEFAULT_WORKSPACE.id);
+      if (!switched.ok) {
+        return switched;
+      }
     }
     const destroyed = await this.#createRepository(workspaceId).destroy();
     if (!destroyed.ok) {
       return destroyed;
     }
     const workspaces = this.#state.workspaces.filter((item) => item.id !== workspaceId);
-    this.#saveRegistry(workspaces, this.#state.workspace);
-    return ok(undefined);
+    return this.#saveRegistry(workspaces, this.#state.workspace);
   }
 
   async workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>> {
@@ -564,25 +575,32 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     await this.#repository.close();
     for (const entry of entries) {
       const repository = this.#createRepository(entry.workspace.id);
-      const saved = await repository.replaceAll({
+      const written = await repository.replaceAll({
         ...entry.dataset,
         audit: [this.#auditEntry(log), ...entry.dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
       });
       await repository.close();
-      if (!saved.ok) {
-        return saved;
+      if (!written.ok) {
+        return written;
       }
     }
-    const kept = new Set(entries.map((entry) => entry.workspace.id));
-    for (const workspace of this.#state.workspaces.filter((item) => !kept.has(item.id))) {
-      await this.#createRepository(workspace.id).destroy();
-    }
     const workspaces = entries.map((entry) => entry.workspace);
-    const active = workspaces.find((item) => item.id === activeId) ?? workspaces[0] ?? DEFAULT_WORKSPACE;
+    const kept = new Set(workspaces.map((workspace) => workspace.id));
+    const removed = this.#state.workspaces.filter((item) => !kept.has(item.id));
+    const active = activeIn(workspaces, activeId);
+    const saved = this.#saveRegistry(workspaces, active);
+    if (!saved.ok) {
+      return saved;
+    }
     this.#repository = this.#createRepository(active.id);
-    this.#saveRegistry(workspaces, active);
     this.#set({ dataset: null });
     await this.start();
+    for (const workspace of removed) {
+      const destroyed = await this.#createRepository(workspace.id).destroy();
+      if (!destroyed.ok) {
+        return destroyed;
+      }
+    }
     return ok(undefined);
   }
 }

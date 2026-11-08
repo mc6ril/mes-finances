@@ -1,4 +1,4 @@
-import { DB_NAME_REAL } from '@/constants/misc';
+import { fail, ok, type Result } from '@/core/errors';
 import type { WorkspaceRegistryInterface } from '@/core/ports';
 import {
   DEFAULT_WORKSPACE,
@@ -8,6 +8,7 @@ import {
   type WorkspaceRegistryState,
 } from '@/core/workspaces';
 
+const MAIN_DATABASE = 'mes-finances';
 const REGISTRY_KEY = 'mes-finances:espaces';
 const ACTIVE_KEY = 'mes-finances:espace-actif';
 const WORKSPACE_DB_PREFIX = 'mes-finances-espace-';
@@ -17,7 +18,7 @@ const RECOVERED_NAME = 'Espace récupéré';
 
 export const databaseNameFor = (workspaceId: string): string => {
   if (workspaceId === DEFAULT_WORKSPACE.id) {
-    return DB_NAME_REAL;
+    return MAIN_DATABASE;
   }
   return `${WORKSPACE_DB_PREFIX}${workspaceId}`;
 };
@@ -30,11 +31,15 @@ const readStorage = (key: string): string | null => {
   }
 };
 
-const writeStorage = (key: string, value: string): void => {
+const writeStorage = (key: string, value: string): Result<void> => {
   try {
     window.localStorage.setItem(key, value);
-  } catch {
-    return;
+    return ok(undefined);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      return fail('storage-full');
+    }
+    return fail('storage-unavailable');
   }
 };
 
@@ -88,9 +93,12 @@ export class LocalWorkspaceRegistry implements WorkspaceRegistryInterface {
     return { workspaces, activeId: resolveActiveId(workspaces, readStorage(ACTIVE_KEY)) };
   }
 
-  save(workspaces: Workspace[], activeId: string): void {
-    writeStorage(REGISTRY_KEY, JSON.stringify(workspaces));
-    writeStorage(ACTIVE_KEY, activeId);
+  save(workspaces: Workspace[], activeId: string): Result<void> {
+    const saved = writeStorage(REGISTRY_KEY, JSON.stringify(workspaces));
+    if (!saved.ok) {
+      return saved;
+    }
+    return writeStorage(ACTIVE_KEY, activeId);
   }
 }
 
@@ -107,8 +115,9 @@ export class MemoryWorkspaceRegistry implements WorkspaceRegistryInterface {
     return this.#state;
   }
 
-  save(workspaces: Workspace[], activeId: string): void {
+  save(workspaces: Workspace[], activeId: string): Result<void> {
     this.#state = { workspaces, activeId };
+    return ok(undefined);
   }
 
   get state(): WorkspaceRegistryState {

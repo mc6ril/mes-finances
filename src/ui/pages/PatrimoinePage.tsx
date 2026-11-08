@@ -16,10 +16,10 @@ import {
 } from 'recharts';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { patrimoineContext, referenceDate } from '@/app/selectors';
+import { patrimoineContext, referenceDate } from '@/core/overview';
 import { useChartTheme } from '@/hooks/useTheme';
 import { useFinanceActions } from '@/hooks/useFinanceActions';
-import { ACCOUNT_GROUP_LABELS, ACCOUNT_KIND_LABELS } from '@/constants/misc';
+import { ACCOUNT_GROUP_LABELS, ACCOUNT_KIND_LABELS } from '@/ui/constants';
 import { lastMonths, monthEnd, parseMonthKey, toMonthKey } from '@/core/dates';
 import { capitalize, formatDateFr, formatPercent, monthLabel, monthShortLabel } from '@/core/format';
 import type { Account, MonthKey } from '@/core/model';

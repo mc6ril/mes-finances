@@ -116,3 +116,5 @@ export const projectionScenarios = ({
       isHypothesis: true,
     };
   });
+
+export const GOAL_RATE_HYPOTHESES = [0, 0.02, 0.04];

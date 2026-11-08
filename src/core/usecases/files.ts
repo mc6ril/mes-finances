@@ -99,7 +99,10 @@ export const createFileUseCases = ({ reader, csv, json, saver, workspaces }: Fil
     if (!saved.ok) {
       return saved;
     }
-    workspaces.markShared(workspace.id);
+    const marked = workspaces.markShared(workspace.id);
+    if (!marked.ok) {
+      return marked;
+    }
     return ok(workspace);
   };
 

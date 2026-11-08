@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
-import { FinanceStore } from '@/app/FinanceStore';
+import { FinanceStore } from '@/core/store/FinanceStore';
 import type { Category, Dataset } from '@/core/model';
 import { createInitialDataset } from '@/core/seed';
 import { hasUnsentChanges } from '@/core/workspaces';

@@ -1,7 +1,7 @@
 import { TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { useFinanceState } from '@/hooks/useFinance';
-import type { ImportTarget } from '@/app/FinanceStore';
+import type { ImportTarget } from '@/core/store/FinanceStore';
 import { formatDateFr } from '@/core/format';
 import type { Dataset } from '@/core/model';
 import { DEFAULT_WORKSPACE, hasUnsentChanges, isShared, workspaceNameError } from '@/core/workspaces';

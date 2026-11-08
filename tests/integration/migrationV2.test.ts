@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
-import { FinanceStore } from '@/app/FinanceStore';
+import { FinanceStore } from '@/core/store/FinanceStore';
 import { createInitialDataset } from '@/core/seed';
 import { SCHEMA_VERSION } from '@/core/model';
 

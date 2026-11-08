@@ -2,9 +2,10 @@ import { Menu, Send, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 import { useFinanceState } from '@/hooks/useFinance';
+import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
 import { useToast } from '@/hooks/useToast';
 import { useFinanceActions } from '@/hooks/useFinanceActions';
-import { APP_VERSION } from '@/constants/misc';
+import { APP_VERSION } from '@/ui/constants';
 import { hasUnsentChanges } from '@/core/workspaces';
 import Button from '@/ui/design-system/Button';
 import { Select } from '@/ui/design-system/Field';
@@ -141,6 +142,7 @@ type AppShellProps = { children: ReactNode };
 const AppShell = ({ children }: AppShellProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  useSyncErrorNotice();
   const current = NAV_ITEMS.find((item) => item.path === location.pathname) ?? NAV_ITEMS[0];
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });

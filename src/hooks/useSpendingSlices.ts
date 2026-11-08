@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { spendingSlices } from '@/app/selectors';
+import { spendingSlices } from '@/core/overview';
 import type { Dataset, MonthKey } from '@/core/model';
 
 export const useSpendingSlices = (dataset: Dataset, month: MonthKey) =>

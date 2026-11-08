@@ -47,7 +47,10 @@ const setup = (fakes: Fakes = {}) => {
         { workspace: commun, dataset },
       ]),
     workspaceData: async (workspaceId) => ok(workspaceId === 'w1' ? { workspace: commun, dataset } : null),
-    markShared: (workspaceId) => shared.push(workspaceId),
+    markShared: (workspaceId) => {
+      shared.push(workspaceId);
+      return ok(undefined);
+    },
   };
   const useCases = createFileUseCases({ reader, csv, json, saver, workspaces });
   return { useCases, saved, shared };

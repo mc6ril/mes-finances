@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDataset } from '@/hooks/useFinance';
 import { useFinanceActions } from '@/hooks/useFinanceActions';
-import { PAYMENT_METHODS } from '@/constants/misc';
+import { PAYMENT_METHODS } from '@/ui/constants';
 import { STATUS_LABELS, TYPE_LABELS } from '@/core/csvImport';
 import type { Transaction, TransactionStatus, TransactionType } from '@/core/model';
 import Button from '@/ui/design-system/Button';

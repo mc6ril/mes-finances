@@ -11,7 +11,7 @@ import {
 } from '@/adapters/storage/workspaceRegistry';
 import { createFileUseCases, type FileUseCases } from '@/core/usecases/files';
 import { createFinanceUseCases, type FinanceUseCases } from '@/core/usecases/finance';
-import { FinanceStore } from './FinanceStore';
+import { FinanceStore } from '@/core/store/FinanceStore';
 
 export type Container = {
   store: FinanceStore;

@@ -18,7 +18,7 @@ import { useState, type ReactNode } from 'react';
 import { useDataset, useFileUseCases, useFinanceState } from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
 import { useFinanceActions } from '@/hooks/useFinanceActions';
-import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/constants/misc';
+import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/ui/constants';
 import type { WorkspaceData } from '@/core/fullBackup';
 import { parseFlexibleDate, todayIso } from '@/core/dates';
 import { formatDateFr } from '@/core/format';

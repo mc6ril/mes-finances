@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useDataset, useFileUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useFinanceActions } from '@/hooks/useFinanceActions';
-import { MOVEMENT_LABELS } from '@/constants/misc';
+import { MOVEMENT_LABELS } from '@/ui/constants';
 import { planBrokerImport, type BrokerDraft, type BrokerRowStatus } from '@/core/brokerImport';
 import { parseFlexibleDate } from '@/core/dates';
 import { formatDateFr } from '@/core/format';

@@ -15,9 +15,9 @@ import {
 } from 'recharts';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { patrimoineContext, plaisirBudgetFor } from '@/app/selectors';
+import { patrimoineContext, plaisirBudgetFor } from '@/core/overview';
 import { useChartTheme } from '@/hooks/useTheme';
-import { GROUP_LABELS } from '@/constants/misc';
+import { GROUP_LABELS } from '@/ui/constants';
 import { yearSummary, type MonthSummary } from '@/core/annual';
 import { monthsOfYear, monthKeyOf, parseMonthKey, yearOf } from '@/core/dates';
 import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/format';
