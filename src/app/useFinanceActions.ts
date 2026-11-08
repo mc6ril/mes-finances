@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { effectiveBudget, effectiveYearBudget, propagateBudgetLine } from '@/core/budget';
 import { formatEuros, monthLabel } from '@/core/format';
-import { materializeRecurring } from '@/core/recurring';
 import { createInitialDataset } from '@/core/seed';
 import { todayIso } from '@/core/dates';
 import type {
@@ -19,7 +18,9 @@ import type {
   Valuation,
 } from '@/core/model';
 import type { CollectionItem, PortResult } from '@/core/ports';
-import { newId, useFinanceStore, useToast, writeDemoFlag } from './FinanceContext';
+import type { WorkspaceData } from '@/core/fullBackup';
+import type { ImportTarget } from './FinanceStore';
+import { newId, useFinanceStore, useToast } from './FinanceContext';
 
 export type TransactionDraft = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -165,29 +166,6 @@ export const useFinanceActions = () => {
         );
       },
 
-      generateRecurring: async (month: MonthKey) => {
-        const current = dataset();
-        const created = materializeRecurring(
-          current.recurrings,
-          month,
-          current.transactions,
-          newId,
-          new Date().toISOString(),
-        );
-        if (created.length === 0) {
-          notify('Aucune opération récurrente à générer pour ce mois', 'info');
-          return true;
-        }
-        return report(
-          await store.upsert('transactions', created, {
-            action: 'creation',
-            entity: 'Récurrences',
-            summary: `${plural(created.length, 'opération')} prévue(s) pour ${monthLabel(month)}`,
-          }),
-          `${plural(created.length, 'opération')} prévue${created.length > 1 ? 's' : ''} ajoutée${created.length > 1 ? 's' : ''}`,
-        );
-      },
-
       saveRecurring: async (recurring: Recurring, isNew: boolean) =>
         upsert('recurrings', [recurring], 'Récurrence', recurring.label, isNew, 'Récurrence enregistrée'),
 
@@ -325,13 +303,47 @@ export const useFinanceActions = () => {
             entity: 'Réinitialisation',
             summary: 'Retour à la configuration initiale',
           }),
-          'Données réinitialisées',
+          'Espace réinitialisé',
         ),
 
-      setDemo: async (isDemo: boolean) => {
-        writeDemoFlag(isDemo);
-        await store.setDemo(isDemo);
+      switchWorkspace: async (workspaceId: string) => {
+        await store.switchWorkspace(workspaceId);
       },
+
+      createWorkspace: async (name: string) => report(await store.createWorkspace(name), 'Espace créé'),
+
+      importWorkspace: async (imported: Dataset, target: ImportTarget) =>
+        report(
+          await store.importWorkspace(imported, target),
+          target.kind === 'new' ? 'Espace importé' : 'Espace mis à jour',
+        ),
+
+      renameWorkspace: (workspaceId: string, name: string) =>
+        report(store.renameWorkspace(workspaceId, name), 'Espace renommé'),
+
+      deleteWorkspace: async (workspaceId: string) =>
+        report(await store.deleteWorkspace(workspaceId), 'Espace supprimé'),
+
+      workspaceData: async (workspaceId: string): Promise<WorkspaceData | null> => {
+        const result = await store.workspaceData(workspaceId);
+        if (!result.ok) {
+          notify(result.message, 'error');
+          return null;
+        }
+        return result.value;
+      },
+
+      allWorkspaceData: async (): Promise<WorkspaceData[] | null> => {
+        const result = await store.allWorkspaceData();
+        if (!result.ok) {
+          notify(result.message, 'error');
+          return null;
+        }
+        return result.value;
+      },
+
+      restoreAll: async (entries: WorkspaceData[], activeId: string) =>
+        report(await store.restoreAll(entries, activeId), 'Sauvegarde complète restaurée'),
     };
   }, [store, notify]);
 };

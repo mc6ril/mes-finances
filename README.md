@@ -53,10 +53,11 @@ src/
     csvImport.ts        Mapping CSV, doublons, export CSV
     recurring.ts        Opérations récurrentes
     backup.ts           Sauvegarde / restauration validée et versionnée
-    seed.ts demo.ts     Configuration initiale et données de démonstration
+    seed.ts             Configuration initiale (vierge)
+    workspaces.ts       Espaces de suivi indépendants (Perso, Commun…)
     ports.ts            Port de persistance + PortResult / PortFailure
   adapters/             Secondary adapters
-    storage/            IndexedDB (base réelle « mes-finances », base démo séparée)
+    storage/            IndexedDB (une base par espace) et liste des espaces
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
   app/                  Primary adapters : store, actions, sélecteurs, thème
   ui/
@@ -78,10 +79,23 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 - Catégories à **budget annuel** (par défaut Voyages, Cadeaux, Dépenses exceptionnelles ; réglable dans Paramètres → Catégories) : suivies sur l'année, hors du rythme mensuel du budget plaisir et du budget plaisir mensuel. Leur budget annuel ÷ 12 est compté comme provision dans l'enveloppe.
 - Mode **simplifié** : seules l'épargne personnelle et les dépenses plaisir sont suivies dans l'enveloppe de 460 € (charges déjà déduites). Mode **complet** : tout le compte courant. Les deux modes ne s'additionnent jamais.
 
-## Données de démonstration
+## Espaces de suivi
 
-« Paramètres → Explorer la démo » bascule sur une base IndexedDB distincte, remplie de données fictives. Tes données réelles ne sont jamais modifiées. Un bandeau jaune signale le mode démo.
+Chaque espace (Perso, Commun…) est une base IndexedDB indépendante : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
+
+- **Créer** un espace : Paramètres → Espaces de suivi.
+- **Sauvegarder** : « Tout sauvegarder » exporte tous les espaces (importés compris) dans un seul fichier ; « Restaurer » ce fichier recrée tous les espaces.
+- **Partager** un espace : Sauvegardes → Partager un espace, puis envoyer le fichier JSON. Seul l’espace choisi est dans le fichier.
+- **Recevoir** un espace : Paramètres → Importer un espace. Il est créé en lecture seule ; un import suivant du même espace le remplace.
+
+La base historique « mes-finances » est l’espace « Perso » : aucune migration n’est nécessaire.
 
 ## Évolutions et compatibilité
 
 Le schéma est versionné (`SCHEMA_VERSION` dans `core/model.ts`, version de base IndexedDB dans l'adapter). Toute évolution passe par une migration dans `core/migrate.ts` (appliquée à l'ouverture de la base et à la restauration d'une sauvegarde) et dans l'`upgrade` IndexedDB, pour ne jamais casser les données déjà enregistrées.
+
+## Sécurité et déploiement
+
+- `netlify.toml` : build (`npm run build` → `dist/`) et en-têtes de sécurité. La CSP interdit au navigateur tout chargement ou envoi vers un autre serveur : les données ne peuvent pas quitter l'appareil, même en cas de dépendance compromise.
+- `.github/dependabot.yml` : mises à jour hebdomadaires des dépendances npm (et mensuelles des GitHub Actions), proposées en pull requests.
+- `.github/workflows/ci.yml` : typecheck, tests, build et `npm audit` à chaque push sur `main` et sur chaque pull request.

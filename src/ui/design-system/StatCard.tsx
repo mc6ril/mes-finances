@@ -25,7 +25,7 @@ const StatCard = ({
 }: StatCardProps) => (
   <div
     className={cx(
-      'flex flex-col gap-2 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none',
+      'relative flex flex-col gap-2 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none',
       className,
     )}
   >

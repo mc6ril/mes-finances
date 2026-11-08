@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
+import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/app/FinanceStore';
 import { createInitialDataset } from '@/core/seed';
 import { SCHEMA_VERSION } from '@/core/model';
@@ -62,7 +63,7 @@ describe('ouverture d’une base créée par la version précédente', () => {
     await createV1Database('base-v1');
     const store = new FinanceStore(
       () => new IndexedDbRepository('base-v1'),
-      false,
+      new MemoryWorkspaceRegistry(),
       () => 'id',
     );
     await store.start();

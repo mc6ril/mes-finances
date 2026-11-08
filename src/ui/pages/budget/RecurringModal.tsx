@@ -73,6 +73,9 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
     .map((account) => ({ value: account.id, label: account.name }));
   const categoryName = new Map(dataset.categories.map((category) => [category.id, category.name]));
 
+  const generatedUntilFor = (id: string | null): string | null =>
+    dataset.recurrings.find((recurring) => recurring.id === id)?.generatedUntil ?? null;
+
   const save = async () => {
     if (!editing) {
       return;
@@ -108,6 +111,7 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
       startMonth: form.startMonth,
       endMonth: form.endMonth || null,
       active: form.active,
+      generatedUntil: generatedUntilFor(editing.id),
     };
     if (await actions.saveRecurring(recurring, editing.id === null)) {
       setEditing(null);
@@ -121,8 +125,9 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
   return (
     <Modal title="Opérations récurrentes" onClose={onClose} size="lg">
       <Text variant="muted" className="mb-4">
-        Les récurrences génèrent des opérations « prévues » pour un mois donné (bouton « Générer les prévus
-        »). Elles ne sont jamais comptées tant que tu ne les passes pas en « réalisé ».
+        Chaque récurrence ajoute automatiquement son opération « prévue » au début du mois. Si tu l’as déjà
+        saisie à la main (même compte, même montant), elle est reconnue au lieu d’être dupliquée, et une
+        opération prévue que tu supprimes ne revient pas. Elle passe en « réalisé » à sa date.
       </Text>
       {editing ? (
         <div className="grid gap-3 sm:grid-cols-2">

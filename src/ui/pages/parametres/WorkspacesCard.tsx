@@ -1,0 +1,194 @@
+import { Check, Lock, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useFinanceState, useToast } from '@/app/FinanceContext';
+import { useFinanceActions } from '@/app/useFinanceActions';
+import { formatDateFr } from '@/core/format';
+import type { Dataset } from '@/core/model';
+import { DEFAULT_WORKSPACE, isReadOnly, type Workspace } from '@/core/workspaces';
+import Badge from '@/ui/design-system/Badge';
+import Button from '@/ui/design-system/Button';
+import Card from '@/ui/design-system/Card';
+import { Input } from '@/ui/design-system/Field';
+import { ConfirmDialog } from '@/ui/design-system/Modal';
+import Text from '@/ui/design-system/Text';
+import FilePickerButton from './FilePickerButton';
+import ImportWorkspaceModal from './ImportWorkspaceModal';
+import { readBackupFile } from './readBackupFile';
+
+type PendingImport = { dataset: Dataset; workspaceName: string | null };
+
+type WorkspaceRowProps = {
+  workspace: Workspace;
+  isActive: boolean;
+  onDelete: (workspace: Workspace) => void;
+};
+
+const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
+  const actions = useFinanceActions();
+  const [draft, setDraft] = useState<string | null>(null);
+
+  const saveName = () => {
+    if (draft === null) {
+      return;
+    }
+    if (draft.trim() === workspace.name || actions.renameWorkspace(workspace.id, draft)) {
+      setDraft(null);
+    }
+  };
+
+  const onKey = (key: string) => {
+    if (key === 'Enter') {
+      saveName();
+    }
+    if (key === 'Escape') {
+      setDraft(null);
+    }
+  };
+
+  return (
+    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-stone-100 px-4 py-3 dark:border-stone-800">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        {draft === null ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Text variant="strong">{workspace.name}</Text>
+            {isActive && <Badge tone="info">Affiché</Badge>}
+            {isReadOnly(workspace) && (
+              <Badge tone="neutral">
+                <Lock className="mr-1 inline h-3 w-3" aria-hidden />
+                Importé · lecture seule
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <Input
+            value={draft}
+            onChange={setDraft}
+            onBlur={saveName}
+            onKeyDown={onKey}
+            label="Nom de l’espace"
+            autoFocus
+            className="h-9 max-w-xs"
+          />
+        )}
+        {workspace.importedAt && (
+          <Text variant="small">Dernier import le {formatDateFr(workspace.importedAt.slice(0, 10))}</Text>
+        )}
+      </div>
+      <div className="flex items-center gap-1">
+        {!isActive && draft === null && (
+          <Button size="sm" onClick={() => void actions.switchWorkspace(workspace.id)}>
+            Ouvrir
+          </Button>
+        )}
+        {draft === null ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={Pencil}
+            label={`Renommer ${workspace.name}`}
+            onClick={() => setDraft(workspace.name)}
+          />
+        ) : (
+          <Button size="sm" variant="ghost" icon={Check} label="Enregistrer le nom" onClick={saveName} />
+        )}
+        {workspace.id !== DEFAULT_WORKSPACE.id && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={Trash2}
+            label={`Supprimer ${workspace.name}`}
+            onClick={() => onDelete(workspace)}
+          />
+        )}
+      </div>
+    </li>
+  );
+};
+
+const WorkspacesCard = () => {
+  const { workspaces, workspace: active } = useFinanceState();
+  const actions = useFinanceActions();
+  const { notify } = useToast();
+  const [newName, setNewName] = useState('');
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
+  const [toDelete, setToDelete] = useState<Workspace | null>(null);
+
+  const create = async () => {
+    if (await actions.createWorkspace(newName)) {
+      setNewName('');
+    }
+  };
+
+  const onFile = async (file: File) => {
+    const result = await readBackupFile(file);
+    if (!result.ok) {
+      notify(result.message, 'error');
+      return;
+    }
+    if (result.kind === 'complete') {
+      notify(
+        'Ce fichier est une sauvegarde complète de tous les espaces : utilise « Restaurer » dans Sauvegardes.',
+        'error',
+      );
+      return;
+    }
+    setPendingImport({ dataset: result.dataset, workspaceName: result.workspaceName });
+  };
+
+  return (
+    <Card
+      title="Espaces de suivi"
+      subtitle="Chaque espace est indépendant : comptes, catégories, budgets et réglages propres. Un espace importé (par exemple le compte commun envoyé par un proche) est en lecture seule."
+    >
+      <ul className="flex flex-col gap-2">
+        {workspaces.map((workspace) => (
+          <WorkspaceRow
+            key={workspace.id}
+            workspace={workspace}
+            isActive={workspace.id === active.id}
+            onDelete={setToDelete}
+          />
+        ))}
+      </ul>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="w-full sm:w-64">
+          <Input
+            value={newName}
+            onChange={setNewName}
+            placeholder="Nom du nouvel espace (ex. Commun)"
+            label="Nom du nouvel espace"
+          />
+        </div>
+        <Button icon={Plus} onClick={() => void create()} disabled={!newName.trim()}>
+          Créer
+        </Button>
+        <FilePickerButton label="Importer un espace" onFile={(file) => void onFile(file)} />
+      </div>
+      {pendingImport && (
+        <ImportWorkspaceModal
+          dataset={pendingImport.dataset}
+          workspaceName={pendingImport.workspaceName}
+          onCancel={() => setPendingImport(null)}
+          onConfirm={(target) => {
+            void actions.importWorkspace(pendingImport.dataset, target);
+            setPendingImport(null);
+          }}
+        />
+      )}
+      {toDelete && (
+        <ConfirmDialog
+          title={`Supprimer l’espace « ${toDelete.name} » ?`}
+          message="Toutes ses données (comptes, opérations, budgets…) seront effacées de ce navigateur. Tes autres espaces ne sont pas touchés. Exporte d’abord une sauvegarde si tu veux pouvoir le retrouver."
+          confirmLabel="Supprimer"
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => {
+            void actions.deleteWorkspace(toDelete.id);
+            setToDelete(null);
+          }}
+        />
+      )}
+    </Card>
+  );
+};
+
+export default WorkspacesCard;

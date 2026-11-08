@@ -1,23 +1,30 @@
+import type { LucideIcon } from 'lucide-react';
 import {
   Archive,
   ArchiveRestore,
+  Banknote,
   Download,
-  FlaskConical,
+  FileSpreadsheet,
   History,
+  PiggyBank,
   Plus,
+  Receipt,
   RotateCcw,
+  Share2,
   ShieldCheck,
-  Upload,
+  ShoppingBag,
 } from 'lucide-react';
-import { useState } from 'react';
-import { newId, useDataset, useFinanceState, useToast } from '@/app/FinanceContext';
+import { useState, type ReactNode } from 'react';
+import { newId, useDataset, useFinanceState, useReadOnly, useToast } from '@/app/FinanceContext';
 import { useFinanceActions } from '@/app/useFinanceActions';
-import { downloadTextFile, parseJsonText, readFileText } from '@/adapters/files/files';
+import { downloadTextFile } from '@/adapters/files/files';
 import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/constants/misc';
-import { createBackup, readBackup } from '@/core/backup';
+import { createBackup } from '@/core/backup';
+import { createFullBackup, type WorkspaceData } from '@/core/fullBackup';
 import { transactionsToCsv } from '@/core/csvImport';
 import { parseFlexibleDate, todayIso } from '@/core/dates';
 import { formatDateFr } from '@/core/format';
+import { isReadOnly, workspaceFileSlug } from '@/core/workspaces';
 import type {
   Account,
   AccountGroup,
@@ -30,6 +37,7 @@ import type {
   TrackingMode,
 } from '@/core/model';
 import Badge from '@/ui/design-system/Badge';
+import { cx } from '@/ui/design-system/cx';
 import Button from '@/ui/design-system/Button';
 import Card from '@/ui/design-system/Card';
 import { Field, Input, Select } from '@/ui/design-system/Field';
@@ -38,6 +46,9 @@ import MoneyInput from '@/ui/design-system/MoneyInput';
 import Segmented from '@/ui/design-system/Segmented';
 import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
+import FilePickerButton from './parametres/FilePickerButton';
+import { readBackupFile } from './parametres/readBackupFile';
+import WorkspacesCard from './parametres/WorkspacesCard';
 
 const GROUP_BY_KIND: Record<AccountKind, AccountGroup> = {
   courant: 'courant',
@@ -113,20 +124,40 @@ const ProfileCard = () => {
             onCommit={(age) => void actions.updateSettings({ age }, null)}
           />
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Text variant="label">Thème</Text>
-          <Segmented<ThemePreference>
-            value={settings.theme}
-            label="Thème"
-            onChange={(theme) => void actions.updateSettings({ theme }, null)}
-            options={[
-              { value: 'system', label: 'Système' },
-              { value: 'light', label: 'Clair' },
-              { value: 'dark', label: 'Sombre' },
-            ]}
-          />
-        </div>
+        <ThemePicker />
       </div>
+    </Card>
+  );
+};
+
+const ThemePicker = () => {
+  const { settings } = useDataset();
+  const actions = useFinanceActions();
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <Text variant="label">Thème</Text>
+      <Segmented<ThemePreference>
+        value={settings.theme}
+        label="Thème"
+        onChange={(theme) => void actions.updateSettings({ theme }, null)}
+        options={[
+          { value: 'system', label: 'Système' },
+          { value: 'light', label: 'Clair' },
+          { value: 'dark', label: 'Sombre' },
+        ]}
+      />
+    </div>
+  );
+};
+
+const ReadOnlyNotice = () => {
+  const { workspace } = useFinanceState();
+  return (
+    <Card
+      title={`Espace « ${workspace.name} » en lecture seule`}
+      subtitle="Ses comptes, catégories et réglages sont gérés par la personne qui te l’envoie. Pour le mettre à jour, importe son nouveau fichier dans Espaces de suivi."
+    >
+      <ThemePicker />
     </Card>
   );
 };
@@ -279,6 +310,29 @@ const AccountsCard = () => {
   );
 };
 
+const GROUP_STYLES: Record<CategoryGroup, { icon: LucideIcon; accent: string; dot: string }> = {
+  revenu: {
+    icon: Banknote,
+    accent: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-300',
+    dot: 'bg-sky-500',
+  },
+  fixe: {
+    icon: Receipt,
+    accent: 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300',
+    dot: 'bg-brand-500',
+  },
+  epargne: {
+    icon: PiggyBank,
+    accent: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300',
+    dot: 'bg-emerald-500',
+  },
+  plaisir: {
+    icon: ShoppingBag,
+    accent: 'bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300',
+    dot: 'bg-pink-500',
+  },
+};
+
 type CategoryRowProps = { category: Category };
 
 const PERIOD_GROUPS: CategoryGroup[] = ['fixe', 'plaisir'];
@@ -286,40 +340,118 @@ const PERIOD_GROUPS: CategoryGroup[] = ['fixe', 'plaisir'];
 const CategoryRow = ({ category }: CategoryRowProps) => {
   const actions = useFinanceActions();
   const [name, setName] = useState(category.name);
+  const hasPeriod = PERIOD_GROUPS.includes(category.group);
+
+  const saveName = () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setName(category.name);
+      return;
+    }
+    if (trimmed !== category.name) {
+      void actions.saveCategory({ ...category, name: trimmed }, false);
+    }
+  };
+
   return (
-    <li className={`flex flex-col gap-1 ${category.archived ? 'opacity-50' : ''}`}>
-      <div className="flex items-center gap-2">
-        <Input
-          value={name}
-          onChange={setName}
-          onBlur={() =>
-            name.trim() &&
-            name !== category.name &&
-            void actions.saveCategory({ ...category, name: name.trim() }, false)
-          }
-          label="Nom de la catégorie"
-          className="h-9"
+    <li
+      className={cx(
+        'group flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5',
+        category.archived && '-mx-2 rounded-lg bg-stone-50 px-2 dark:bg-stone-800/40',
+      )}
+    >
+      <div className="flex min-w-[12rem] flex-1 items-center gap-1">
+        <span
+          className={cx(
+            'h-2 w-2 shrink-0 rounded-full',
+            category.archived ? 'bg-stone-300 dark:bg-stone-600' : GROUP_STYLES[category.group].dot,
+          )}
+          aria-hidden
         />
+        <input
+          value={name}
+          aria-label={`Nom de la catégorie ${category.name}`}
+          disabled={category.archived}
+          onChange={(event) => setName(event.target.value)}
+          onBlur={saveName}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.currentTarget.blur();
+            }
+            if (event.key === 'Escape') {
+              setName(category.name);
+              event.currentTarget.blur();
+            }
+          }}
+          className={cx(
+            'h-9 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-stone-900 transition-colors hover:border-stone-200 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-default disabled:hover:border-transparent dark:text-stone-100 dark:disabled:hover:border-transparent dark:hover:border-stone-700 dark:focus:bg-stone-900',
+            category.archived && 'italic text-stone-500 dark:text-stone-400',
+          )}
+        />
+        {category.archived && <Badge tone="neutral">Archivée</Badge>}
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        {hasPeriod && !category.archived && (
+          <Segmented<BudgetPeriod>
+            value={category.period}
+            label={`Période de budget ${category.name}`}
+            onChange={(period) => void actions.saveCategory({ ...category, period }, false)}
+            options={[
+              { value: 'mensuel', label: 'Mensuel' },
+              { value: 'annuel', label: 'Annuel' },
+            ]}
+          />
+        )}
         <Button
           variant="ghost"
           size="sm"
           icon={category.archived ? ArchiveRestore : Archive}
-          label={category.archived ? 'Réactiver' : 'Archiver'}
+          label={category.archived ? `Réactiver ${category.name}` : `Archiver ${category.name}`}
+          className="w-8 px-0"
           onClick={() => void actions.saveCategory({ ...category, archived: !category.archived }, false)}
         />
       </div>
-      {PERIOD_GROUPS.includes(category.group) && (
-        <Segmented<BudgetPeriod>
-          value={category.period}
-          label={`Période de budget ${category.name}`}
-          onChange={(period) => void actions.saveCategory({ ...category, period }, false)}
-          options={[
-            { value: 'mensuel', label: 'Mensuel' },
-            { value: 'annuel', label: 'Annuel' },
-          ]}
-        />
-      )}
     </li>
+  );
+};
+
+type CategoryGroupSectionProps = { group: CategoryGroup; categories: Category[] };
+
+const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) => {
+  const active = categories.filter((category) => !category.archived);
+  const archived = categories.filter((category) => category.archived);
+  const [showArchived, setShowArchived] = useState(false);
+  const GroupIcon = GROUP_STYLES[group].icon;
+  return (
+    <section>
+      <div className="flex items-center gap-2.5 border-b border-stone-100 pb-2.5 dark:border-stone-800">
+        <span
+          className={cx('flex h-7 w-7 items-center justify-center rounded-lg', GROUP_STYLES[group].accent)}
+        >
+          <GroupIcon className="h-3.5 w-3.5" aria-hidden />
+        </span>
+        <Text variant="strong">{GROUP_LABELS[group]}</Text>
+      </div>
+      <ul className="divide-y divide-stone-100 dark:divide-stone-800/70">
+        {active.map((category) => (
+          <CategoryRow key={`${category.id}-${category.name}`} category={category} />
+        ))}
+        {showArchived &&
+          archived.map((category) => (
+            <CategoryRow key={`${category.id}-${category.name}`} category={category} />
+          ))}
+      </ul>
+      {archived.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowArchived((current) => !current)}
+          className="mt-1 text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100"
+        >
+          {showArchived ? 'Masquer' : 'Afficher'} {archived.length} catégorie{archived.length > 1 ? 's' : ''}{' '}
+          archivée{archived.length > 1 ? 's' : ''}
+        </button>
+      )}
+    </section>
   );
 };
 
@@ -344,36 +476,35 @@ const CategoriesCard = () => {
   return (
     <Card
       title="Catégories"
-      subtitle="« Annuel » : la catégorie sort du budget mensuel et se suit sur l’année (voyages, cadeaux…). Une catégorie archivée reste dans l’historique mais n’est plus proposée."
+      subtitle="Clique sur un nom pour le modifier. « Annuel » sort la catégorie du budget mensuel pour la suivre sur l’année (voyages, cadeaux…). Une catégorie archivée reste dans l’historique mais n’est plus proposée."
     >
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-2 flex flex-col gap-7">
         {(Object.keys(GROUP_LABELS) as CategoryGroup[]).map((group) => (
-          <div key={group}>
-            <Text variant="label" className="mb-2">
-              {GROUP_LABELS[group]}
-            </Text>
-            <ul className="flex flex-col gap-1.5">
-              {dataset.categories
-                .filter((category) => category.group === group)
-                .map((category) => (
-                  <CategoryRow key={category.id} category={category} />
-                ))}
-            </ul>
-          </div>
+          <CategoryGroupSection
+            key={group}
+            group={group}
+            categories={dataset.categories.filter((category) => category.group === group)}
+          />
         ))}
       </div>
-      <div className="mt-5 flex flex-wrap items-end gap-2">
-        <Field label="Nouvelle catégorie">
-          <Input value={newName} onChange={setNewName} placeholder="Ex. Sport" />
-        </Field>
-        <Field label="Groupe">
+      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-xl bg-stone-50 p-3 dark:bg-stone-800/40">
+        <div className="min-w-[12rem] flex-1">
+          <Input
+            value={newName}
+            onChange={setNewName}
+            placeholder="Nouvelle catégorie (ex. Sport)"
+            label="Nouvelle catégorie"
+          />
+        </div>
+        <div className="w-full sm:w-56">
           <Select
             value={newGroup}
             onChange={(value) => setNewGroup(value as CategoryGroup)}
+            label="Groupe de la nouvelle catégorie"
             options={Object.entries(GROUP_LABELS).map(([value, label]) => ({ value, label }))}
           />
-        </Field>
-        <Button icon={Plus} onClick={() => void add()}>
+        </div>
+        <Button icon={Plus} variant="primary" onClick={() => void add()} disabled={!newName.trim()}>
           Ajouter
         </Button>
       </div>
@@ -381,139 +512,196 @@ const CategoriesCard = () => {
   );
 };
 
+type SettingRowProps = { icon: LucideIcon; title: string; description: string; children: ReactNode };
+
+const SettingRow = ({ icon: Icon, title, description, children }: SettingRowProps) => (
+  <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 first:pt-1 last:pb-1">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+      <Icon className="h-4 w-4" aria-hidden />
+    </span>
+    <div className="min-w-[12rem] flex-1">
+      <Text variant="strong">{title}</Text>
+      <Text variant="small">{description}</Text>
+    </div>
+    <div className="ml-12 flex items-center gap-2 sm:ml-0">{children}</div>
+  </li>
+);
+
+type PendingRestore =
+  | { kind: 'workspace'; dataset: Dataset }
+  | { kind: 'complete'; entries: WorkspaceData[]; activeId: string };
+
+const restoreMessage = (pending: PendingRestore, workspaceName: string): string => {
+  if (pending.kind === 'complete') {
+    const names = pending.entries.map((entry) => `« ${entry.workspace.name} »`).join(', ');
+    return `Tous les espaces actuels seront remplacés par ceux de la sauvegarde : ${names}. Les espaces absents du fichier seront supprimés de ce navigateur.`;
+  }
+  return `Les données de l’espace « ${workspaceName} » seront remplacées par le fichier (${pending.dataset.transactions.length} opérations, ${pending.dataset.accounts.length} comptes). Tes autres espaces ne sont pas touchés.`;
+};
+
 const BackupCard = () => {
   const dataset = useDataset();
-  const { isDemo } = useFinanceState();
+  const { workspace, workspaces } = useFinanceState();
   const actions = useFinanceActions();
   const { notify } = useToast();
-  const [pending, setPending] = useState<Dataset | null>(null);
+  const [pending, setPending] = useState<PendingRestore | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [selectedSharedId, setSharedId] = useState(workspace.id);
+  const sharedId = workspaces.some((item) => item.id === selectedSharedId) ? selectedSharedId : workspace.id;
   const stamp = todayIso();
+  const readOnly = isReadOnly(workspace);
 
-  const exportJson = () => {
+  const exportAll = async () => {
+    const entries = await actions.allWorkspaceData();
+    if (!entries) {
+      return;
+    }
     downloadTextFile(
-      `mes-finances-sauvegarde-${stamp}${isDemo ? '-demo' : ''}.json`,
-      JSON.stringify(createBackup(dataset, new Date().toISOString()), null, 2),
+      `mes-finances-sauvegarde-complete-${stamp}.json`,
+      JSON.stringify(createFullBackup(entries, workspace.id, new Date().toISOString()), null, 2),
       'application/json',
     );
-    notify('Sauvegarde exportée');
+    notify(`Sauvegarde complète exportée (${entries.length} espace${entries.length > 1 ? 's' : ''})`);
+  };
+
+  const exportOne = async () => {
+    const entry = await actions.workspaceData(sharedId);
+    if (!entry) {
+      return;
+    }
+    downloadTextFile(
+      `mes-finances-${workspaceFileSlug(entry.workspace.name)}-${stamp}.json`,
+      JSON.stringify(createBackup(entry.dataset, new Date().toISOString(), entry.workspace.name), null, 2),
+      'application/json',
+    );
+    notify(`Espace « ${entry.workspace.name} » exporté`);
   };
 
   const onFile = async (file: File) => {
-    const text = await readFileText(file);
-    if (!text.ok) {
-      notify(text.message, 'error');
+    const result = await readBackupFile(file);
+    if (!result.ok) {
+      notify(result.message, 'error');
       return;
     }
-    const json = parseJsonText(text.value);
-    if (!json.ok) {
-      notify(json.message, 'error');
+    if (result.kind === 'complete') {
+      setPending({ kind: 'complete', entries: result.entries, activeId: result.activeId });
       return;
     }
-    const backup = readBackup(json.value);
-    if (!backup.ok) {
-      notify(backup.reason, 'error');
+    if (readOnly) {
+      notify('Cet espace est importé : pour le mettre à jour, utilise « Importer un espace ».', 'error');
       return;
     }
-    setPending(backup.dataset);
+    setPending({ kind: 'workspace', dataset: result.dataset });
+  };
+
+  const confirmRestore = (restore: PendingRestore) => {
+    if (restore.kind === 'complete') {
+      void actions.restoreAll(restore.entries, restore.activeId);
+      return;
+    }
+    void actions.restore(restore.dataset);
   };
 
   return (
     <Card
       title="Sauvegardes"
-      subtitle="Tes données restent dans ce navigateur. Exporte régulièrement une sauvegarde : c’est ta seule copie de sécurité."
+      subtitle="Les données restent dans ce navigateur : une sauvegarde complète régulière est ta seule copie de sécurité."
     >
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="flex flex-col gap-2 rounded-xl border border-stone-100 p-4 dark:border-stone-800">
-          <Text variant="strong">Sauvegarde complète</Text>
-          <Text variant="small">
-            Comptes, opérations, budgets, objectifs, paramètres et historique (JSON).
-          </Text>
-          <Button icon={Download} variant="primary" onClick={exportJson} className="mt-auto">
-            Exporter la sauvegarde
-          </Button>
-        </div>
-        <div className="flex flex-col gap-2 rounded-xl border border-stone-100 p-4 dark:border-stone-800">
-          <Text variant="strong">Restaurer</Text>
-          <Text variant="small">
-            Remplace toutes les données actuelles par celles du fichier. Une confirmation est demandée.
-          </Text>
-          <label className="mt-auto inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-white px-3.5 text-sm font-medium text-stone-800 ring-1 ring-inset ring-stone-200 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-100 dark:ring-stone-700">
-            <Upload className="h-4 w-4" aria-hidden />
-            Choisir un fichier
-            <input
-              type="file"
-              accept="application/json,.json"
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                event.target.value = '';
-                if (file) {
-                  void onFile(file);
-                }
-              }}
-            />
-          </label>
-        </div>
-        <div className="flex flex-col gap-2 rounded-xl border border-stone-100 p-4 dark:border-stone-800">
-          <Text variant="strong">Export des opérations</Text>
-          <Text variant="small">
-            Toutes les opérations au format CSV (séparateur « ; »), lisible dans un tableur.
-          </Text>
+      <ul className="divide-y divide-stone-100 dark:divide-stone-800">
+        <SettingRow
+          icon={Archive}
+          title="Sauvegarde complète"
+          description={`Tous les espaces, importés compris : ${workspaces.map((item) => item.name).join(', ')}`}
+        >
           <Button
+            size="sm"
+            variant="primary"
             icon={Download}
-            className="mt-auto"
+            label="Tout sauvegarder"
+            className="w-8 px-0"
+            onClick={() => void exportAll()}
+          />
+        </SettingRow>
+        <SettingRow
+          icon={Share2}
+          title="Partager un espace"
+          description="Un seul espace dans le fichier, par exemple le compte commun"
+        >
+          <Select
+            value={sharedId}
+            onChange={setSharedId}
+            label="Espace à exporter"
+            className="h-8 w-40 text-xs"
+            options={workspaces.map((item) => ({ value: item.id, label: item.name }))}
+          />
+          <Button
+            size="sm"
+            icon={Download}
+            label="Exporter cet espace"
+            className="w-8 px-0"
+            onClick={() => void exportOne()}
+          />
+        </SettingRow>
+        <SettingRow
+          icon={ArchiveRestore}
+          title="Restaurer"
+          description="Sauvegarde complète : remplace tous les espaces. Fichier d’un espace : remplace l’espace affiché."
+        >
+          <FilePickerButton
+            label="Choisir un fichier à restaurer"
+            onFile={(file) => void onFile(file)}
+            iconOnly
+          />
+        </SettingRow>
+        <SettingRow
+          icon={FileSpreadsheet}
+          title="Opérations en CSV"
+          description={`Espace « ${workspace.name} », lisible dans un tableur`}
+        >
+          <Button
+            size="sm"
+            icon={Download}
+            label="Exporter en CSV"
+            className="w-8 px-0"
             onClick={() =>
               downloadTextFile(
-                `mes-finances-operations-${stamp}.csv`,
-                `﻿${transactionsToCsv(dataset.transactions, dataset.categories, dataset.accounts)}`,
+                `mes-finances-${workspaceFileSlug(workspace.name)}-operations-${stamp}.csv`,
+                `\ufeff${transactionsToCsv(dataset.transactions, dataset.categories, dataset.accounts)}`,
                 'text/csv',
               )
             }
-          >
-            Exporter en CSV
-          </Button>
-        </div>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-stone-50 p-4 dark:bg-stone-800/40">
-        <div className="flex items-start gap-3">
-          <FlaskConical className="mt-0.5 h-4 w-4 text-amber-600" aria-hidden />
-          <div>
-            <Text variant="strong">Données de démonstration</Text>
-            <Text variant="small">
-              Stockées dans une base séparée : passer en mode démo ne touche jamais à tes données réelles.
-            </Text>
-          </div>
-        </div>
-        <Button icon={FlaskConical} onClick={() => void actions.setDemo(!isDemo)}>
-          {isDemo ? 'Revenir à mes données' : 'Explorer la démo'}
-        </Button>
-      </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <Text variant="small">
-          <ShieldCheck className="mr-1 inline h-3.5 w-3.5 text-emerald-600" aria-hidden />
-          Aucune donnée n’est transmise à un serveur. Aucune connexion bancaire.
+          />
+        </SettingRow>
+      </ul>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3 dark:border-stone-800">
+        <Text variant="caption" className="flex items-center gap-1">
+          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
+          Aucune donnée transmise à un serveur · aucune connexion bancaire
         </Text>
-        <Button variant="ghost" icon={RotateCcw} onClick={() => setConfirmReset(true)}>
-          Réinitialiser {isDemo ? 'la démo' : 'mes données'}
-        </Button>
+        {!readOnly && (
+          <Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => setConfirmReset(true)}>
+            Réinitialiser « {workspace.name} »
+          </Button>
+        )}
       </div>
       {pending && (
         <ConfirmDialog
-          title="Restaurer cette sauvegarde ?"
-          message={`Les données actuelles seront remplacées par la sauvegarde (${pending.transactions.length} opérations, ${pending.accounts.length} comptes). Exporte d’abord une sauvegarde de l’état actuel si tu veux pouvoir revenir en arrière.`}
+          title={
+            pending.kind === 'complete' ? 'Restaurer la sauvegarde complète ?' : 'Restaurer cet espace ?'
+          }
+          message={`${restoreMessage(pending, workspace.name)} Exporte d’abord une sauvegarde de l’état actuel si tu veux pouvoir revenir en arrière.`}
           confirmLabel="Restaurer"
           onCancel={() => setPending(null)}
           onConfirm={() => {
-            void actions.restore(pending);
+            confirmRestore(pending);
             setPending(null);
           }}
         />
       )}
       {confirmReset && (
         <ConfirmDialog
-          title="Tout réinitialiser ?"
-          message="Toutes les opérations, budgets et objectifs seront effacés et la configuration initiale rétablie. Cette action est irréversible sans sauvegarde."
+          title={`Réinitialiser l’espace « ${workspace.name} » ?`}
+          message="Toutes les opérations, budgets et objectifs de cet espace seront effacés et la configuration initiale rétablie. Tes autres espaces ne sont pas touchés. Cette action est irréversible sans sauvegarde."
           confirmLabel="Réinitialiser"
           onCancel={() => setConfirmReset(false)}
           onConfirm={() => {
@@ -547,15 +735,19 @@ const AuditCard = () => {
   );
 };
 
-const ParametresPage = () => (
-  <div className="flex flex-col gap-5">
-    <PageHeader title="Paramètres et sauvegardes" />
-    <ProfileCard />
-    <BackupCard />
-    <AccountsCard />
-    <CategoriesCard />
-    <AuditCard />
-  </div>
-);
+const ParametresPage = () => {
+  const readOnly = useReadOnly();
+  return (
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Paramètres et sauvegardes" />
+      <WorkspacesCard />
+      {readOnly ? <ReadOnlyNotice /> : <ProfileCard />}
+      <BackupCard />
+      {!readOnly && <AccountsCard />}
+      {!readOnly && <CategoriesCard />}
+      <AuditCard />
+    </div>
+  );
+};
 
 export default ParametresPage;

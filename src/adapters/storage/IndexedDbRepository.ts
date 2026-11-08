@@ -1,4 +1,4 @@
-import { openDB, type IDBPDatabase } from 'idb';
+import { deleteDB, openDB, type IDBPDatabase } from 'idb';
 import type { CollectionName, Dataset, Settings } from '@/core/model';
 import { SCHEMA_VERSION } from '@/core/model';
 import {
@@ -68,6 +68,9 @@ export class IndexedDbRepository implements FinanceRepositoryInterface {
             }
           });
         },
+        blocking: () => {
+          void this.close();
+        },
       });
     }
     return this.#db;
@@ -133,5 +136,28 @@ export class IndexedDbRepository implements FinanceRepositoryInterface {
         transaction.done,
       ]);
     });
+  }
+
+  async close(): Promise<void> {
+    if (!this.#db) {
+      return;
+    }
+    const pending = this.#db;
+    this.#db = null;
+    try {
+      (await pending).close();
+    } catch {
+      return;
+    }
+  }
+
+  async destroy(): Promise<PortResult<void>> {
+    try {
+      await this.close();
+      await deleteDB(this.#name);
+      return success(undefined);
+    } catch (error) {
+      return toFailure(error);
+    }
   }
 }

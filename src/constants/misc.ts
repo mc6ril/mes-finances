@@ -1,8 +1,7 @@
 import type { AccountGroup, AccountKind, CategoryGroup, SavingsMovementKind } from '@/core/model';
 
-export const STORAGE_DEMO_FLAG = 'mes-finances:demo';
 export const DB_NAME_REAL = 'mes-finances';
-export const DB_NAME_DEMO = 'mes-finances-demo';
+export const APP_VERSION = __APP_VERSION__;
 
 export const SERIES_LIGHT = [
   '#2a78d6',

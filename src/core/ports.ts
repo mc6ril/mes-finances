@@ -1,6 +1,14 @@
 import type { CollectionName, Dataset, Settings } from './model';
+import type { Workspace, WorkspaceRegistryState } from './workspaces';
 
-export type PortFailureKind = 'indisponible' | 'quota' | 'lecture' | 'format' | 'inconnu';
+export type PortFailureKind =
+  | 'indisponible'
+  | 'quota'
+  | 'lecture'
+  | 'format'
+  | 'lecture-seule'
+  | 'invalide'
+  | 'inconnu';
 
 export type PortFailure = { ok: false; kind: PortFailureKind; message: string };
 
@@ -22,4 +30,11 @@ export interface FinanceRepositoryInterface {
   put<C extends CollectionName>(collection: C, items: CollectionItem<C>[]): Promise<PortResult<void>>;
   remove(collection: CollectionName, keys: string[]): Promise<PortResult<void>>;
   replaceAll(dataset: Dataset): Promise<PortResult<void>>;
+  destroy(): Promise<PortResult<void>>;
+  close(): Promise<void>;
+}
+
+export interface WorkspaceRegistryInterface {
+  load(): Promise<WorkspaceRegistryState>;
+  save(workspaces: Workspace[], activeId: string): void;
 }

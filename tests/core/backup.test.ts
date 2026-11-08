@@ -15,7 +15,15 @@ describe('sauvegarde', () => {
   it('produit une sauvegarde complète relisible à l’identique', () => {
     const backup = createBackup(dataset, '2026-11-05T10:00:00.000Z');
     const restored = readBackup(JSON.parse(JSON.stringify(backup)));
-    expect(restored).toEqual({ ok: true, dataset });
+    expect(restored).toEqual({ ok: true, dataset, workspaceName: null });
+  });
+
+  it('transporte le nom de l’espace exporté', () => {
+    const backup = createBackup(dataset, '2026-11-05T10:00:00.000Z', 'Commun');
+    expect(readBackup(JSON.parse(JSON.stringify(backup)))).toMatchObject({
+      ok: true,
+      workspaceName: 'Commun',
+    });
   });
 
   it('refuse un fichier qui n’est pas une sauvegarde de l’application', () => {

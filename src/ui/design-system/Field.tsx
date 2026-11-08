@@ -31,6 +31,7 @@ type InputProps = {
   onBlur?: () => void;
   label?: string;
   autoFocus?: boolean;
+  onKeyDown?: (key: string) => void;
 };
 
 export const Input = ({
@@ -43,6 +44,7 @@ export const Input = ({
   onBlur,
   label,
   autoFocus,
+  onKeyDown,
 }: InputProps) => (
   <input
     type={type}
@@ -52,6 +54,7 @@ export const Input = ({
     aria-label={label}
     autoFocus={autoFocus}
     onBlur={onBlur}
+    onKeyDown={onKeyDown ? (event) => onKeyDown(event.key) : undefined}
     onChange={(event) => onChange(event.target.value)}
     className={cx(CONTROL, className)}
   />
@@ -72,7 +75,7 @@ export const Select = ({ value, onChange, options, className, label }: SelectPro
     value={value}
     aria-label={label}
     onChange={(event) => onChange(event.target.value)}
-    className={cx(CONTROL, 'pr-8', className)}
+    className={cx(CONTROL, 'select-chevron cursor-pointer pr-10', className)}
   >
     {options.map((option) => (
       <option key={option.value} value={option.value}>

@@ -2,32 +2,18 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
-import { DB_NAME_DEMO, DB_NAME_REAL, STORAGE_DEMO_FLAG } from '@/constants/misc';
+import { databaseNameFor, LocalWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { monthKeyOf, todayIso } from '@/core/dates';
+import { isReadOnly } from '@/core/workspaces';
 import type { Dataset, MonthKey } from '@/core/model';
 import { FinanceStore, type StoreState } from './FinanceStore';
-
-const readDemoFlag = (): boolean => {
-  try {
-    return window.localStorage.getItem(STORAGE_DEMO_FLAG) === '1';
-  } catch {
-    return false;
-  }
-};
-
-export const writeDemoFlag = (isDemo: boolean): void => {
-  try {
-    window.localStorage.setItem(STORAGE_DEMO_FLAG, isDemo ? '1' : '0');
-  } catch {
-    return;
-  }
-};
 
 const fallbackId = (): string => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -38,11 +24,12 @@ export const newId = (): string => {
   return fallbackId();
 };
 
-const repositoryFor = (isDemo: boolean) => new IndexedDbRepository(isDemo ? DB_NAME_DEMO : DB_NAME_REAL);
+const repositoryFor = (workspaceId: string) => new IndexedDbRepository(databaseNameFor(workspaceId));
 
 const StoreContext = createContext<FinanceStore | null>(null);
 
-export const createFinanceStore = (): FinanceStore => new FinanceStore(repositoryFor, readDemoFlag(), newId);
+export const createFinanceStore = (): FinanceStore =>
+  new FinanceStore(repositoryFor, new LocalWorkspaceRegistry(), newId);
 
 type FinanceProviderProps = { store: FinanceStore; children: ReactNode };
 
@@ -63,6 +50,8 @@ export const useFinanceState = (): StoreState => {
   return useSyncExternalStore(store.subscribe, store.getSnapshot);
 };
 
+export const useReadOnly = (): boolean => isReadOnly(useFinanceState().workspace);
+
 export const useDataset = (): Dataset => {
   const { dataset } = useFinanceState();
   if (!dataset) {
@@ -82,8 +71,27 @@ const PeriodContext = createContext<PeriodValue | null>(null);
 
 type PeriodProviderProps = { children: ReactNode };
 
+const useToday = (): string => {
+  const [today, setToday] = useState(todayIso);
+  useEffect(() => {
+    const update = () => setToday(todayIso());
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        update();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', update);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', update);
+    };
+  }, []);
+  return today;
+};
+
 export const PeriodProvider = ({ children }: PeriodProviderProps) => {
-  const today = todayIso();
+  const today = useToday();
   const currentMonth = monthKeyOf(today);
   const [month, setMonth] = useState<MonthKey>(currentMonth);
   const value = useMemo(() => ({ month, setMonth, today, currentMonth }), [month, today, currentMonth]);

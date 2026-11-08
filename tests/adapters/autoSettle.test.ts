@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
+import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/app/FinanceStore';
 import { createInitialDataset } from '@/core/seed';
 import { aTransaction } from '../core/fixtures';
@@ -17,7 +18,7 @@ describe('bascule automatique à l’ouverture', () => {
     });
     const store = new FinanceStore(
       () => new IndexedDbRepository('bascule'),
-      false,
+      new MemoryWorkspaceRegistry(),
       () => 'id',
       () => new Date('2026-11-26T10:00:00'),
     );
@@ -43,7 +44,7 @@ describe('bascule automatique à l’ouverture', () => {
     });
     const store = new FinanceStore(
       () => new IndexedDbRepository('bascule-2'),
-      false,
+      new MemoryWorkspaceRegistry(),
       () => 'id',
       () => current,
     );
@@ -59,7 +60,7 @@ describe('bascule automatique à l’ouverture', () => {
     );
     const store = new FinanceStore(
       () => new IndexedDbRepository('bascule-3'),
-      false,
+      new MemoryWorkspaceRegistry(),
       () => 'id',
       () => new Date('2026-11-26T10:00:00'),
     );

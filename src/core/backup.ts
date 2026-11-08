@@ -5,14 +5,23 @@ import { isArray, isInteger, isObject, isString } from '@/utils/typeCheck';
 
 export const BACKUP_APP_ID = 'mes-finances';
 
-export type Backup = { app: typeof BACKUP_APP_ID; schemaVersion: number; exportedAt: string; data: Dataset };
+export type Backup = {
+  app: typeof BACKUP_APP_ID;
+  schemaVersion: number;
+  exportedAt: string;
+  workspaceName?: string;
+  data: Dataset;
+};
 
-export type BackupReadResult = { ok: true; dataset: Dataset } | { ok: false; reason: string };
+export type BackupReadResult =
+  | { ok: true; dataset: Dataset; workspaceName: string | null }
+  | { ok: false; reason: string };
 
-export const createBackup = (dataset: Dataset, exportedAt: string): Backup => ({
+export const createBackup = (dataset: Dataset, exportedAt: string, workspaceName?: string): Backup => ({
   app: BACKUP_APP_ID,
   schemaVersion: dataset.schemaVersion,
   exportedAt,
+  ...(workspaceName ? { workspaceName } : {}),
   data: dataset,
 });
 
@@ -95,5 +104,6 @@ export const readBackup = (raw: unknown): BackupReadResult => {
   return {
     ok: true,
     dataset: migrateDataset({ ...(raw.data as Dataset), schemaVersion: raw.schemaVersion }),
+    workspaceName: isString(raw.workspaceName) && raw.workspaceName.trim() ? raw.workspaceName.trim() : null,
   };
 };

@@ -92,6 +92,7 @@ export type Recurring = {
   startMonth: MonthKey;
   endMonth: MonthKey | null;
   active: boolean;
+  generatedUntil?: MonthKey | null;
 };
 
 export type Goal = {
