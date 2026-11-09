@@ -211,3 +211,47 @@ describe('colonnes en français', () => {
     expect(guessMapping(['Date', 'Libellé', 'Montant en devise', 'Montant']).amount).toBe(3);
   });
 });
+
+describe('export CSV BoursoBank (en-têtes français)', () => {
+  const header = [
+    'Date Opération',
+    'Date Valeur',
+    'Libellé',
+    'Libellé Suggéré',
+    'Catégorie',
+    'Catégorie Parente',
+    'Solde',
+    'Commentaire',
+    'Numéro Compte',
+    'Libellé Compte',
+    'Solde',
+    'Pointage',
+  ];
+  const row = [
+    '2026-10-30',
+    '2026-10-30',
+    'CARTE 29/10/26 MON-MARCHE CB*0000',
+    'Mon Marche',
+    'Vie quotidienne',
+    'Vie quotidienne',
+    '-80,46',
+    '',
+    '00000000000',
+    'BoursoBank',
+    '2803.25',
+    'Non',
+  ];
+
+  it('prend la première colonne « Solde » comme montant (la seconde est le solde du compte)', () => {
+    expect(guessMapping(header)).toMatchObject({ date: 0, label: 2, category: 4, amount: 6 });
+  });
+
+  it('importe l’opération', () => {
+    const { drafts, errors } = mapRows([header, row], guessMapping(header), {
+      accountId: 'courant',
+      hasHeader: true,
+    });
+    expect(errors).toEqual([]);
+    expect(drafts[0]).toMatchObject({ date: '2026-10-30', amount: -8046 });
+  });
+});

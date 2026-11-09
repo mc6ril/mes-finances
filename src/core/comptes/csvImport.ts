@@ -70,13 +70,25 @@ export const guessMapping = (headers: string[]): ColumnMapping => {
     }
     return null;
   };
+  const date = find('date');
+  const label = find('label');
+  const amount = find('amount');
+  const debit = find('debit');
+  const credit = find('credit');
+  const category = find('category');
+  // BoursoBank nomme « Solde » la colonne du montant (la seconde « Solde » est celle du compte) :
+  // on ne la prend que faute de colonne montant, débit ou crédit.
+  const fallbackAmount =
+    amount === null && debit === null && credit === null
+      ? simplified.findIndex((header, position) => !used.has(position) && header === 'solde')
+      : -1;
   return {
-    date: find('date'),
-    label: find('label'),
-    amount: find('amount'),
-    debit: find('debit'),
-    credit: find('credit'),
-    category: find('category'),
+    date,
+    label,
+    amount: fallbackAmount >= 0 ? fallbackAmount : amount,
+    debit,
+    credit,
+    category,
   };
 };
 
