@@ -7,7 +7,7 @@ const Legend = ({ items }: LegendProps) => (
     {items.map((item) => (
       <li key={item.label} className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300">
         <span
-          className="inline-block h-0.5 w-3.5 rounded"
+          className="inline-block h-0.5 w-3.5 rounded-sm"
           style={{
             background: item.dashed ? 'transparent' : item.color,
             borderTop: item.dashed ? `2px dashed ${item.color}` : undefined,

@@ -16,7 +16,7 @@ import PeriodPicker from './PeriodPicker';
 
 const Brand = () => (
   <div className="flex items-center gap-2.5 px-2">
-    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-sm">
+    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-xs">
       <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden>
         <path
           d="M7 21l5-6 4 4 8-10"
@@ -113,7 +113,7 @@ const Toasts = () => {
   const { toasts, dismiss } = useToast();
   return (
     <div
-      className="pointer-events-none fixed bottom-4 right-4 z-[60] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2"
+      className="pointer-events-none fixed bottom-4 right-4 z-60 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2"
       aria-live="polite"
     >
       {toasts.map((toast) => (
@@ -151,7 +151,7 @@ const AppShell = ({ children }: AppShellProps) => {
   return (
     <div className="min-h-screen">
       <div className="flex">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-stone-200/80 bg-white/70 px-3 py-5 backdrop-blur dark:border-stone-800 dark:bg-[#161615] lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-stone-200/80 bg-white/70 px-3 py-5 backdrop-blur-sm dark:border-stone-800 dark:bg-[#161615] lg:flex">
           <Brand />
           <NavList />
           <SidebarFooter />
@@ -181,7 +181,7 @@ const AppShell = ({ children }: AppShellProps) => {
         )}
         <div className="min-w-0 flex-1">
           <UnsentChangesBanner />
-          <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#f6f6f3]/85 backdrop-blur dark:border-stone-800 dark:bg-[#121211]/85">
+          <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#f6f6f3]/85 backdrop-blur-sm dark:border-stone-800 dark:bg-[#121211]/85">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
               <div className="flex items-center gap-2">
                 <Button

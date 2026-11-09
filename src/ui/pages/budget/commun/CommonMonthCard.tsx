@@ -130,11 +130,7 @@ const RecapLine = ({ label, amount, detail, sign, dot, strong = false }: RecapLi
   <div className="flex items-baseline justify-between gap-4 py-1.5">
     <div className="flex min-w-0 items-baseline gap-2">
       <span className="flex w-3 shrink-0 justify-center text-xs text-stone-400">
-        {dot ? (
-          <span className="h-2 w-2 translate-y-[-1px] rounded-full" style={{ background: dot }} />
-        ) : (
-          sign
-        )}
+        {dot ? <span className="h-2 w-2 -translate-y-px rounded-full" style={{ background: dot }} /> : sign}
       </span>
       <span>
         <span
@@ -347,7 +343,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                             'Virement d’épargne ajouté au compte commun',
                           )
                         }
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-sm ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50 dark:bg-stone-900 dark:text-emerald-300 dark:ring-emerald-500/30"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-xs ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50 dark:bg-stone-900 dark:text-emerald-300 dark:ring-emerald-500/30"
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden />
                         Virement fait

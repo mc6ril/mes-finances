@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { cx } from './cx';
 
 const CONTROL =
-  'h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100';
+  'h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100';
 
 type FieldProps = {
   label: string;
@@ -133,7 +133,7 @@ export const Checkbox = ({ checked, onChange, label, children }: CheckboxProps) 
       checked={checked}
       aria-label={label}
       onChange={(event) => onChange(event.target.checked)}
-      className="h-4 w-4 rounded border-stone-300 text-brand-600 focus:ring-brand-500 dark:border-stone-600 dark:bg-stone-900"
+      className="h-4 w-4 rounded-sm border-stone-300 text-brand-600 focus:ring-brand-500 dark:border-stone-600 dark:bg-stone-900"
     />
     {children}
   </label>

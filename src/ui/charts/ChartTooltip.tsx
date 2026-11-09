@@ -21,7 +21,7 @@ const ChartTooltip = ({ active, payload, label, labelFormatter }: ChartTooltipPr
   }
   const heading = labelFormatter ? labelFormatter(String(label ?? '')) : String(label ?? '');
   return (
-    <div className="min-w-[160px] rounded-xl border border-stone-200 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur dark:border-stone-700 dark:bg-stone-900/95">
+    <div className="min-w-[160px] rounded-xl border border-stone-200 bg-white/95 px-3 py-2 text-xs shadow-lg backdrop-blur-sm dark:border-stone-700 dark:bg-stone-900/95">
       {heading && <div className="mb-1.5 font-semibold text-stone-800 dark:text-stone-100">{heading}</div>}
       <ul className="flex flex-col gap-1">
         {payload.map((entry) => (

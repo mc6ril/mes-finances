@@ -17,7 +17,7 @@ const SIZES = { md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
 
 export const Modal = ({ title, onClose, children, footer, size = 'md' }: ModalProps) => (
   <div
-    className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 backdrop-blur-sm sm:items-center sm:p-4"
+    className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 backdrop-blur-xs sm:items-center sm:p-4"
     role="dialog"
     aria-modal
     aria-label={title}

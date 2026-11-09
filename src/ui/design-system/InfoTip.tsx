@@ -7,7 +7,7 @@ const InfoTip = ({ text, label }: InfoTipProps) => (
     <button
       type="button"
       aria-label={`À propos de ${label}`}
-      className="flex h-4 w-4 items-center justify-center rounded-full text-stone-400 hover:text-stone-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:text-stone-500 dark:hover:text-stone-300"
+      className="flex h-4 w-4 items-center justify-center rounded-full text-stone-400 hover:text-stone-600 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/40 dark:text-stone-500 dark:hover:text-stone-300"
     >
       <Info className="h-3.5 w-3.5" aria-hidden />
     </button>

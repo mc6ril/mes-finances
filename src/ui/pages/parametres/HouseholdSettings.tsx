@@ -71,7 +71,7 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
   return (
     <>
       <SettingRow label="Membres" hint="Les deux personnes qui partagent le compte.">
-        <div className="grid w-full gap-2 sm:w-[26rem] sm:grid-cols-2">
+        <div className="grid w-full gap-2 sm:w-104 sm:grid-cols-2">
           {household.members.map((member, index) => (
             <NameInput
               key={member.id}

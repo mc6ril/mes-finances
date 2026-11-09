@@ -357,7 +357,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
         category.archived && '-mx-2 rounded-lg bg-stone-50 px-2 dark:bg-stone-800/40',
       )}
     >
-      <div className="flex min-w-[12rem] flex-1 items-center gap-1">
+      <div className="flex min-w-48 flex-1 items-center gap-1">
         <span
           className={cx(
             'h-2 w-2 shrink-0 rounded-full',
@@ -381,7 +381,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
             }
           }}
           className={cx(
-            'h-9 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-stone-900 transition-colors hover:border-stone-200 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:cursor-default disabled:hover:border-transparent dark:text-stone-100 dark:disabled:hover:border-transparent dark:hover:border-stone-700 dark:focus:bg-stone-900',
+            'h-9 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-stone-900 transition-colors hover:border-stone-200 focus:border-brand-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 disabled:cursor-default disabled:hover:border-transparent dark:text-stone-100 dark:disabled:hover:border-transparent dark:hover:border-stone-700 dark:focus:bg-stone-900',
             category.archived && 'italic text-stone-500 dark:text-stone-400',
           )}
         />
@@ -499,7 +499,7 @@ const CategoriesCard = () => {
         ))}
       </div>
       <div className="mt-6 flex flex-wrap items-center gap-2 rounded-xl bg-stone-50 p-3 dark:bg-stone-800/40">
-        <div className="min-w-[12rem] flex-1">
+        <div className="min-w-48 flex-1">
           <Input
             value={newName}
             onChange={setNewName}
@@ -533,7 +533,7 @@ const SettingRow = ({ icon: Icon, title, description, children }: SettingRowProp
     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
       <Icon className="h-4 w-4" aria-hidden />
     </span>
-    <div className="min-w-[12rem] flex-1">
+    <div className="min-w-48 flex-1">
       <Text variant="strong">{title}</Text>
       <Text variant="small">{description}</Text>
     </div>
@@ -542,8 +542,7 @@ const SettingRow = ({ icon: Icon, title, description, children }: SettingRowProp
 );
 
 type PendingRestore =
-  | { kind: 'workspace'; dataset: Dataset }
-  | { kind: 'complete'; entries: WorkspaceData[]; activeId: string };
+  { kind: 'workspace'; dataset: Dataset } | { kind: 'complete'; entries: WorkspaceData[]; activeId: string };
 
 const restoreMessage = (pending: PendingRestore, workspaceName: string): string => {
   if (pending.kind === 'complete') {
