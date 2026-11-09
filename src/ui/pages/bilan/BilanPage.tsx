@@ -17,7 +17,7 @@ import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext, plaisirBudgetFor } from '@/core/budget/overview';
 import { useChartTheme } from '@/hooks/useTheme';
-import { GROUP_LABELS } from '@/ui/constants';
+import { groupLabel } from '@/ui/constants';
 import { yearSummary, type MonthSummary } from '@/core/budget/annual';
 import { monthsOfYear, monthKeyOf, parseMonthKey, yearOf } from '@/core/shared/dates';
 import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
@@ -165,6 +165,7 @@ const visibleMonthIndex = (year: number, today: IsoDate): number => {
 
 const BilanPage = () => {
   const dataset = useDataset();
+  const { kind } = dataset.settings;
   const { month, today } = usePeriod();
   const { series, ink } = useChartTheme();
   const year = parseMonthKey(month).year;
@@ -437,7 +438,7 @@ const BilanPage = () => {
                 </div>
               </div>
               <Text as="span" variant="caption" className="w-20 text-right">
-                {GROUP_LABELS[entry.group]}
+                {groupLabel(entry.group, kind)}
               </Text>
             </li>
           ))}
@@ -470,7 +471,7 @@ const BilanPage = () => {
                       colSpan={14}
                       className="bg-stone-50 font-semibold text-stone-600 dark:bg-stone-800/40 dark:text-stone-300"
                     >
-                      <span className="sticky left-3">{GROUP_LABELS[group]}</span>
+                      <span className="sticky left-3">{groupLabel(group, kind)}</span>
                     </td>
                   </tr>,
                   ...rows.map((row) => (

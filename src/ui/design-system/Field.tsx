@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { cx } from './cx';
 
 const CONTROL =
@@ -94,17 +94,30 @@ type TextareaProps = {
   autoFocus?: boolean;
 };
 
-export const Textarea = ({ value, onChange, placeholder, rows = 2, label, autoFocus }: TextareaProps) => (
-  <textarea
-    value={value}
-    placeholder={placeholder}
-    rows={rows}
-    aria-label={label}
-    autoFocus={autoFocus}
-    onChange={(event) => onChange(event.target.value)}
-    className={cx(CONTROL, 'h-auto py-2')}
-  />
-);
+export const Textarea = ({ value, onChange, placeholder, rows = 2, label, autoFocus }: TextareaProps) => {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  // La zone grandit avec le texte : tout reste visible, sans barre de défilement.
+  useLayoutEffect(() => {
+    const node = ref.current;
+    if (!node) {
+      return;
+    }
+    node.style.height = 'auto';
+    node.style.height = `${node.scrollHeight + 2}px`;
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      placeholder={placeholder}
+      rows={rows}
+      aria-label={label}
+      autoFocus={autoFocus}
+      onChange={(event) => onChange(event.target.value)}
+      className={cx(CONTROL, 'h-auto resize-none overflow-hidden py-2')}
+    />
+  );
+};
 
 type CheckboxProps = {
   checked: boolean;

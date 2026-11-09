@@ -24,7 +24,7 @@ import {
 } from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
-import { ACCOUNT_KIND_LABELS, GROUP_LABELS } from '@/ui/constants';
+import { ACCOUNT_KIND_LABELS, GROUP_LABELS, groupLabel } from '@/ui/constants';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
 import { parseFlexibleDate, todayIso } from '@/core/shared/dates';
 import { formatDateFr } from '@/core/shared/format';
@@ -416,6 +416,7 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
 type CategoryGroupSectionProps = { group: CategoryGroup; categories: Category[] };
 
 const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) => {
+  const { settings } = useDataset();
   const active = categories.filter((category) => !category.archived);
   const archived = categories.filter((category) => category.archived);
   const [showArchived, setShowArchived] = useState(false);
@@ -428,7 +429,7 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
         >
           <GroupIcon className="h-3.5 w-3.5" aria-hidden />
         </span>
-        <Text variant="strong">{GROUP_LABELS[group]}</Text>
+        <Text variant="strong">{groupLabel(group, settings.kind)}</Text>
       </div>
       <ul className="divide-y divide-stone-100 dark:divide-stone-800/70">
         {active.map((category) => (
@@ -505,7 +506,10 @@ const CategoriesCard = () => {
             value={newGroup}
             onChange={(value) => setNewGroup(value as CategoryGroup)}
             label="Groupe de la nouvelle catégorie"
-            options={Object.entries(GROUP_LABELS).map(([value, label]) => ({ value, label }))}
+            options={(Object.keys(GROUP_LABELS) as CategoryGroup[]).map((value) => ({
+              value,
+              label: groupLabel(value, dataset.settings.kind),
+            }))}
           />
         </div>
         <Button icon={Plus} variant="primary" onClick={() => void add()} disabled={!newName.trim()}>

@@ -1,4 +1,10 @@
-import type { AccountGroup, AccountKind, CategoryGroup, SavingsMovementKind } from '@/core/shared/model';
+import type {
+  AccountGroup,
+  AccountKind,
+  CategoryGroup,
+  SavingsMovementKind,
+  WorkspaceKind,
+} from '@/core/shared/model';
 
 export const APP_VERSION = __APP_VERSION__;
 
@@ -34,6 +40,10 @@ export const GROUP_LABELS: Record<CategoryGroup, string> = {
   epargne: 'Épargne',
   plaisir: 'Dépenses personnelles',
 };
+
+/** Libellé d'un groupe de catégories ; dans un espace commun, les dépenses variables sont communes. */
+export const groupLabel = (group: CategoryGroup, kind: WorkspaceKind): string =>
+  kind === 'commun' && group === 'plaisir' ? 'Dépenses communes' : GROUP_LABELS[group];
 
 export const ACCOUNT_KIND_LABELS: Record<AccountKind, string> = {
   courant: 'Compte courant',

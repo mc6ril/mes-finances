@@ -4,7 +4,7 @@ import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { budgetOf, budgetOriginOf, linesFor, visibleGroups, yearBudgetOf } from '@/core/budget/overview';
 import { useReport } from '@/hooks/useReport';
-import { GROUP_LABELS } from '@/ui/constants';
+import { groupLabel } from '@/ui/constants';
 import type { BudgetLine, LineStatus } from '@/core/budget/budget';
 import { annualActualInMonth, groupTotal, provisionPerMonth } from '@/core/budget/budget';
 import { monthsOfYear, parseMonthKey } from '@/core/shared/dates';
@@ -114,12 +114,13 @@ type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: strin
 const GroupTable = ({ group, lines, month }: GroupTableProps) => {
   const finance = useFinanceUseCases();
   const report = useReport();
+  const { settings } = useDataset();
   const rows = lines.filter((line) => line.group === group);
   const planned = groupTotal(rows, group, 'available');
   const actual = groupTotal(rows, group, 'actual');
   return (
     <Card
-      title={GROUP_LABELS[group]}
+      title={groupLabel(group, settings.kind)}
       padded={false}
       action={
         <Text variant="small">
