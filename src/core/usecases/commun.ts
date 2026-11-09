@@ -2,7 +2,7 @@ import { commonMonthOf, commonMonthSummary, memberLabel } from '../commun/househ
 import { monthEnd } from '../shared/dates';
 import { ok, type Result } from '../shared/errors';
 import { formatEuros, monthLabel } from '../shared/format';
-import type { CommonMonth, MonthKey, Settlement, Transaction } from '../shared/model';
+import type { CommonMonth, MonthKey, SavingsMovement, Settlement, Transaction } from '../shared/model';
 import { loadedDataset, type FinanceDeps } from './shared';
 
 export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
@@ -62,7 +62,11 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
       summary: monthLabel(settlement.month),
     });
 
-  /** Vire l'épargne du mois : un virement du compte commun vers chaque compte d'épargne, en fin de mois. */
+  /**
+   * Épargne du mois faite. Virée depuis le compte commun : un virement vers chaque livret.
+   * Versée par un membre depuis son compte : un versement sur chaque livret, sans ligne
+   * sur le compte commun (le relevé fait foi).
+   */
   const transferSavings = async (month: MonthKey): Promise<Result<void>> => {
     const loaded = loadedDataset(gateway);
     if (!loaded.ok) {
@@ -73,28 +77,51 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     const stamp = now().toISOString();
     const accountName = (accountId: string) =>
       dataset.accounts.find((account) => account.id === accountId)?.name ?? 'Épargne';
-    const transfers: Transaction[] = commonMonthSummary(dataset, month)
-      .savings.filter((line) => line.amount > 0)
-      .map((line) => ({
+    const lines = commonMonthSummary(dataset, month).savings.filter((line) => line.amount > 0);
+    const payer = dataset.settings.household?.savingsPaidBy ?? null;
+    const summary = `Épargne du commun · ${monthLabel(month)}`;
+    if (payer) {
+      const movements: SavingsMovement[] = lines.map((line) => ({
         id: newId(),
+        accountId: line.accountId,
         date,
-        label: line.label?.trim() || accountName(line.accountId),
-        amount: -line.amount,
-        accountId: dataset.settings.mainAccountId,
-        counterpartAccountId: line.accountId,
-        categoryId: null,
-        type: 'virement',
-        status: 'realise',
-        paymentMethod: 'Virement',
-        comment: '',
-        recurringId: null,
-        createdAt: stamp,
-        updatedAt: stamp,
+        kind: 'versement',
+        amount: line.amount,
+        comment: `${line.label?.trim() || 'Épargne du commun'} · versée par ${memberLabel(dataset, payer)}`,
       }));
+      const saved = await gateway.upsert('savingsMovements', movements, {
+        action: 'creation',
+        entity: 'Épargne',
+        summary,
+      });
+      if (!saved.ok) {
+        return saved;
+      }
+      return saveCommonMonth({
+        ...commonMonthOf(dataset, month),
+        savingsTransfer: { date, transactionIds: [], movementIds: movements.map((movement) => movement.id) },
+      });
+    }
+    const transfers: Transaction[] = lines.map((line) => ({
+      id: newId(),
+      date,
+      label: line.label?.trim() || accountName(line.accountId),
+      amount: -line.amount,
+      accountId: dataset.settings.mainAccountId,
+      counterpartAccountId: line.accountId,
+      categoryId: null,
+      type: 'virement',
+      status: 'realise',
+      paymentMethod: 'Virement',
+      comment: '',
+      recurringId: null,
+      createdAt: stamp,
+      updatedAt: stamp,
+    }));
     const saved = await gateway.upsert('transactions', transfers, {
       action: 'creation',
       entity: 'Opération',
-      summary: `Épargne du commun · ${monthLabel(month)}`,
+      summary,
     });
     if (!saved.ok) {
       return saved;
@@ -111,13 +138,24 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
       return loaded;
     }
     const entry = commonMonthOf(loaded.value, month);
-    const removed = await gateway.remove('transactions', entry.savingsTransfer?.transactionIds ?? [], {
-      action: 'suppression',
-      entity: 'Opération',
+    const log = {
+      action: 'suppression' as const,
+      entity: 'Épargne',
       summary: `Épargne du commun · ${monthLabel(month)}`,
-    });
-    if (!removed.ok) {
-      return removed;
+    };
+    const transactionIds = entry.savingsTransfer?.transactionIds ?? [];
+    const movementIds = entry.savingsTransfer?.movementIds ?? [];
+    if (transactionIds.length > 0) {
+      const removed = await gateway.remove('transactions', transactionIds, log);
+      if (!removed.ok) {
+        return removed;
+      }
+    }
+    if (movementIds.length > 0) {
+      const removed = await gateway.remove('savingsMovements', movementIds, log);
+      if (!removed.ok) {
+        return removed;
+      }
     }
     return saveCommonMonth({ ...entry, savingsTransfer: null });
   };

@@ -184,6 +184,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
       ? `${percent((summary.incomes[memberId] ?? 0) / summary.totalIncome)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`
       : undefined;
   const positive = summary.balance >= 0;
+  const payer = dataset.settings.household?.savingsPaidBy ?? null;
 
   return (
     <section className="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none">
@@ -322,7 +323,9 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                     <>
                       <span className="flex items-center gap-2 text-sm text-emerald-800 dark:text-emerald-200">
                         <Check className="h-4 w-4" aria-hidden />
-                        Épargne virée le {formatDateFr(entry.savingsTransfer.date)}
+                        {payer
+                          ? `Épargne versée par ${memberLabel(dataset, payer)} le ${formatDateFr(entry.savingsTransfer.date)}`
+                          : `Épargne virée le ${formatDateFr(entry.savingsTransfer.date)}`}
                       </span>
                       <button
                         type="button"
@@ -337,7 +340,9 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   ) : (
                     <>
                       <span className="text-sm text-stone-600 dark:text-stone-300">
-                        À virer en fin de mois :{' '}
+                        {payer
+                          ? `À verser par ${memberLabel(dataset, payer)} sur les livrets :`
+                          : 'À virer en fin de mois :'}{' '}
                         <Amount cents={summary.savingsTotal} className="font-medium" />
                       </span>
                       <button
@@ -345,13 +350,15 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                         onClick={() =>
                           void report(
                             finance.transferSavings(month),
-                            'Virement d’épargne ajouté au compte commun',
+                            payer
+                              ? 'Versements ajoutés aux livrets'
+                              : 'Virement d’épargne ajouté au compte commun',
                           )
                         }
                         className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-xs ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50 dark:bg-stone-900 dark:text-emerald-300 dark:ring-emerald-500/30"
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden />
-                        Virement fait
+                        {payer ? 'Épargne versée' : 'Virement fait'}
                       </button>
                     </>
                   )}

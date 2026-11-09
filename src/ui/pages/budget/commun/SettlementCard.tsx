@@ -16,6 +16,7 @@ import Text from '@/ui/design-system/Text';
 const KIND_HINT = {
   income: '',
   contribution: '',
+  savings: '',
   charge: 'à sa charge',
   avance: 'avancé',
 } as const;

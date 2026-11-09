@@ -155,6 +155,11 @@ export type Household = {
   members: HouseholdMember[];
   /** Part des revenus versée au commun, entre 0 et 1. */
   contributionRate: number;
+  /**
+   * Membre qui verse l'épargne du mois directement de son compte vers les livrets ;
+   * absent ou null = virée depuis le compte commun.
+   */
+  savingsPaidBy?: string | null;
 };
 
 /** Ligne d'épargne du mois ; `label` nomme l'enveloppe quand plusieurs lignes vont sur le même compte. */
@@ -168,7 +173,7 @@ export type CommonMonth = {
   /** null = reprend les taux du mois précédent. */
   savingsRates: SavingsRate[] | null;
   /** Virements d'épargne du mois, une fois faits (opérations créées sur le compte commun). */
-  savingsTransfer?: { date: IsoDate; transactionIds: string[] } | null;
+  savingsTransfer?: { date: IsoDate; transactionIds: string[]; movementIds?: string[] } | null;
   /**
    * Revenus des membres dont le salaire n'arrive pas sur le commun, saisis dans le mois
    * du commun ; un membre absent reprend le montant du mois précédent.

@@ -97,6 +97,25 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
         />
       </SettingRow>
       <SettingRow
+        label="Épargne du mois versée depuis"
+        hint="Le compte d’où partent les virements vers les livrets. Versée par une personne : elle compte dans sa part."
+      >
+        <Segmented<string>
+          value={household.savingsPaidBy ?? ''}
+          label="Épargne du mois versée depuis"
+          onChange={(payer) =>
+            save({ ...household, savingsPaidBy: payer || null }, 'Origine de l’épargne du commun modifiée')
+          }
+          options={[
+            { value: '', label: 'Compte commun' },
+            ...household.members.map((member, index) => ({
+              value: member.id,
+              label: member.name.trim() || `Personne ${index + 1}`,
+            })),
+          ]}
+        />
+      </SettingRow>
+      <SettingRow
         label="Part des revenus versée au commun"
         hint="Chacun contribue au prorata de ses revenus. L’enveloppe est arrondie aux 50 € supérieurs."
       >

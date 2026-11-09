@@ -179,7 +179,7 @@ export const commonMonthSummary = (dataset: Dataset, month: MonthKey): CommonMon
 };
 
 export type SettlementLine = {
-  kind: 'income' | 'contribution' | 'charge' | 'avance';
+  kind: 'income' | 'contribution' | 'savings' | 'charge' | 'avance';
   label: string;
   /** Positif : le commun doit au membre ; négatif : le membre doit au commun. */
   amount: Cents;
@@ -216,6 +216,10 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
         ]
       : []),
     { kind: 'contribution', label: 'Part du commun', amount: -(summary.contributions[member.id] ?? 0) },
+    // Épargne versée par ce membre depuis son compte : elle compte dans sa part.
+    ...(dataset.settings.household?.savingsPaidBy === member.id && summary.savingsTotal > 0
+      ? [{ kind: 'savings' as const, label: 'Épargne versée sur les livrets', amount: summary.savingsTotal }]
+      : []),
     ...imputed('charge').map((transaction) => ({
       kind: 'charge' as const,
       label: transaction.label,

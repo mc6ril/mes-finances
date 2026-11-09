@@ -284,3 +284,29 @@ describe('settlementCandidates', () => {
     ]);
   });
 });
+
+describe('épargne versée par un membre', () => {
+  it('compte l’épargne du mois dans la part de celui qui la verse', () => {
+    const base = dataset();
+    const paidBySam = {
+      ...base,
+      settings: {
+        ...base.settings,
+        household: { ...base.settings.household!, savingsPaidBy: 'm2' },
+      },
+    };
+    const savings = commonMonthSummary(base, '2026-10').savingsTotal;
+    expect(savings).toBeGreaterThan(0);
+    const before = memberSettlement(base, '2026-10', 'm2');
+    const after = memberSettlement(paidBySam, '2026-10', 'm2');
+    expect(after.due).toBe(before.due + savings);
+    expect(after.lines).toContainEqual({
+      kind: 'savings',
+      label: 'Épargne versée sur les livrets',
+      amount: savings,
+    });
+    expect(memberSettlement(paidBySam, '2026-10', 'm1').due).toBe(
+      memberSettlement(base, '2026-10', 'm1').due,
+    );
+  });
+});

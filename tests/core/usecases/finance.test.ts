@@ -317,6 +317,29 @@ describe('compte commun', () => {
     ]);
   });
 
+  it('épargne versée par un membre : versements sur les livrets, rien sur le compte commun', async () => {
+    const dataset = commun();
+    const paidBySam: Dataset = {
+      ...dataset,
+      settings: { ...dataset.settings, household: { ...household, savingsPaidBy: 'm2' } },
+      commonMonths: [
+        { month: '2026-10', envelope: 300000, savingsRates: [{ accountId: 'acc-ep-immo', rate: 0.2 }] },
+      ],
+    };
+    const { useCases, calls } = setup(paidBySam);
+    await useCases.transferSavings('2026-10');
+    expect(calls.map((call) => [call.kind, 'collection' in call ? call.collection : null])).toEqual([
+      ['upsert', 'savingsMovements'],
+      ['upsert', 'commonMonths'],
+    ]);
+    expect(calls[0]).toMatchObject({
+      items: [{ accountId: 'acc-ep-immo', kind: 'versement', amount: 60000, date: '2026-10-31' }],
+    });
+    expect(calls[1]).toMatchObject({
+      items: [{ savingsTransfer: { transactionIds: [], movementIds: ['id-1'] } }],
+    });
+  });
+
   it('annule un règlement sans toucher au virement', async () => {
     const { useCases, calls } = setup(commun());
     const settlement = {
