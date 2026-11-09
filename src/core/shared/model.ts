@@ -169,6 +169,11 @@ export type CommonMonth = {
   savingsRates: SavingsRate[] | null;
   /** Virements d'épargne du mois, une fois faits (opérations créées sur le compte commun). */
   savingsTransfer?: { date: IsoDate; transactionIds: string[] } | null;
+  /**
+   * Revenus des membres dont le salaire n'arrive pas sur le commun, saisis dans le mois
+   * du commun ; un membre absent reprend le montant du mois précédent.
+   */
+  outsideIncomes?: Record<string, Cents>;
 };
 
 /** Règlement de fin de mois effectué : positif = versé par le commun au membre. */
@@ -226,4 +231,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;

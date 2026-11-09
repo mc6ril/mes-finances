@@ -124,9 +124,11 @@ type RecapLineProps = {
   sign?: '+' | '−';
   dot?: string;
   strong?: boolean;
+  /** Remplace le montant par un champ (revenu saisi à la main). */
+  input?: ReactNode;
 };
 
-const RecapLine = ({ label, amount, detail, sign, dot, strong = false }: RecapLineProps) => (
+const RecapLine = ({ label, amount, detail, sign, dot, strong = false, input }: RecapLineProps) => (
   <div className="flex items-baseline justify-between gap-4 py-1.5">
     <div className="flex min-w-0 items-baseline gap-2">
       <span className="flex w-3 shrink-0 justify-center text-xs text-stone-400">
@@ -144,13 +146,15 @@ const RecapLine = ({ label, amount, detail, sign, dot, strong = false }: RecapLi
         {detail && <span className="block text-xs text-stone-400">{detail}</span>}
       </span>
     </div>
-    <Amount
-      cents={amount}
-      className={cx(
-        'text-sm',
-        strong ? 'font-semibold text-stone-900 dark:text-stone-50' : 'text-stone-700 dark:text-stone-200',
-      )}
-    />
+    {input ?? (
+      <Amount
+        cents={amount}
+        className={cx(
+          'text-sm',
+          strong ? 'font-semibold text-stone-900 dark:text-stone-50' : 'text-stone-700 dark:text-stone-200',
+        )}
+      />
+    )}
   </div>
 );
 
@@ -225,7 +229,8 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               </div>
               {summary.totalIncome === 0 && (
                 <p className="mt-2 text-xs text-stone-400">
-                  Aucun revenu ce mois-ci : ajoute les salaires dans Compte courant (type Revenu, « De qui »).
+                  Aucun revenu ce mois-ci : le salaire versé sur le commun vient des opérations (type Revenu,
+                  « De qui ») ; l’autre se saisit dans le récapitulatif.
                 </p>
               )}
             </Indented>
@@ -359,15 +364,36 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
         <aside className="border-t border-stone-100 bg-stone-50/70 px-5 py-6 dark:border-stone-800 dark:bg-stone-900/40 sm:px-6 lg:rounded-br-2xl lg:border-l lg:border-t-0">
           <Heading icon={ReceiptText} tone="stone" title="Récapitulatif" />
           <div className="mt-4">
-            {members.map((member, index) => (
-              <RecapLine
-                key={member.id}
-                label={`Revenus ${memberLabel(dataset, member.id)}`}
-                detail={shareOf(member.id)}
-                amount={summary.incomes[member.id] ?? 0}
-                dot={MEMBER_DOTS[index % MEMBER_DOTS.length]}
-              />
-            ))}
+            {members.map((member, index) =>
+              member.salaryOnCommon ? (
+                <RecapLine
+                  key={member.id}
+                  label={`Revenus ${memberLabel(dataset, member.id)}`}
+                  detail={shareOf(member.id)}
+                  amount={summary.incomes[member.id] ?? 0}
+                  dot={MEMBER_DOTS[index % MEMBER_DOTS.length]}
+                />
+              ) : (
+                <RecapLine
+                  key={member.id}
+                  label={`Revenus ${memberLabel(dataset, member.id)}`}
+                  detail={shareOf(member.id) ?? 'Versés sur son compte : à saisir'}
+                  amount={summary.incomes[member.id] ?? 0}
+                  dot={MEMBER_DOTS[index % MEMBER_DOTS.length]}
+                  input={
+                    <MoneyInput
+                      key={`${month}-${member.id}-${summary.incomes[member.id] ?? 0}`}
+                      cents={summary.incomes[member.id] ?? 0}
+                      label={`Revenus ${memberLabel(dataset, member.id)} du mois`}
+                      className="w-28"
+                      onCommit={(cents) =>
+                        save({ outsideIncomes: { ...entry.outsideIncomes, [member.id]: cents } })
+                      }
+                    />
+                  }
+                />
+              ),
+            )}
             <Divider />
             <RecapLine label="Enveloppe commune" amount={summary.envelope} strong />
             <RecapLine label="Report du mois précédent" amount={summary.carriedOver} sign="+" />
@@ -389,8 +415,8 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
             <Amount cents={summary.balance} className="text-base font-semibold" />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-stone-400">
-            Revenus issus des opérations de type Revenu. Le reste est reporté sur le mois suivant, à l’euro
-            près.
+            Salaire versé sur le commun : opérations de type Revenu. Salaire versé ailleurs : saisi ici,
+            repris le mois suivant. Le reste est reporté sur le mois suivant, à l’euro près.
           </p>
         </aside>
       </div>

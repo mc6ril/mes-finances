@@ -51,6 +51,16 @@ export const effectiveSavingsRates = (commonMonths: CommonMonth[], month: MonthK
     .filter((entry) => entry.month <= month && entry.savingsRates !== null)
     .sort((a, b) => b.month.localeCompare(a.month))[0]?.savingsRates ?? [];
 
+/** Revenu hors commun d'un membre : celui du mois, ou du dernier mois qui en indique un. */
+export const effectiveOutsideIncome = (
+  commonMonths: CommonMonth[],
+  month: MonthKey,
+  memberId: string,
+): Cents =>
+  [...commonMonths]
+    .filter((entry) => entry.month <= month && entry.outsideIncomes?.[memberId] !== undefined)
+    .sort((a, b) => b.month.localeCompare(a.month))[0]?.outsideIncomes?.[memberId] ?? 0;
+
 export const membersOf = (dataset: Dataset): HouseholdMember[] => dataset.settings.household?.members ?? [];
 
 /** Prénom du membre, ou « Personne 1 / 2 » tant qu'il n'est pas renseigné. */
@@ -67,17 +77,21 @@ const revenuesIn = (transactions: Transaction[], month: MonthKey): Transaction[]
     (transaction) => transaction.type === 'revenu' && isCounted(transaction) && inMonth(transaction, month),
   );
 
-/** Revenus de chaque membre : opérations de revenu rattachées à lui. */
-const incomesByMember = (transactions: Transaction[], month: MonthKey, members: HouseholdMember[]) =>
+/**
+ * Revenus de chaque membre : opérations de revenu rattachées à lui, plus, pour un membre
+ * dont le salaire n'arrive pas sur le commun, le montant saisi dans le mois du commun.
+ */
+const incomesByMember = (dataset: Dataset, month: MonthKey, members: HouseholdMember[]) =>
   Object.fromEntries(
     members.map((member) => [
       member.id,
-      revenuesIn(transactions, month)
+      revenuesIn(dataset.transactions, month)
         .filter(
           (transaction) =>
             transaction.imputation?.kind === 'revenu' && transaction.imputation.memberId === member.id,
         )
-        .reduce((sum, transaction) => sum + transaction.amount, 0),
+        .reduce((sum, transaction) => sum + transaction.amount, 0) +
+        (member.salaryOnCommon ? 0 : effectiveOutsideIncome(dataset.commonMonths, month, member.id)),
     ]),
   ) as Record<string, Cents>;
 
@@ -120,7 +134,7 @@ const firstTrackedMonth = (dataset: Dataset): MonthKey | null =>
 const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): CommonMonthSummary => {
   const members = membersOf(dataset);
   const entry = commonMonthOf(dataset, month);
-  const incomes = incomesByMember(dataset.transactions, month, members);
+  const incomes = incomesByMember(dataset, month, members);
   const totalIncome = Object.values(incomes).reduce((sum, value) => sum + value, 0);
   const suggested = suggestedEnvelope(totalIncome, dataset.settings.household?.contributionRate ?? 0);
   const envelope = entry.envelope ?? suggested;

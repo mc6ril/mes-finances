@@ -233,3 +233,23 @@ describe('remboursement reçu pour un membre et charge hors compte', () => {
     expect(memberSettlement(data, '2026-10', 'm1').due).toBe(68132 - 15400);
   });
 });
+
+describe('revenus versés hors du commun', () => {
+  it('reprend le montant saisi, ou celui du dernier mois qui en indique un', () => {
+    const data = dataset({
+      transactions: [income('2026-10-01', 300000, 'm1'), income('2026-11-01', 300000, 'm1')],
+      commonMonths: [{ ...october, outsideIncomes: { m2: 250000 } }, november],
+    });
+    expect(commonMonthSummary(data, '2026-10').incomes).toEqual({ m1: 300000, m2: 250000 });
+    expect(commonMonthSummary(data, '2026-11').incomes).toEqual({ m1: 300000, m2: 250000 });
+    expect(commonMonthSummary(data, '2026-10').suggestedEnvelope).toBe(415000);
+  });
+
+  it('ignore le montant saisi pour un membre dont le salaire arrive sur le commun', () => {
+    const data = dataset({
+      transactions: [income('2026-10-01', 300000, 'm1')],
+      commonMonths: [{ ...october, outsideIncomes: { m1: 999900 } }],
+    });
+    expect(commonMonthSummary(data, '2026-10').incomes.m1).toBe(300000);
+  });
+});

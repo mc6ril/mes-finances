@@ -244,7 +244,10 @@ describe('migrateDataset v7 → v8', () => {
       commonMonths: [legacyMonth as never],
     });
     expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(migrated.commonMonths).toEqual([{ month: '2026-10', envelope: 400000, savingsRates: null }]);
+    // v10 : le salaire versé hors du commun passe dans le mois du commun.
+    expect(migrated.commonMonths).toEqual([
+      { month: '2026-10', envelope: 400000, savingsRates: null, outsideIncomes: { m2: 250000 } },
+    ]);
     expect(
       migrated.transactions.map((transaction) => [
         transaction.date,
@@ -255,8 +258,51 @@ describe('migrateDataset v7 → v8', () => {
       ]),
     ).toEqual([
       ['2026-10-01', 'revenu', 'cat-salaire', 300000, { kind: 'revenu', memberId: 'm1' }],
-      ['2026-10-01', 'revenu', 'cat-salaire', 250000, { kind: 'revenu', memberId: 'm2', outside: true }],
       ['2026-10-01', 'revenu', 'cat-autres-entrees', 7051, null],
+    ]);
+  });
+});
+
+describe('migrateDataset v9 → v10', () => {
+  it('range les salaires versés hors du commun dans le mois du commun, sans héritage entre mois', () => {
+    const base = createInitialDataset('2026-08-01', () => 'id');
+    const outside = (id: string, date: string, amount: number) => ({
+      ...base.transactions[0],
+      id,
+      date,
+      label: 'Salaire',
+      amount,
+      accountId: 'acc-courant',
+      counterpartAccountId: null,
+      categoryId: 'cat-salaire',
+      type: 'revenu' as const,
+      status: 'realise' as const,
+      paymentMethod: '',
+      comment: '',
+      recurringId: null,
+      createdAt: '',
+      updatedAt: '',
+      imputation: { kind: 'revenu' as const, memberId: 'm2', outside: true },
+    });
+    const migrated = migrateDataset({
+      ...base,
+      schemaVersion: 9,
+      commonMonths: [
+        { month: '2026-08', envelope: null, savingsRates: [] },
+        { month: '2026-09', envelope: 300000, savingsRates: null },
+        { month: '2026-10', envelope: null, savingsRates: null },
+      ],
+      transactions: [
+        outside('a', '2026-08-01', 200000),
+        outside('b', '2026-08-20', 5000),
+        outside('c', '2026-10-01', 210000),
+      ],
+    } as never);
+    expect(migrated.transactions).toEqual([]);
+    expect(migrated.commonMonths.map((entry) => [entry.month, entry.outsideIncomes])).toEqual([
+      ['2026-08', { m2: 205000 }],
+      ['2026-09', { m2: 0 }],
+      ['2026-10', { m2: 210000 }],
     ]);
   });
 });

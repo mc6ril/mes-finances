@@ -197,6 +197,58 @@ const toVersion9 = (dataset: Dataset): Dataset => ({
   settings: { ...dataset.settings, importRules: dataset.settings.importRules ?? [] },
 });
 
+/**
+ * v10 : le salaire d'un membre versé hors du commun n'est plus une opération du compte
+ * mais un montant du mois du commun (outsideIncomes).
+ */
+const toVersion10 = (dataset: Dataset): Dataset => {
+  const isOutsideSalary = (transaction: Transaction) =>
+    transaction.type === 'revenu' &&
+    transaction.imputation?.kind === 'revenu' &&
+    transaction.imputation.outside === true;
+  const moved = dataset.transactions.filter(isOutsideSalary);
+  if (moved.length === 0) {
+    return dataset;
+  }
+  const byMonth = new Map<string, Record<string, number>>();
+  for (const transaction of moved) {
+    const month = transaction.date.slice(0, 7);
+    const incomes = byMonth.get(month) ?? {};
+    const memberId = transaction.imputation!.memberId;
+    incomes[memberId] = (incomes[memberId] ?? 0) + transaction.amount;
+    byMonth.set(month, incomes);
+  }
+  const existing = new Set(dataset.commonMonths.map((entry) => entry.month));
+  const commonMonths = [
+    ...dataset.commonMonths.map((entry) => {
+      const incomes = byMonth.get(entry.month);
+      return incomes ? { ...entry, outsideIncomes: { ...entry.outsideIncomes, ...incomes } } : entry;
+    }),
+    ...[...byMonth]
+      .filter(([month]) => !existing.has(month))
+      .map(([month, incomes]) => ({ month, envelope: null, savingsRates: null, outsideIncomes: incomes })),
+  ];
+  // Un mois sans revenu hors commun ne doit pas hériter de celui du mois précédent.
+  const members = [...new Set(moved.map((transaction) => transaction.imputation!.memberId))];
+  const months = [...byMonth.keys()].sort();
+  const filled = commonMonths.map((entry) =>
+    entry.month >= months[0]! && entry.month <= months[months.length - 1]!
+      ? {
+          ...entry,
+          outsideIncomes: Object.fromEntries(
+            members.map((memberId) => [memberId, entry.outsideIncomes?.[memberId] ?? 0]),
+          ),
+        }
+      : entry,
+  );
+  const removed = new Set(moved.map((transaction) => transaction.id));
+  return {
+    ...dataset,
+    commonMonths: filled,
+    transactions: dataset.transactions.filter((transaction) => !removed.has(transaction.id)),
+  };
+};
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -207,6 +259,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 7, apply: toVersion7 },
   { version: 8, apply: toVersion8 },
   { version: 9, apply: toVersion9 },
+  { version: 10, apply: toVersion10 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

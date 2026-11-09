@@ -186,10 +186,13 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
                   value: `charge:${member.id}`,
                   label: `Reçu pour ${memberLabel(dataset, member.id)} (remboursement à lui reverser)`,
                 })),
-                ...members.map((member) => ({
-                  value: `revenu:${member.id}`,
-                  label: `Revenu de ${memberLabel(dataset, member.id)}${member.salaryOnCommon ? '' : ' (versé sur son compte)'}`,
-                })),
+                // Le salaire versé hors du commun se saisit dans le mois du commun (Budget).
+                ...members
+                  .filter((member) => member.salaryOnCommon || form.imputation === `revenu:${member.id}`)
+                  .map((member) => ({
+                    value: `revenu:${member.id}`,
+                    label: `Revenu de ${memberLabel(dataset, member.id)}`,
+                  })),
               ]}
             />
           </Field>
