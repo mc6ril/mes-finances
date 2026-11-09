@@ -51,6 +51,10 @@ export const goalCurrentAmount = (
     ? linkedValueAt(goal.linkedAccountIds, accounts, context, today).value
     : goal.initialAmount;
 
+/** Total des apports prévus hors comptes : prévisionnel, jamais compté dans le montant constitué. */
+export const plannedContributionsOf = (goal: Goal): Cents =>
+  (goal.plannedContributions ?? []).reduce((total, line) => total + line.amount, 0);
+
 export type GoalTracking = {
   actual: Cents;
   planned: Cents;

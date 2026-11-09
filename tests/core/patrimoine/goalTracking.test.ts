@@ -152,3 +152,19 @@ describe('point de départ d’un objectif existant', () => {
     });
   });
 });
+
+describe('apports prévus hors comptes', () => {
+  it('sont totalisés à part, sans changer le montant constitué', async () => {
+    const { plannedContributionsOf } = await import('@/core/patrimoine/goalTracking');
+    const withPlanned = {
+      ...goal,
+      plannedContributions: [
+        { id: 'p1', label: 'Apport Cyril', amount: 500000 },
+        { id: 'p2', label: 'Apport famille', amount: 3000000 },
+      ],
+    };
+    expect(plannedContributionsOf(withPlanned)).toBe(3500000);
+    expect(plannedContributionsOf(goal)).toBe(0);
+    expect(goalTracking(withPlanned, [pea], context, '2026-07-02').actual).toBe(170000);
+  });
+});

@@ -12,7 +12,12 @@ import {
 } from 'recharts';
 import { patrimoineContext } from '@/core/budget/overview';
 import { GOAL_RATE_HYPOTHESES, goalProgress, projectionScenarios } from '@/core/patrimoine/goals';
-import { goalHistory, goalTracking, plannedAmountAt } from '@/core/patrimoine/goalTracking';
+import {
+  goalHistory,
+  goalTracking,
+  plannedAmountAt,
+  plannedContributionsOf,
+} from '@/core/patrimoine/goalTracking';
 import { addMonths, monthEnd, monthKeyOf, monthsBetween } from '@/core/shared/dates';
 import { capitalize, formatDateFr, formatEuros, monthLabel, monthShortLabel } from '@/core/shared/format';
 import type { Cents, Goal, MonthKey } from '@/core/shared/model';
@@ -71,6 +76,34 @@ const PlanGap = ({ gap, planned, goal }: GapProps) => (
   </div>
 );
 
+type PlannedProps = { goal: Goal; current: Cents; total: Cents };
+
+/** Apports attendus hors comptes : prévisionnels, affichés à part et jamais comptés comme constitués. */
+const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
+  const withPlanned = current + total;
+  const percentWith = Math.min(100, Math.round((withPlanned / goal.targetAmount) * 1000) / 10);
+  return (
+    <div className="mt-3 rounded-xl border border-dashed border-stone-200 px-3 py-2.5 dark:border-stone-700">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <Text variant="small">
+          Apports prévus hors comptes <span className="text-stone-400">· prévisionnel</span>
+        </Text>
+        <Text variant="small">
+          avec eux : <Amount cents={withPlanned} className="font-medium text-stone-900 dark:text-stone-50" />{' '}
+          · {String(percentWith).replace('.', ',')} %
+        </Text>
+      </div>
+      <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+        {(goal.plannedContributions ?? []).map((line) => (
+          <li key={line.id} className="text-xs text-stone-500 dark:text-stone-400">
+            {line.label} <Amount cents={line.amount} rounded className="text-stone-700 dark:text-stone-200" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 type GoalCardProps = { goal: Goal; onEdit: () => void; onDelete: () => void };
 
 const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
@@ -87,6 +120,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
     [goal, dataset.accounts, context, today],
   );
   const current = tracking.actual;
+  const plannedTotal = plannedContributionsOf(goal);
   const progress = goalProgress(goal, current, today);
   const month = monthKeyOf(today);
   const scenarios = useMemo(
@@ -155,6 +189,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
         className="mt-2 h-2.5"
         label={`Avancement ${goal.name}`}
       />
+      {plannedTotal > 0 && <PlannedContributions goal={goal} current={current} total={plannedTotal} />}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <PlanGap gap={tracking.gap} planned={tracking.planned} goal={goal} />

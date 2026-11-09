@@ -121,7 +121,11 @@ export type Goal = {
   /** Point de départ de la trajectoire prévue, figé à la création. */
   startDate: IsoDate;
   startAmount: Cents;
+  /** Apports attendus hors des comptes suivis (famille, primes…) : prévisionnels, montrés seulement dans l'objectif. */
+  plannedContributions?: PlannedContribution[];
 };
+
+export type PlannedContribution = { id: string; label: string; amount: Cents };
 
 export type AuditAction = 'creation' | 'modification' | 'suppression' | 'import' | 'restauration';
 

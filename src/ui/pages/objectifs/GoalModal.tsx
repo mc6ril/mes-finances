@@ -1,3 +1,4 @@
+import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { patrimoineContext } from '@/core/budget/overview';
 import { linkedValueAt } from '@/core/patrimoine/goalTracking';
@@ -23,6 +24,7 @@ type GoalForm = {
   linked: string[];
   startDate: string;
   startAmount: string;
+  planned: { id: string; label: string; amount: string }[];
 };
 
 const eurosInput = (cents: Cents): string => String(cents / 100).replace('.', ',');
@@ -43,6 +45,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
     linked: goal?.linkedAccountIds ?? [],
     startDate: goal?.startDate ?? today,
     startAmount: goal ? eurosInput(goal.startAmount) : '',
+    planned: (goal?.plannedContributions ?? []).map((line) => ({ ...line, amount: eurosInput(line.amount) })),
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -91,6 +94,14 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
       setError('La date de départ doit précéder la date cible.');
       return;
     }
+    const plannedContributions = form.planned
+      .filter((line) => line.label.trim() || line.amount.trim())
+      .map((line) => ({
+        id: line.id,
+        label: line.label.trim() || 'Apport',
+        amount: parseEuros(line.amount) ?? 0,
+      }))
+      .filter((line) => line.amount > 0);
     const saved: Draft<Goal> = {
       id: goal?.id,
       name: form.name.trim(),
@@ -101,6 +112,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
       linkedAccountIds: form.linked,
       startDate,
       startAmount,
+      plannedContributions,
     };
     if (await report(finance.saveGoal(saved), 'Objectif enregistré')) {
       onClose();
@@ -190,6 +202,68 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
             placeholder={suggested ?? (form.initial || '0')}
           />
         </Field>
+        <div className="border-t border-stone-200 pt-3 dark:border-stone-800 sm:col-span-2">
+          <Text variant="label">Apports prévus hors comptes</Text>
+          <Text variant="small" className="mt-0.5">
+            Prévisionnel (famille, primes…) : affiché seulement dans cet objectif, jamais compté comme
+            constitué.
+          </Text>
+          <ul className="mt-2 flex flex-col gap-2">
+            {form.planned.map((line, index) => (
+              <li key={line.id} className="flex items-center gap-2">
+                <Input
+                  value={line.label}
+                  onChange={(label) =>
+                    update({
+                      planned: form.planned.map((item, position) =>
+                        position === index ? { ...item, label } : item,
+                      ),
+                    })
+                  }
+                  placeholder="Apport des parents"
+                  label="Libellé de l’apport"
+                />
+                <div className="w-32 shrink-0">
+                  <Input
+                    value={line.amount}
+                    onChange={(amount) =>
+                      update({
+                        planned: form.planned.map((item, position) =>
+                          position === index ? { ...item, amount } : item,
+                        ),
+                      })
+                    }
+                    inputMode="decimal"
+                    placeholder="0"
+                    label="Montant de l’apport"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={X}
+                  label="Retirer cet apport"
+                  onClick={() =>
+                    update({ planned: form.planned.filter((_, position) => position !== index) })
+                  }
+                />
+              </li>
+            ))}
+          </ul>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={Plus}
+            className="mt-1"
+            onClick={() =>
+              update({
+                planned: [...form.planned, { id: `p-${Date.now().toString(36)}`, label: '', amount: '' }],
+              })
+            }
+          >
+            Ajouter un apport prévu
+          </Button>
+        </div>
         {error && <Text className="text-red-600 dark:text-red-400 sm:col-span-2">{error}</Text>}
       </div>
     </Modal>
