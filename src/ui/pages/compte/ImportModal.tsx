@@ -13,7 +13,7 @@ import {
   type ImportError,
 } from '@/core/comptes/csvImport';
 import { formatDateFr } from '@/core/shared/format';
-import type { Category } from '@/core/shared/model';
+import { categoryFromBankLabel } from '@/core/comptes/bankCategories';
 import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
@@ -33,14 +33,6 @@ const MAPPING_FIELDS: { key: keyof ColumnMapping; label: string; required: boole
   { key: 'credit', label: 'Crédit', required: false },
   { key: 'category', label: 'Catégorie (facultatif)', required: false },
 ];
-
-const categoryFromLabel = (label: string, categories: Category[]): string | null => {
-  const normalized = label.trim().toLowerCase();
-  if (!normalized) {
-    return null;
-  }
-  return categories.find((category) => category.name.toLowerCase() === normalized)?.id ?? null;
-};
 
 type ReviewRow = { draft: ImportDraft; include: boolean; duplicate: boolean; categoryId: string };
 
@@ -103,8 +95,8 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
         include: !duplicates.has(index),
         duplicate: duplicates.has(index),
         categoryId:
-          categoryFromLabel(draft.categoryLabel, dataset.categories) ??
           suggestCategory(draft.label, dataset.transactions) ??
+          categoryFromBankLabel(draft.categoryLabel, dataset.categories) ??
           '',
       })),
     );

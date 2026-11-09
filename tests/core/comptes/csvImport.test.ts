@@ -97,7 +97,7 @@ describe('findDuplicates', () => {
     expect(findDuplicates(drafts, existing)).toEqual([0]);
   });
 
-  it('signale les doublons internes au fichier', () => {
+  it('ne signale pas deux lignes identiques du même fichier', () => {
     const drafts = mapRows(
       [
         ['05/11/2026', 'Café', '-2,50'],
@@ -106,7 +106,7 @@ describe('findDuplicates', () => {
       { date: 0, label: 1, amount: 2, debit: null, credit: null, category: null },
       { accountId: 'courant', hasHeader: false },
     ).drafts;
-    expect(findDuplicates(drafts, [])).toEqual([1]);
+    expect(findDuplicates(drafts, [])).toEqual([]);
   });
 
   it('ne confond pas des comptes différents', () => {

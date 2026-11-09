@@ -177,15 +177,15 @@ const looksSame = (a: Comparable, b: Comparable): boolean =>
   Math.abs(daysBetween(a.date, b.date)) <= DUPLICATE_DAY_WINDOW &&
   normalizeLabel(a.label) === normalizeLabel(b.label);
 
+/**
+ * Lignes déjà présentes dans l'appli. Deux lignes identiques d'un même fichier ne sont
+ * pas des doublons : une banque n'exporte pas deux fois la même opération (deux cafés
+ * le même jour sont deux opérations).
+ */
 export const findDuplicates = (drafts: ImportDraft[], existing: Transaction[]): number[] =>
-  drafts.flatMap((draft, index) => {
-    const inExisting = existing.some((transaction) => looksSame(draft, transaction));
-    const inFile = drafts.slice(0, index).some((previous) => looksSame(draft, previous));
-    if (inExisting || inFile) {
-      return [index];
-    }
-    return [];
-  });
+  drafts.flatMap((draft, index) =>
+    existing.some((transaction) => looksSame(draft, transaction)) ? [index] : [],
+  );
 
 export const suggestCategory = (label: string, history: Transaction[]): string | null => {
   const key = normalizeLabel(label);
