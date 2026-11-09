@@ -197,3 +197,39 @@ describe('budget du commun', () => {
     expect(categoryActuals(transactions, [aCategory()], '2026-10').restaurants?.actual).toBe(2000);
   });
 });
+
+describe('remboursement reçu pour un membre et charge hors compte', () => {
+  it('un remboursement reçu sur le commun pour un membre lui est dû, sans être une entrée du commun', () => {
+    const data = dataset({
+      transactions: [
+        ...dataset().transactions,
+        aTransaction({
+          date: '2026-10-21',
+          amount: 5000,
+          type: 'revenu',
+          accountId: 'acc-courant',
+          categoryId: null,
+          label: 'Mutuelle',
+          imputation: { kind: 'charge', memberId: 'm1' },
+        }),
+      ],
+    });
+    expect(commonMonthSummary(data, '2026-10').inflows).toBe(7051);
+    const lines = memberSettlement(data, '2026-10', 'm1').lines;
+    expect(lines.at(-1)).toMatchObject({ kind: 'charge', amount: 5000, label: 'Mutuelle' });
+  });
+
+  it('une charge payée hors du compte réduit la part du membre sans toucher le solde', () => {
+    const outside = aTransaction({
+      date: '2026-10-25',
+      amount: -15400,
+      type: 'depense',
+      accountId: 'acc-courant',
+      imputation: { kind: 'charge', memberId: 'm1', outside: true },
+    });
+    const account = anAccount({ id: 'acc-courant', openingDate: '2026-10-01' });
+    expect(accountBalanceAt(account, [outside], '2026-10-31')).toBe(0);
+    const data = dataset({ transactions: [...dataset().transactions, outside] });
+    expect(memberSettlement(data, '2026-10', 'm1').due).toBe(68132 - 15400);
+  });
+});

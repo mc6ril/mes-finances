@@ -183,6 +183,10 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
               options={[
                 { value: '', label: 'Commun (intérêts, retrait d’épargne…)' },
                 ...members.map((member) => ({
+                  value: `charge:${member.id}`,
+                  label: `Reçu pour ${memberLabel(dataset, member.id)} (remboursement à lui reverser)`,
+                })),
+                ...members.map((member) => ({
                   value: `revenu:${member.id}`,
                   label: `Revenu de ${memberLabel(dataset, member.id)}${member.salaryOnCommon ? '' : ' (versé sur son compte)'}`,
                 })),

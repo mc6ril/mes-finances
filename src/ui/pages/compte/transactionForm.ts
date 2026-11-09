@@ -100,6 +100,9 @@ const imputationOf = (
   if (form.type === 'depense' && (kind === 'charge' || kind === 'avance')) {
     return { imputation: { kind, memberId } };
   }
+  if (form.type === 'revenu' && kind === 'charge') {
+    return { imputation: { kind, memberId } };
+  }
   if (form.type === 'revenu' && kind === 'revenu') {
     const member = members.find((candidate) => candidate.id === memberId);
     return { imputation: { kind, memberId, ...(member?.salaryOnCommon === false ? { outside: true } : {}) } };

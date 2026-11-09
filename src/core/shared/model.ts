@@ -35,9 +35,11 @@ export type TransactionStatus = 'prevu' | 'realise' | 'rapproche';
 
 /**
  * Espace commun : à qui se rattache l'opération. Absent = commun.
- * - charge : dépense payée par le commun, à la charge du membre ;
+ * - charge : opération du commun qui concerne le membre seul — dépense à sa charge (montant négatif)
+ *   ou somme reçue pour lui, comme un remboursement de mutuelle (montant positif) ;
  * - avance : dépense payée par le membre de sa poche, hors du compte ;
- * - revenu : revenu du membre ; `outside` quand il arrive sur son propre compte.
+ * - revenu : revenu du membre.
+ * `outside` : l'opération ne passe pas par le compte (revenu versé sur son compte, charge réglée ailleurs).
  */
 export type Imputation = { kind: 'charge' | 'avance' | 'revenu'; memberId: string; outside?: boolean };
 

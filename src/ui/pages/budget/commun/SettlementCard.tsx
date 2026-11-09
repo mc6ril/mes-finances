@@ -52,7 +52,12 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           <li key={line.transactionId ?? `${line.kind}-${index}`} className="flex justify-between gap-2">
             <span className="min-w-0 truncate text-stone-600 dark:text-stone-300">
               {line.label}
-              {KIND_HINT[line.kind] && <span className="text-stone-400"> · {KIND_HINT[line.kind]}</span>}
+              {KIND_HINT[line.kind] && (
+                <span className="text-stone-400">
+                  {' '}
+                  · {line.kind === 'charge' && line.amount > 0 ? 'reçu pour lui' : KIND_HINT[line.kind]}
+                </span>
+              )}
             </span>
             <Amount cents={line.amount} signed />
           </li>
