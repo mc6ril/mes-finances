@@ -44,6 +44,10 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
       ...form,
       memberId: keepsMember ? form.memberId : null,
       receivedFor: keepsMember && form.type === 'revenu' && form.receivedFor === true,
+      counterpartAccountId:
+        form.type === 'virement' || form.type === 'investissement'
+          ? (form.counterpartAccountId ?? null)
+          : null,
     };
     if (await report(finance.saveImportRule(rule), 'Règle enregistrée')) {
       onClose();
@@ -79,12 +83,35 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
           <Select
             value={form.type}
             onChange={(value) =>
-              update({ type: value as TransactionType, categoryId: null, memberId: null, receivedFor: false })
+              update({
+                type: value as TransactionType,
+                categoryId: null,
+                memberId: null,
+                receivedFor: false,
+                counterpartAccountId: null,
+              })
             }
             options={RULE_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }))}
           />
         </Field>
-        {form.type !== 'virement' && (
+        {(form.type === 'virement' || form.type === 'investissement') && (
+          <Field
+            label="Vers le compte"
+            hint="Livret, assurance-vie, courtier… Sans compte : virement vers l’extérieur (autre banque, une personne)."
+          >
+            <Select
+              value={form.counterpartAccountId ?? ''}
+              onChange={(value) => update({ counterpartAccountId: value || null })}
+              options={[
+                { value: '', label: 'Aucun (hors de l’appli)' },
+                ...dataset.accounts
+                  .filter((account) => !account.archived && account.id !== dataset.settings.mainAccountId)
+                  .map((account) => ({ value: account.id, label: account.name })),
+              ]}
+            />
+          </Field>
+        )}
+        {(form.type !== 'virement' || form.counterpartAccountId) && (
           <Field label="Catégorie">
             <Select
               value={form.categoryId ?? ''}
@@ -154,6 +181,8 @@ const ImportRulesCard = () => {
   const [editing, setEditing] = useState<RuleForm | null>(null);
   const rules = dataset.settings.importRules ?? [];
   const categoryName = (id: string | null) => dataset.categories.find((category) => category.id === id)?.name;
+  const accountName = (id: string | null | undefined) =>
+    dataset.accounts.find((account) => account.id === id)?.name;
   const memberName = (id: string | null) =>
     dataset.settings.household?.members.find((member) => member.id === id)?.name;
 
@@ -180,6 +209,9 @@ const ImportRulesCard = () => {
               </Text>
               <Badge tone="brand">{TYPE_LABELS[rule.type]}</Badge>
               {categoryName(rule.categoryId) && <Badge>{categoryName(rule.categoryId)}</Badge>}
+              {accountName(rule.counterpartAccountId) && (
+                <Badge>{`Vers ${accountName(rule.counterpartAccountId)}`}</Badge>
+              )}
               {memberName(rule.memberId) && (
                 <Badge>{`${rule.receivedFor ? 'Reçu pour' : rule.type === 'revenu' ? 'De' : 'Pour'} ${memberName(rule.memberId)}`}</Badge>
               )}

@@ -45,6 +45,7 @@ type ReviewRow = {
   categoryId: string;
   type: TransactionType;
   imputation?: Imputation;
+  counterpartAccountId: string | null;
   rule: string | null;
   cardTotal: boolean;
 };
@@ -124,6 +125,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
           type: rule?.type ?? draft.type,
           categoryId: rule ? (rule.categoryId ?? '') : guessed,
           ...(imputation ? { imputation } : {}),
+          counterpartAccountId: rule?.counterpartAccountId ?? null,
           rule: rule?.match ?? null,
         };
       }),
@@ -139,7 +141,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       label: row.draft.label,
       amount: row.draft.amount,
       accountId: row.draft.accountId,
-      counterpartAccountId: null,
+      counterpartAccountId: row.counterpartAccountId,
       categoryId: row.categoryId || null,
       type: row.type,
       status: row.draft.status,

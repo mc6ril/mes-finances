@@ -39,4 +39,4 @@ export const imputationFromRule = (rule: ImportRule, members: HouseholdMember[])
   return undefined;
 };
 
-export const RULE_TYPES: TransactionType[] = ['depense', 'revenu', 'virement'];
+export const RULE_TYPES: TransactionType[] = ['depense', 'revenu', 'virement', 'investissement'];

@@ -205,6 +205,8 @@ export type ImportRule = {
   memberId: string | null;
   /** Revenu : reçu pour le membre (remboursement que le commun lui doit), pas son revenu. */
   receivedFor?: boolean;
+  /** Virement ou investissement : compte de destination (livret, assurance-vie, courtier…). */
+  counterpartAccountId?: string | null;
 };
 
 export type Settings = {
