@@ -41,3 +41,14 @@ describe('applyShare', () => {
     expect(applyShare(1000, 33.33)).toBe(333);
   });
 });
+
+describe('parseEuros : formats de relevés bancaires', () => {
+  it('accepte le signe moins typographique, les guillemets et le signe en fin', () => {
+    expect(parseEuros('−4,20')).toBe(-420);
+    expect(parseEuros('–4,20')).toBe(-420);
+    expect(parseEuros('"-4,20"')).toBe(-420);
+    expect(parseEuros('4,20-')).toBe(-420);
+    expect(parseEuros('(4,20)')).toBe(-420);
+    expect(parseEuros('-4,20 EUR')).toBe(-420);
+  });
+});

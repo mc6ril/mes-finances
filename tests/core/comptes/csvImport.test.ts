@@ -200,3 +200,14 @@ describe('export CSV Boursorama', () => {
     });
   });
 });
+
+describe('colonnes en français', () => {
+  it('ne prend pas « Date de valeur » pour le montant', () => {
+    const header = ['Date opération', 'Date de valeur', 'Libellé', 'Catégorie', 'Montant', 'Solde'];
+    expect(guessMapping(header)).toMatchObject({ date: 0, label: 2, category: 3, amount: 4 });
+  });
+
+  it('préfère une colonne « Montant » exacte à une colonne qui en contient le mot', () => {
+    expect(guessMapping(['Date', 'Libellé', 'Montant en devise', 'Montant']).amount).toBe(3);
+  });
+});

@@ -3,11 +3,24 @@ import type { Cents } from './model';
 const DECIMAL_PATTERN = /^\d+(\.\d{1,2})?$/;
 const THOUSANDS_GROUPS = /^\d{1,3}(?:[.,]\d{3})+$/;
 
-const stripDecoration = (input: string): string => input.replace(/[\s  €]/g, '').replace(/^\+/, '');
+/** Retire espaces (y compris insécables), symbole et code devise, guillemets ; unifie les signes moins. */
+const stripDecoration = (input: string): string =>
+  input
+    .replace(/[\s\u00a0\u202f€"']/g, '')
+    .replace(/EUR$/i, '')
+    .replace(/[\u2212\u2013\u2014]/g, '-')
+    .replace(/^\+/, '');
 
+/** Signe négatif en tête (-4,20), en fin (4,20-) ou entre parenthèses ((4,20)). */
 const splitSign = (input: string): { negative: boolean; body: string } => {
   if (input.startsWith('-')) {
     return { negative: true, body: input.slice(1) };
+  }
+  if (input.endsWith('-')) {
+    return { negative: true, body: input.slice(0, -1) };
+  }
+  if (input.startsWith('(') && input.endsWith(')')) {
+    return { negative: true, body: input.slice(1, -1) };
   }
   return { negative: false, body: input };
 };

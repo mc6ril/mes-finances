@@ -47,23 +47,28 @@ export type ImportError = { line: number; code: Extract<AppErrorCode, 'invalid-d
 
 const simplify = (header: string): string => header.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
-const HEADER_PATTERNS: Record<keyof ColumnMapping, RegExp> = {
-  date: /^date/,
-  label: /libelle|description|intitule|wording|label|nature/,
-  amount: /^montant|amount|valeur$/,
-  debit: /debit/,
-  credit: /credit/,
-  category: /categ/,
+/** Motifs par colonne, du plus précis au plus large : le premier qui trouve une colonne libre l'emporte. */
+const HEADER_PATTERNS: Record<keyof ColumnMapping, RegExp[]> = {
+  date: [/^date ?(d.)?op/, /^date$/, /^date/],
+  label: [/^(libelle|label|intitule|description)$/, /libelle|description|intitule|wording|label|nature/],
+  amount: [/^(montant|amount)$/, /^montant|amount/],
+  debit: [/debit/],
+  credit: [/credit/],
+  category: [/^(categorie|category)$/, /categ/],
 };
 
 export const guessMapping = (headers: string[]): ColumnMapping => {
   const simplified = headers.map(simplify);
+  const used = new Set<number>();
   const find = (key: keyof ColumnMapping): number | null => {
-    const index = simplified.findIndex((header) => HEADER_PATTERNS[key].test(header));
-    if (index < 0) {
-      return null;
+    for (const pattern of HEADER_PATTERNS[key]) {
+      const index = simplified.findIndex((header, position) => !used.has(position) && pattern.test(header));
+      if (index >= 0) {
+        used.add(index);
+        return index;
+      }
     }
-    return index;
+    return null;
   };
   return {
     date: find('date'),
