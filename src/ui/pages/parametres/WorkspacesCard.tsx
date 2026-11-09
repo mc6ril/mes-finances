@@ -4,12 +4,12 @@ import { useFileUseCases, useFinanceState, useFinanceStore } from '@/hooks/useFi
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
 import { formatDateFr } from '@/core/shared/format';
-import type { Dataset } from '@/core/shared/model';
+import type { Dataset, WorkspaceKind } from '@/core/shared/model';
 import { DEFAULT_WORKSPACE, hasUnsentChanges, isShared, type Workspace } from '@/core/espaces/workspaces';
 import Badge from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
 import Card from '@/ui/design-system/Card';
-import { Input } from '@/ui/design-system/Field';
+import { Input, Select } from '@/ui/design-system/Field';
 import { ConfirmDialog } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 import { errorMessage } from '@/ui/errorMessages';
@@ -135,12 +135,14 @@ const WorkspacesCard = () => {
   const report = useReport();
   const { notify } = useToast();
   const [newName, setNewName] = useState('');
+  const [newKind, setNewKind] = useState<WorkspaceKind>('perso');
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [toDelete, setToDelete] = useState<Workspace | null>(null);
 
   const create = async () => {
-    if (await report(store.createWorkspace(newName), 'Espace créé')) {
+    if (await report(store.createWorkspace(newName, newKind), 'Espace créé')) {
       setNewName('');
+      setNewKind('perso');
     }
   };
 
@@ -182,6 +184,17 @@ const WorkspacesCard = () => {
             onChange={setNewName}
             placeholder="Nom du nouvel espace (ex. Commun)"
             label="Nom du nouvel espace"
+          />
+        </div>
+        <div className="w-full sm:w-44">
+          <Select
+            value={newKind}
+            onChange={(kind) => setNewKind(kind as WorkspaceKind)}
+            label="Type du nouvel espace"
+            options={[
+              { value: 'perso', label: 'Compte perso' },
+              { value: 'commun', label: 'Compte commun' },
+            ]}
           />
         </div>
         <Button icon={Plus} onClick={() => void create()} disabled={!newName.trim()}>

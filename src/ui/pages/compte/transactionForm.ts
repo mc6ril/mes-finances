@@ -2,6 +2,7 @@ import { parseEuros } from '@/core/shared/money';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import type {
   Category,
+  Imputation,
   CategoryGroup,
   Transaction,
   TransactionStatus,
@@ -21,6 +22,8 @@ export type TransactionFormState = {
   paymentMethod: string;
   status: TransactionStatus;
   comment: string;
+  /** Espace commun : '' (commun), 'charge:<membre>' ou 'avance:<membre>'. */
+  imputation: string;
 };
 
 export const GROUPS_BY_TYPE: Record<TransactionType, CategoryGroup[]> = {
@@ -50,6 +53,9 @@ export const formFromTransaction = (transaction: Transaction): TransactionFormSt
   paymentMethod: transaction.paymentMethod,
   status: transaction.status,
   comment: transaction.comment,
+  imputation: transaction.imputation
+    ? `${transaction.imputation.kind}:${transaction.imputation.memberId}`
+    : '',
 });
 
 export const initialForm = (
@@ -75,7 +81,17 @@ export const emptyForm = (date: string, accountId: string): TransactionFormState
   paymentMethod: 'Carte',
   status: 'realise',
   comment: '',
+  imputation: '',
 });
+
+/** La répartition « pour qui » ne concerne que les dépenses. */
+const imputationOf = (form: TransactionFormState): { imputation?: Imputation } => {
+  const [kind, memberId] = form.imputation.split(':');
+  if (form.type !== 'depense' || (kind !== 'charge' && kind !== 'avance') || !memberId) {
+    return {};
+  }
+  return { imputation: { kind, memberId } };
+};
 
 const signFor = (form: TransactionFormState): 1 | -1 => {
   if (form.type === 'revenu') {
@@ -127,6 +143,7 @@ export const validateForm = (
       status: form.status,
       comment: form.comment.trim(),
       recurringId: null,
+      ...imputationOf(form),
     },
   };
 };

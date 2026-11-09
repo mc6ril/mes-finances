@@ -1,3 +1,4 @@
+import { memberLabel, membersOf } from '@/core/commun/household';
 import { useState } from 'react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -57,6 +58,8 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
   const [errors, setErrors] = useState<FormErrors>({});
   const update = (patch: Partial<TransactionFormState>) => setForm((current) => ({ ...current, ...patch }));
   const accounts = dataset.accounts.filter((account) => !account.archived);
+  const isCommon = dataset.settings.kind === 'commun';
+  const members = membersOf(dataset);
   const accountOptions = accounts.map((account) => ({ value: account.id, label: account.name }));
   const categoryOptions = [
     { value: '', label: 'Sans catégorie' },
@@ -145,6 +148,28 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
               value={form.counterpartAccountId}
               onChange={(counterpartAccountId) => update({ counterpartAccountId })}
               options={[{ value: '', label: 'Choisir…' }, ...accountOptions]}
+            />
+          </Field>
+        )}
+        {isCommon && form.type === 'depense' && (
+          <Field
+            label="Pour qui"
+            hint="À la charge de : payé par le commun, déduit de sa part. Avancé par : payé de sa poche, remboursé."
+          >
+            <Select
+              value={form.imputation}
+              onChange={(imputation) => update({ imputation })}
+              options={[
+                { value: '', label: 'Commun' },
+                ...members.map((member) => ({
+                  value: `charge:${member.id}`,
+                  label: `À la charge de ${memberLabel(dataset, member.id)}`,
+                })),
+                ...members.map((member) => ({
+                  value: `avance:${member.id}`,
+                  label: `Avancé par ${memberLabel(dataset, member.id)}`,
+                })),
+              ]}
             />
           </Field>
         )}

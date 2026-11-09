@@ -1,4 +1,5 @@
 import { createBudgetUseCases } from './budgets';
+import { createCommonUseCases } from './commun';
 import { createEntityUseCases } from './entities';
 import { createNoteUseCases } from './notes';
 import { createSavingsUseCases } from './savings';
@@ -13,6 +14,7 @@ export const createFinanceUseCases = (deps: FinanceDeps) => ({
   ...createSavingsUseCases(deps),
   ...createWorkspaceUseCases(deps),
   ...createNoteUseCases(deps),
+  ...createCommonUseCases(deps),
 });
 
 export type FinanceUseCases = ReturnType<typeof createFinanceUseCases>;

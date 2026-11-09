@@ -119,3 +119,13 @@ describe('patrimoineSeries avec la date du jour', () => {
     ]);
   });
 });
+
+describe('orderCategories dans un espace commun', () => {
+  it('suit l’ordre de départ du compte commun', async () => {
+    const { COMMON_CATEGORIES } = await import('@/core/shared/seed');
+    const shuffled = [...COMMON_CATEGORIES].reverse();
+    expect(orderCategories(shuffled, 'commun').map((category) => category.id)).toEqual(
+      COMMON_CATEGORIES.map((category) => category.id),
+    );
+  });
+});

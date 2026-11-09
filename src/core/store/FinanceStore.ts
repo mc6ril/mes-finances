@@ -3,7 +3,7 @@ import { migrateDataset } from '@/core/sauvegarde/migrate';
 import { settleDuePlanned } from '@/core/budget/recurring';
 import { syncRecurring } from '@/core/budget/recurring';
 import { monthKeyOf, todayIso } from '@/core/shared/dates';
-import type { AuditEntry, CollectionName, Dataset, Settings } from '@/core/shared/model';
+import type { AuditEntry, CollectionName, Dataset, Settings, WorkspaceKind } from '@/core/shared/model';
 import { SCHEMA_VERSION } from '@/core/shared/model';
 import { orderCategories } from '@/core/budget/categoryOrder';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
@@ -83,7 +83,7 @@ export interface FinanceStoreInterface {
   updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>>;
   restore(dataset: Dataset, log: AuditLog): Promise<Result<void>>;
   switchWorkspace(workspaceId: string): Promise<Result<void>>;
-  createWorkspace(name: string): Promise<Result<void>>;
+  createWorkspace(name: string, kind?: WorkspaceKind): Promise<Result<void>>;
   importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>>;
   renameWorkspace(workspaceId: string, name: string): Result<void>;
   deleteWorkspace(workspaceId: string): Promise<Result<void>>;
@@ -99,7 +99,7 @@ const isAutomaticSettings = (patch: Partial<Settings>): boolean =>
   (Object.keys(patch) as (keyof Settings)[]).every((key) => AUTOMATIC_SETTINGS.includes(key));
 
 const keyOf = (collection: CollectionName, item: object): string => {
-  if (collection === 'budgets' || collection === 'monthNotes') {
+  if (collection === 'budgets' || collection === 'monthNotes' || collection === 'commonMonths') {
     return (item as { month: string }).month;
   }
   if (collection === 'yearBudgets') {
@@ -112,7 +112,13 @@ const withOrderedCategories = (patch: Partial<StoreState>): Partial<StoreState> 
   if (!patch.dataset) {
     return patch;
   }
-  return { ...patch, dataset: { ...patch.dataset, categories: orderCategories(patch.dataset.categories) } };
+  return {
+    ...patch,
+    dataset: {
+      ...patch.dataset,
+      categories: orderCategories(patch.dataset.categories, patch.dataset.settings.kind),
+    },
+  };
 };
 
 export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterface {
@@ -457,7 +463,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     return ok(undefined);
   }
 
-  async createWorkspace(name: string): Promise<Result<void>> {
+  async createWorkspace(name: string, kind: WorkspaceKind = 'perso'): Promise<Result<void>> {
     const workspace = newLocalWorkspace(name, this.#state.workspaces, this.#newId);
     if (!workspace.ok) {
       return workspace;
@@ -466,7 +472,15 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     if (!saved.ok) {
       return saved;
     }
-    return this.switchWorkspace(workspace.value.id);
+    const switched = await this.switchWorkspace(workspace.value.id);
+    if (!switched.ok || kind === 'perso') {
+      return switched;
+    }
+    return this.restore(createInitialDataset(todayIso(this.#now()), this.#newId, kind), {
+      action: 'creation',
+      entity: 'Espace',
+      summary: 'Espace commun',
+    });
   }
 
   async importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>> {

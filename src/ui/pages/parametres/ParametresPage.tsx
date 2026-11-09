@@ -38,6 +38,7 @@ import type {
   Dataset,
   ThemePreference,
   TrackingMode,
+  WorkspaceKind,
 } from '@/core/shared/model';
 import Badge from '@/ui/design-system/Badge';
 import { cx } from '@/ui/design-system/cx';
@@ -49,6 +50,8 @@ import MoneyInput from '@/ui/design-system/MoneyInput';
 import Segmented from '@/ui/design-system/Segmented';
 import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
+import HouseholdSettings from './HouseholdSettings';
+import { DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
 import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './FilePickerButton';
 import WorkspacesCard from './WorkspacesCard';
@@ -67,40 +70,75 @@ const ProfileCard = () => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const { settings } = dataset;
+  const changeKind = (kind: WorkspaceKind) =>
+    void report(
+      finance.updateSettings(
+        kind === 'commun'
+          ? { kind, household: settings.household ?? DEFAULT_HOUSEHOLD, mode: 'complet' }
+          : { kind },
+        kind === 'commun' ? 'Espace commun' : 'Espace perso',
+      ),
+    );
   return (
-    <Card title="Mode de suivi et budget de départ">
+    <Card title="Type d’espace et réglages">
       <div className="flex flex-col gap-5">
         <div className="flex flex-col gap-2">
-          <Segmented<TrackingMode>
-            value={settings.mode}
-            label="Mode de suivi"
-            onChange={(mode) => void report(finance.updateSettings({ mode }, `Mode de suivi : ${mode}`))}
+          <Segmented<WorkspaceKind>
+            value={settings.kind}
+            label="Type d’espace"
+            onChange={changeKind}
             options={[
-              { value: 'simple', label: 'Simplifié (enveloppe personnelle)' },
-              { value: 'complet', label: 'Complet' },
+              { value: 'perso', label: 'Compte perso' },
+              { value: 'commun', label: 'Compte commun' },
             ]}
           />
-          <Text variant="small">
-            {settings.mode === 'simple'
-              ? 'Seuls l’épargne personnelle et le budget plaisir sont suivis, à l’intérieur de ton enveloppe. Les charges communes et le projet immobilier sont considérés comme déjà déduits : ils ne sont ni affichés ni comptés, ce qui évite tout double comptage.'
-              : 'Revenus, charges fixes, épargne et plaisir sont suivis à partir de toutes les opérations du compte courant. L’enveloppe personnelle n’est plus utilisée dans les calculs.'}
-          </Text>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Enveloppe personnelle mensuelle">
-            <MoneyInput
-              key={`env-${settings.personalEnvelope}`}
-              cents={settings.personalEnvelope}
-              label="Enveloppe personnelle"
-              onCommit={(personalEnvelope) =>
-                void report(finance.updateSettings({ personalEnvelope }, 'Enveloppe personnelle modifiée'))
-              }
-            />
-          </Field>
-        </div>
+        {settings.kind === 'commun' && settings.household ? (
+          <HouseholdSettings household={settings.household} />
+        ) : (
+          <PersonalSettings />
+        )}
         <ThemePicker />
       </div>
     </Card>
+  );
+};
+
+const PersonalSettings = () => {
+  const { settings } = useDataset();
+  const finance = useFinanceUseCases();
+  const report = useReport();
+  return (
+    <>
+      <div className="flex flex-col gap-2">
+        <Segmented<TrackingMode>
+          value={settings.mode}
+          label="Mode de suivi"
+          onChange={(mode) => void report(finance.updateSettings({ mode }, `Mode de suivi : ${mode}`))}
+          options={[
+            { value: 'simple', label: 'Simplifié (enveloppe personnelle)' },
+            { value: 'complet', label: 'Complet' },
+          ]}
+        />
+        <Text variant="small">
+          {settings.mode === 'simple'
+            ? 'Seuls l’épargne personnelle et le budget plaisir sont suivis, à l’intérieur de ton enveloppe. Les charges communes et le projet immobilier sont considérés comme déjà déduits : ils ne sont ni affichés ni comptés, ce qui évite tout double comptage.'
+            : 'Revenus, charges fixes, épargne et plaisir sont suivis à partir de toutes les opérations du compte courant. L’enveloppe personnelle n’est plus utilisée dans les calculs.'}
+        </Text>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Enveloppe personnelle mensuelle">
+          <MoneyInput
+            key={`env-${settings.personalEnvelope}`}
+            cents={settings.personalEnvelope}
+            label="Enveloppe personnelle"
+            onCommit={(personalEnvelope) =>
+              void report(finance.updateSettings({ personalEnvelope }, 'Enveloppe personnelle modifiée'))
+            }
+          />
+        </Field>
+      </div>
+    </>
   );
 };
 

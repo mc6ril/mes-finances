@@ -64,6 +64,15 @@ describe('espaces de suivi', () => {
     expect(archived(store.getSnapshot().dataset?.categories ?? [], 'cat-divers')).toBe(true);
   });
 
+  it('crée un espace commun avec ses propres réglages', async () => {
+    const { store } = setup();
+    await store.start();
+    expect((await store.createWorkspace('Commun', 'commun')).ok).toBe(true);
+    expect(store.getSnapshot().dataset?.settings.kind).toBe('commun');
+    await store.switchWorkspace('perso');
+    expect(store.getSnapshot().dataset?.settings.kind).toBe('perso');
+  });
+
   it('importe un espace partagé modifiable, sans toucher à l’espace principal', async () => {
     const { store, registry } = setup();
     await store.start();

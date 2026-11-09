@@ -20,7 +20,9 @@ import ProgressBar, { type ProgressTone } from '@/ui/design-system/ProgressBar';
 import Text from '@/ui/design-system/Text';
 import { cx } from '@/ui/design-system/cx';
 import PageHeader from '@/ui/layout/PageHeader';
-import MonthNote from '@/ui/common/MonthNote';
+import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
+import CommonMonthCard from './commun/CommonMonthCard';
+import SettlementCard from './commun/SettlementCard';
 import AnnualBudgetCard from './AnnualBudgetCard';
 import RecurringModal from './RecurringModal';
 
@@ -397,11 +399,13 @@ const BudgetPage = () => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const [recurringOpen, setRecurringOpen] = useState(false);
+  const [noteMonth, setNoteMonth] = useState<MonthKey | null>(null);
   const lines = useMemo(() => linesFor(dataset, month), [dataset, month]);
   const budget = budgetOf(dataset, month);
   const origin = budgetOriginOf(dataset, month);
   const groups = visibleGroups(dataset);
   const isSimple = dataset.settings.mode === 'simple';
+  const isCommon = dataset.settings.kind === 'commun';
   const history = dataset.audit
     .filter((entry) => entry.entity === 'Budget')
     .sort((a, b) => b.at.localeCompare(a.at))
@@ -411,15 +415,23 @@ const BudgetPage = () => {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Budget"
-        description={`${capitalize(monthLabel(month))} · ${isSimple ? 'mode simplifié (enveloppe personnelle)' : 'mode complet'}`}
+        description={`${capitalize(monthLabel(month))} · ${isCommon ? 'compte commun' : isSimple ? 'mode simplifié (enveloppe personnelle)' : 'mode complet'}`}
         actions={
-          <Button icon={Repeat} onClick={() => setRecurringOpen(true)}>
-            Récurrences
-          </Button>
+          <>
+            <MonthNoteButton month={month} onClick={() => setNoteMonth(month)} />
+            <Button icon={Repeat} onClick={() => setRecurringOpen(true)}>
+              Récurrences
+            </Button>
+          </>
         }
       />
       <MonthTabs month={month} onSelect={setMonth} />
-      <MonthNote key={month} month={month} />
+      <MonthNote
+        key={`${month}-${noteMonth === month}`}
+        month={month}
+        editing={noteMonth === month}
+        onEditingChange={(editing) => setNoteMonth(editing ? month : null)}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Checkbox
           checked={budget?.carryOver ?? false}
@@ -429,13 +441,20 @@ const BudgetPage = () => {
         </Checkbox>
         <BudgetOrigin month={month} origin={origin} isDefined={budget !== null} />
       </div>
-      <Summary
-        lines={lines}
-        isSimple={isSimple}
-        envelope={dataset.settings.personalEnvelope}
-        provision={provisionPerMonth(yearBudgetOf(dataset, month.slice(0, 4)), dataset.categories)}
-        annualSpent={annualActualInMonth(dataset.transactions, dataset.categories, month)}
-      />
+      {isCommon ? (
+        <>
+          <CommonMonthCard month={month} />
+          <SettlementCard month={month} />
+        </>
+      ) : (
+        <Summary
+          lines={lines}
+          isSimple={isSimple}
+          envelope={dataset.settings.personalEnvelope}
+          provision={provisionPerMonth(yearBudgetOf(dataset, month.slice(0, 4)), dataset.categories)}
+          annualSpent={annualActualInMonth(dataset.transactions, dataset.categories, month)}
+        />
+      )}
       {groups.map((group) => (
         <GroupTable key={group} group={group} lines={lines} month={month} />
       ))}

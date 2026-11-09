@@ -250,3 +250,96 @@ describe('notes du mois', () => {
     expect(calls).toEqual([]);
   });
 });
+
+describe('compte commun', () => {
+  const household = {
+    members: [
+      { id: 'm1', name: 'Alex', salaryOnCommon: true },
+      { id: 'm2', name: 'Sam', salaryOnCommon: false },
+    ],
+    contributionRate: 0.75,
+  };
+  const commun = (): Dataset => {
+    const dataset = createInitialDataset('2026-11-01', () => 'audit', 'commun');
+    return { ...dataset, settings: { ...dataset.settings, household } };
+  };
+
+  it('enregistre le mois du commun', async () => {
+    const { useCases, calls } = setup(commun());
+    const entry = { month: '2026-10', incomes: [], envelope: 300000, inflows: [], savingsRates: null };
+    await useCases.saveCommonMonth(entry);
+    expect(calls).toEqual([
+      {
+        kind: 'upsert',
+        collection: 'commonMonths',
+        items: [entry],
+        log: { action: 'modification', entity: 'Mois du commun', summary: 'octobre 2026' },
+      },
+    ]);
+  });
+
+  it('enregistre un règlement versé par le commun : sortie du compte commun', async () => {
+    const { useCases, calls } = setup(commun());
+    await useCases.settle('2026-10', 'm1', 68132, '2026-10-31');
+    expect(calls).toEqual([
+      expect.objectContaining({
+        kind: 'upsert',
+        collection: 'transactions',
+        items: [
+          expect.objectContaining({
+            id: 'id-1',
+            amount: -68132,
+            type: 'virement',
+            accountId: commun().settings.mainAccountId,
+            counterpartAccountId: null,
+            categoryId: null,
+            date: '2026-10-31',
+            label: 'Règlement Alex · octobre 2026',
+          }),
+        ],
+      }),
+      {
+        kind: 'upsert',
+        collection: 'settlements',
+        items: [
+          {
+            id: 'id-2',
+            month: '2026-10',
+            memberId: 'm1',
+            amount: 68132,
+            date: '2026-10-31',
+            transactionId: 'id-1',
+          },
+        ],
+        log: {
+          action: 'creation',
+          entity: 'Règlement',
+          summary: expect.stringMatching(/^Alex · octobre 2026 : /),
+        },
+      },
+    ]);
+  });
+
+  it('un règlement versé au commun est une entrée', async () => {
+    const { useCases, calls } = setup(commun());
+    await useCases.settle('2026-10', 'm2', -195132, '2026-10-31');
+    expect(calls[0]).toMatchObject({ items: [{ amount: 195132, label: 'Règlement Sam · octobre 2026' }] });
+  });
+
+  it('annule un règlement et son opération', async () => {
+    const { useCases, calls } = setup(commun());
+    const settlement = {
+      id: 's1',
+      month: '2026-10',
+      memberId: 'm1',
+      amount: 100,
+      date: '2026-10-31',
+      transactionId: 't1',
+    };
+    await useCases.cancelSettlement(settlement);
+    expect(calls.map((call) => [call.kind, 'collection' in call ? call.collection : null])).toEqual([
+      ['remove', 'settlements'],
+      ['remove', 'transactions'],
+    ]);
+  });
+});

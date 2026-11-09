@@ -30,6 +30,9 @@ const contributionOf = (group: CategoryGroup, transaction: Transaction): Cents =
   return -transaction.amount;
 };
 
+/** Dépense payée par le commun mais à la charge d'un membre : hors budget du commun. */
+const isChargedToMember = (transaction: Transaction): boolean => transaction.imputation?.kind === 'charge';
+
 export const inMonth = (transactions: Transaction[], month: MonthKey): Transaction[] =>
   transactions.filter((transaction) => monthKeyOf(transaction.date) === month);
 
@@ -42,7 +45,7 @@ export const categoryActuals = (
   const result: Record<string, CategoryActual> = {};
   inMonth(transactions, month).forEach((transaction) => {
     const group = groups.get(transaction.categoryId ?? '');
-    if (!group || !transaction.categoryId) {
+    if (!group || !transaction.categoryId || isChargedToMember(transaction)) {
       return;
     }
     const contribution = contributionOf(group, transaction);
@@ -228,6 +231,7 @@ export const monthTotals = (
   const known = new Set(categories.map((category) => category.id));
   totals.nonCategorise = inMonth(transactions, month)
     .filter((transaction) => transaction.type === 'depense' && isCounted(transaction))
+    .filter((transaction) => !isChargedToMember(transaction))
     .filter((transaction) => !known.has(transaction.categoryId ?? ''))
     .reduce((total, transaction) => total - transaction.amount, 0);
   totals.depenses = totals.fixes + totals.plaisir + totals.nonCategorise;

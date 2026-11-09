@@ -7,6 +7,9 @@ export const isInternalMove = (transaction: Transaction): boolean =>
   transaction.type === 'virement' || transaction.type === 'investissement';
 
 export const signedEffectOn = (accountId: string, transaction: Transaction): Cents => {
+  if (transaction.imputation?.kind === 'avance') {
+    return 0;
+  }
   if (transaction.accountId === accountId) {
     return transaction.amount;
   }

@@ -1,5 +1,15 @@
 import { monthKeyOf, monthStart } from './dates';
-import type { Account, BudgetPeriod, Category, CategoryGroup, Dataset, IsoDate, Settings } from './model';
+import type {
+  Account,
+  BudgetPeriod,
+  Category,
+  CategoryGroup,
+  Dataset,
+  Household,
+  IsoDate,
+  Settings,
+  WorkspaceKind,
+} from './model';
 import { SCHEMA_VERSION } from './model';
 
 export const ANNUAL_CATEGORY_IDS = ['cat-voyages', 'cat-cadeaux', 'cat-exceptionnelles'];
@@ -153,6 +163,8 @@ export const initialAccounts = (openingDate: IsoDate): Account[] => [
 ];
 
 export const initialSettings: Settings = {
+  kind: 'perso',
+  household: null,
   mode: 'simple',
   personalEnvelope: 0,
   plaisirBudget: 0,
@@ -160,19 +172,88 @@ export const initialSettings: Settings = {
   mainAccountId: MAIN_ACCOUNT_ID,
 };
 
-export const createInitialDataset = (today: IsoDate, newId: () => string): Dataset => {
+export const DEFAULT_HOUSEHOLD: Household = {
+  members: [
+    { id: 'm1', name: '', salaryOnCommon: true },
+    { id: 'm2', name: '', salaryOnCommon: false },
+  ],
+  contributionRate: 0.7,
+};
+
+export const COMMON_CATEGORIES: Category[] = [
+  category('cat-salaire', 'Salaires', 'revenu'),
+  category('cat-autres-entrees', 'Autres entrées', 'revenu'),
+  category('cat-logement', 'Loyer et charges', 'fixe'),
+  category('cat-assurances', 'Assurances', 'fixe'),
+  category('cat-energie', 'Électricité et énergie', 'fixe'),
+  category('cat-internet', 'Internet et téléphone', 'fixe'),
+  GROCERIES_CATEGORY,
+  HEALTH_CATEGORY,
+  category('cat-transports', 'Transports', 'fixe'),
+  TAXES_CATEGORY,
+  category('cat-ep-vacances', 'Épargne vacances', 'epargne'),
+  category('cat-ep-projets', 'Épargne projets', 'epargne'),
+  category('cat-ep-immo', 'Épargne immobilière', 'epargne'),
+  category('cat-restaurants', 'Restaurants et sorties', 'plaisir'),
+  category('cat-loisirs', 'Loisirs et culture', 'plaisir'),
+  category('cat-maison', 'Maison et équipement', 'plaisir'),
+  category('cat-animaux', 'Animaux', 'plaisir'),
+  category('cat-cadeaux', 'Cadeaux', 'plaisir'),
+  category('cat-voyages', 'Vacances et week-ends', 'plaisir'),
+  category('cat-divers', 'Divers', 'plaisir'),
+];
+
+const savingsAccount = (id: string, name: string, color: string, openingDate: IsoDate): Account => ({
+  id,
+  name,
+  kind: 'livret',
+  group: 'securise',
+  openingBalance: 0,
+  openingDate,
+  isJoint: false,
+  personalSharePercent: null,
+  archived: false,
+  color,
+});
+
+const commonAccounts = (openingDate: IsoDate): Account[] => [
+  {
+    ...savingsAccount(MAIN_ACCOUNT_ID, 'Compte commun', '#1d5ff1', openingDate),
+    kind: 'courant',
+    group: 'courant',
+  },
+  savingsAccount('acc-ep-vacances', 'Épargne vacances', '#14b8a6', openingDate),
+  savingsAccount('acc-ep-projets', 'Épargne projets', '#8b5cf6', openingDate),
+  savingsAccount('acc-ep-immo', 'Épargne immobilière', '#ec4899', openingDate),
+];
+
+const commonSettings: Settings = {
+  ...initialSettings,
+  kind: 'commun',
+  household: DEFAULT_HOUSEHOLD,
+  mode: 'complet',
+};
+
+export const createInitialDataset = (
+  today: IsoDate,
+  newId: () => string,
+  kind: WorkspaceKind = 'perso',
+): Dataset => {
   const month = monthKeyOf(today);
+  const isCommon = kind === 'commun';
   return {
     schemaVersion: SCHEMA_VERSION,
-    settings: initialSettings,
-    accounts: initialAccounts(monthStart(month)),
-    categories: DEFAULT_CATEGORIES,
+    settings: isCommon ? commonSettings : initialSettings,
+    accounts: isCommon ? commonAccounts(monthStart(month)) : initialAccounts(monthStart(month)),
+    categories: isCommon ? COMMON_CATEGORIES : DEFAULT_CATEGORIES,
     transactions: [],
     savingsMovements: [],
     valuations: [],
     budgets: [{ month, planned: {}, carryOver: false }],
     yearBudgets: [{ year: month.slice(0, 4), planned: {} }],
     monthNotes: [],
+    commonMonths: [],
+    settlements: [],
     recurrings: [],
     goals: [],
     audit: [

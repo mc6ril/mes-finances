@@ -190,7 +190,7 @@ describe('migrateDataset v5 → v6', () => {
   it('ajoute une liste de notes vide', () => {
     const { monthNotes: _notes, ...current } = createInitialDataset('2026-11-05', ids);
     const migrated = migrateDataset({ ...current, schemaVersion: 5 } as never);
-    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.monthNotes).toEqual([]);
   });
 
@@ -198,5 +198,21 @@ describe('migrateDataset v5 → v6', () => {
     const { monthNotes: _notes, ...data } = createInitialDataset('2026-11-05', ids);
     const read = readBackup({ app: 'mes-finances', schemaVersion: 5, data });
     expect(read.ok && read.value.dataset.monthNotes).toEqual([]);
+  });
+});
+
+describe('migrateDataset v6 → v7', () => {
+  it('fait de chaque espace existant un espace perso, sans mois du commun', () => {
+    const {
+      commonMonths: _months,
+      settlements: _settlements,
+      ...current
+    } = createInitialDataset('2026-11-05', ids);
+    const { kind: _kind, household: _household, ...settings } = current.settings;
+    const migrated = migrateDataset({ ...current, settings, schemaVersion: 6 } as never);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.settings).toMatchObject({ kind: 'perso', household: null });
+    expect(migrated.commonMonths).toEqual([]);
+    expect(migrated.settlements).toEqual([]);
   });
 });

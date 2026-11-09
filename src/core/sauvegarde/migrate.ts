@@ -1,14 +1,30 @@
 import { goalStartFor } from '../patrimoine/goalTracking';
-import type { BudgetPeriod, Category, Dataset, Goal, MonthBudget, YearBudget } from '../shared/model';
+import type {
+  BudgetPeriod,
+  Category,
+  Dataset,
+  Goal,
+  MonthBudget,
+  Settings,
+  YearBudget,
+} from '../shared/model';
 import { SCHEMA_VERSION } from '../shared/model';
 import { ANNUAL_CATEGORY_IDS, GROCERIES_CATEGORY, HEALTH_CATEGORY, TAXES_CATEGORY } from '../shared/seed';
 
 type LegacyCategory = Omit<Category, 'period'> & { period?: BudgetPeriod };
 
-type LegacyDataset = Omit<Dataset, 'categories' | 'yearBudgets' | 'monthNotes'> & {
+type LegacySettings = Omit<Settings, 'kind' | 'household'> & Partial<Pick<Settings, 'kind' | 'household'>>;
+
+type LegacyDataset = Omit<
+  Dataset,
+  'categories' | 'yearBudgets' | 'monthNotes' | 'commonMonths' | 'settlements' | 'settings'
+> & {
+  settings: LegacySettings;
   categories: LegacyCategory[];
   yearBudgets?: YearBudget[];
   monthNotes?: Dataset['monthNotes'];
+  commonMonths?: Dataset['commonMonths'];
+  settlements?: Dataset['settlements'];
 };
 
 const withPeriod = (category: LegacyCategory): Category => {
@@ -66,6 +82,7 @@ const toVersion2 = (dataset: LegacyDataset): Dataset => {
     ...dataset,
     schemaVersion: 2,
     monthNotes: dataset.monthNotes ?? [],
+    ...v7Fields(dataset),
     categories,
     yearBudgets: existingOrDerived(dataset, annualIds),
     budgets: dataset.budgets.map((budget) => withoutAnnual(budget, annualIds)),
@@ -111,6 +128,19 @@ const toVersion5 = (dataset: Dataset): Dataset => {
   };
 };
 
+/** Champs ajoutés en v7 ; posés dès la v2 pour garder un Dataset complet à chaque étape. */
+const v7Fields = (dataset: LegacyDataset) => ({
+  settings: {
+    ...dataset.settings,
+    kind: dataset.settings.kind ?? 'perso',
+    household: dataset.settings.household ?? null,
+  },
+  commonMonths: dataset.commonMonths ?? [],
+  settlements: dataset.settlements ?? [],
+});
+
+const toVersion7 = (dataset: Dataset): Dataset => ({ ...dataset, ...v7Fields(dataset) });
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -118,6 +148,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 4, apply: toVersion4 },
   { version: 5, apply: toVersion5 },
   { version: 6, apply: toVersion6 },
+  { version: 7, apply: toVersion7 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

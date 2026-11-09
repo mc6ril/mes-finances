@@ -49,10 +49,16 @@ const ID_FIELD: Partial<Record<CollectionName, string>> = {
   budgets: 'month',
   yearBudgets: 'year',
   monthNotes: 'month',
+  commonMonths: 'month',
 };
 
 /** Collections apparues après coup : absentes des sauvegardes plus anciennes que cette version. */
-const ADDED_IN: Partial<Record<CollectionName, number>> = { yearBudgets: 2, monthNotes: 6 };
+const ADDED_IN: Partial<Record<CollectionName, number>> = {
+  yearBudgets: 2,
+  monthNotes: 6,
+  commonMonths: 7,
+  settlements: 7,
+};
 
 const invalidCollection = (data: Record<string, unknown>, schemaVersion: number): string | null => {
   const expected = [...COLLECTIONS, ...(Object.keys(ADDED_IN) as CollectionName[])];

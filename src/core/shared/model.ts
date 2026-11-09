@@ -33,6 +33,9 @@ export type Category = {
 export type TransactionType = 'revenu' | 'depense' | 'virement' | 'investissement';
 export type TransactionStatus = 'prevu' | 'realise' | 'rapproche';
 
+/** Dans un espace commun : opération à la charge d'un membre, ou avancée par lui. Absent = commun. */
+export type Imputation = { kind: 'charge' | 'avance'; memberId: string };
+
 export type Transaction = {
   id: string;
   date: IsoDate;
@@ -46,6 +49,7 @@ export type Transaction = {
   paymentMethod: string;
   comment: string;
   recurringId: string | null;
+  imputation?: Imputation;
   createdAt: string;
   updatedAt: string;
 };
@@ -125,9 +129,50 @@ export type AuditEntry = {
 };
 
 export type TrackingMode = 'simple' | 'complet';
+export type WorkspaceKind = 'perso' | 'commun';
+
+export type HouseholdMember = {
+  id: string;
+  name: string;
+  /** Le salaire arrive sur le compte commun (le solde lui est reversé en fin de mois). */
+  salaryOnCommon: boolean;
+};
+
+export type Household = {
+  members: HouseholdMember[];
+  /** Part des revenus versée au commun, entre 0 et 1. */
+  contributionRate: number;
+};
+
+export type IncomeLine = { id: string; memberId: string; label: string; amount: Cents };
+export type ExtraLine = { id: string; label: string; amount: Cents };
+export type SavingsRate = { accountId: string; rate: number };
+
+/** Mois du compte commun : revenus du couple, enveloppe, entrées ponctuelles, épargne en %. */
+export type CommonMonth = {
+  month: MonthKey;
+  incomes: IncomeLine[];
+  /** Enveloppe saisie à la main ; null = enveloppe proposée (arrondie). */
+  envelope: Cents | null;
+  inflows: ExtraLine[];
+  /** null = reprend les taux du mois précédent. */
+  savingsRates: SavingsRate[] | null;
+};
+
+/** Règlement de fin de mois effectué : positif = versé par le commun au membre. */
+export type Settlement = {
+  id: string;
+  month: MonthKey;
+  memberId: string;
+  amount: Cents;
+  date: IsoDate;
+  transactionId: string | null;
+};
 export type ThemePreference = 'system' | 'light' | 'dark';
 
 export type Settings = {
+  kind: WorkspaceKind;
+  household: Household | null;
   mode: TrackingMode;
   personalEnvelope: Cents;
   plaisirBudget: Cents;
@@ -146,6 +191,8 @@ export type Dataset = {
   budgets: MonthBudget[];
   yearBudgets: YearBudget[];
   monthNotes: MonthNote[];
+  commonMonths: CommonMonth[];
+  settlements: Settlement[];
   recurrings: Recurring[];
   goals: Goal[];
   audit: AuditEntry[];
@@ -153,4 +200,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;

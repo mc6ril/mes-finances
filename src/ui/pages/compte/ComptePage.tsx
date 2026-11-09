@@ -1,3 +1,4 @@
+import { memberLabel } from '@/core/commun/household';
 import {
   ArrowDownUp,
   CheckCheck,
@@ -40,7 +41,7 @@ import { Checkbox, Input, Select } from '@/ui/design-system/Field';
 import { ConfirmDialog } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
-import MonthNote from '@/ui/common/MonthNote';
+import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
 import ImportModal from './ImportModal';
 import TransactionModal from './TransactionModal';
 
@@ -563,6 +564,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                         {row.label}
                       </Text>
                       <TransferHint transaction={row} accountId={account.id} accountNames={accountNames} />
+                      <ImputationHint transaction={row} dataset={dataset} />
                     </td>
                     <td>
                       {categoryNames.get(row.categoryId ?? '') ?? (
@@ -644,6 +646,20 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
   );
 };
 
+type ImputationHintProps = { transaction: Transaction; dataset: Dataset };
+
+const ImputationHint = ({ transaction, dataset }: ImputationHintProps) => {
+  if (!transaction.imputation) {
+    return null;
+  }
+  const name = memberLabel(dataset, transaction.imputation.memberId);
+  return (
+    <Text variant="caption" className="text-amber-700 dark:text-amber-400">
+      {transaction.imputation.kind === 'charge' ? `à la charge de ${name}` : `avancé par ${name}`}
+    </Text>
+  );
+};
+
 type TransferHintProps = { transaction: Transaction; accountId: string; accountNames: Map<string, string> };
 
 const TransferHint = ({ transaction, accountId, accountNames }: TransferHintProps) => {
@@ -660,6 +676,7 @@ const ComptePage = () => {
   const dataset = useDataset();
   const { month } = usePeriod();
   const [accountId, setAccountId] = useState(dataset.settings.mainAccountId);
+  const [noteMonth, setNoteMonth] = useState<string | null>(null);
   const account = dataset.accounts.find((item) => item.id === accountId) ?? dataset.accounts[0];
   if (!account) {
     return (
@@ -672,18 +689,26 @@ const ComptePage = () => {
         title="Compte courant"
         description={`Opérations de ${monthLabel(month)} · suivi depuis le ${formatDateFr(account.openingDate)}`}
         actions={
-          <Select
-            value={account.id}
-            onChange={setAccountId}
-            label="Compte affiché"
-            className="w-56"
-            options={dataset.accounts
-              .filter((item) => !item.archived)
-              .map((item) => ({ value: item.id, label: item.name }))}
-          />
+          <>
+            <MonthNoteButton month={month} onClick={() => setNoteMonth(month)} />
+            <Select
+              value={account.id}
+              onChange={setAccountId}
+              label="Compte affiché"
+              className="w-56"
+              options={dataset.accounts
+                .filter((item) => !item.archived)
+                .map((item) => ({ value: item.id, label: item.name }))}
+            />
+          </>
         }
       />
-      <MonthNote key={month} month={month} />
+      <MonthNote
+        key={`${month}-${noteMonth === month}`}
+        month={month}
+        editing={noteMonth === month}
+        onEditingChange={(editing) => setNoteMonth(editing ? month : null)}
+      />
       <Ledger
         key={`${account.id}-${month}`}
         dataset={dataset}
