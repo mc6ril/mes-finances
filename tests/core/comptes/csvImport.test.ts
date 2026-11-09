@@ -154,3 +154,49 @@ describe('transactionsToCsv', () => {
     );
   });
 });
+
+describe('export CSV Boursorama', () => {
+  const header = [
+    'dateOp',
+    'dateVal',
+    'label',
+    'category',
+    'categoryParent',
+    'supplierFound',
+    'amount',
+    'comment',
+    'accountNum',
+    'accountLabel',
+    'accountbalance',
+  ];
+  const row = [
+    '2026-11-03',
+    '2026-11-03',
+    'CARTE 02/11/26 BOULANGERIE CB*1234',
+    'Alimentation',
+    'Vie quotidienne',
+    'boulangerie',
+    '-4,20',
+    '',
+    '00000000000',
+    'BOURSORAMA BANQUE',
+    '1 234,56',
+  ];
+
+  it('reconnaît les colonnes date, libellé, montant et catégorie', () => {
+    expect(guessMapping(header)).toMatchObject({ date: 0, label: 2, amount: 6, category: 3 });
+  });
+
+  it('importe l’opération avec son montant signé', () => {
+    const { drafts, errors } = mapRows([header, row], guessMapping(header), {
+      accountId: 'courant',
+      hasHeader: true,
+    });
+    expect(errors).toEqual([]);
+    expect(drafts[0]).toMatchObject({
+      date: '2026-11-03',
+      amount: -420,
+      label: 'CARTE 02/11/26 BOULANGERIE CB*1234',
+    });
+  });
+});
