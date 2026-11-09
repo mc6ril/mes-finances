@@ -3,6 +3,7 @@ import { categoryActuals, inMonth, monthTotals, type MonthTotals } from './budge
 import { monthKeyOf, monthsOfYear } from '../shared/dates';
 import { isMirrored } from '../comptes/mirror';
 import type {
+  Account,
   Category,
   CategoryGroup,
   Cents,
@@ -47,6 +48,8 @@ type YearSummaryInput = {
   plaisirBudgetByMonth: (month: MonthKey) => Cents;
   today?: IsoDate;
   movements?: SavingsMovement[];
+  /** Pour reconnaître les virements sans catégorie vers un compte d'épargne ou un placement. */
+  accounts?: Account[];
 };
 
 const GROUP_ORDER: CategoryGroup[] = ['revenu', 'fixe', 'epargne', 'plaisir'];
@@ -71,6 +74,44 @@ const buildPivot = (transactions: Transaction[], categories: Category[], months:
     .filter((row) => row.months.some((value) => value !== 0));
 };
 
+const savingsAccountIds = (accounts: Account[]): Set<string> =>
+  new Set(accounts.filter((account) => account.group !== 'courant').map((account) => account.id));
+
+/**
+ * Virements sans catégorie d'épargne d'un compte courant vers un compte d'épargne ou un placement
+ * (ceux catégorisés sont déjà comptés par leur catégorie), regroupés par compte de destination.
+ */
+const uncategorizedSavings = (
+  transactions: Transaction[],
+  categories: Category[],
+  accounts: Account[],
+  month: MonthKey,
+): Map<string, Cents> => {
+  const targets = savingsAccountIds(accounts);
+  const savingsCategories = new Set(
+    categories.filter((category) => category.group === 'epargne').map((category) => category.id),
+  );
+  const result = new Map<string, Cents>();
+  inMonth(transactions, month)
+    .filter(
+      (transaction) =>
+        isCounted(transaction) &&
+        (transaction.type === 'virement' || transaction.type === 'investissement') &&
+        transaction.counterpartAccountId !== null &&
+        targets.has(transaction.counterpartAccountId) &&
+        !targets.has(transaction.accountId) &&
+        !savingsCategories.has(transaction.categoryId ?? ''),
+    )
+    .forEach((transaction) => {
+      const target = transaction.counterpartAccountId!;
+      result.set(target, (result.get(target) ?? 0) - transaction.amount);
+    });
+  return result;
+};
+
+const sumOf = (values: Map<string, Cents>): Cents =>
+  [...values.values()].reduce((total, value) => total + value, 0);
+
 export const depositsInMonth = (
   movements: SavingsMovement[],
   transactions: Transaction[],
@@ -88,13 +129,16 @@ export const yearSummary = ({
   plaisirBudgetByMonth,
   today,
   movements = [],
+  accounts = [],
 }: YearSummaryInput): YearSummary => {
   const monthKeys = monthsOfYear(year);
-  const months = monthKeys.map((month) => {
+  const transfers = monthKeys.map((month) => uncategorizedSavings(transactions, categories, accounts, month));
+  const months = monthKeys.map((month, index) => {
     const totals = monthTotals(transactions, categories, month);
+    const saved = depositsInMonth(movements, transactions, month) + sumOf(transfers[index]!);
     return {
       month,
-      totals: { ...totals, epargne: totals.epargne + depositsInMonth(movements, transactions, month) },
+      totals: { ...totals, epargne: totals.epargne + saved },
       hasData: hasCountedTransactions(transactions, month),
     };
   });
@@ -111,7 +155,10 @@ export const yearSummary = ({
     { revenus: 0, depenses: 0, fixes: 0, plaisir: 0, plaisirMensuel: 0, epargne: 0 },
   );
   const comparable = completedMonths(filled, today);
-  const pivot = buildPivot(transactions, categories, monthKeys);
+  const pivot = [
+    ...buildPivot(transactions, categories, monthKeys),
+    ...transferRows(accounts, transfers),
+  ].sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group));
   const respected = filled.filter(
     (entry) => entry.totals.plaisirMensuel <= plaisirBudgetByMonth(entry.month),
   ).length;
@@ -130,6 +177,21 @@ export const yearSummary = ({
     plaisirBudgetRespected: { respected, measured: filled.length },
   };
 };
+
+/** Une ligne « Épargne » par compte de destination des virements non catégorisés. */
+const transferRows = (accounts: Account[], transfers: Map<string, Cents>[]): PivotRow[] =>
+  accounts
+    .filter((account) => transfers.some((month) => month.has(account.id)))
+    .map((account) => {
+      const values = transfers.map((month) => month.get(account.id) ?? 0);
+      return {
+        categoryId: `account:${account.id}`,
+        name: account.name,
+        group: 'epargne' as const,
+        months: values,
+        total: values.reduce((total, value) => total + value, 0),
+      };
+    });
 
 const completedMonths = (filled: MonthSummary[], today: IsoDate | undefined): MonthSummary[] => {
   if (!today) {

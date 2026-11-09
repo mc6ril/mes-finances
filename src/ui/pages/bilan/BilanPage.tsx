@@ -179,6 +179,7 @@ const BilanPage = () => {
         plaisirBudgetByMonth,
         today,
         movements: dataset.savingsMovements,
+        accounts: dataset.accounts,
       }),
     [dataset, year, plaisirBudgetByMonth, today],
   );

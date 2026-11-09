@@ -1,5 +1,5 @@
 import { yearSummary } from '@/core/budget/annual';
-import { aTransaction, plaisirCategories } from '../fixtures';
+import { anAccount, aTransaction, plaisirCategories } from '../fixtures';
 
 const salary = (month: string) =>
   aTransaction({ date: `${month}-28`, amount: 250000, type: 'revenu', categoryId: 'salaire' });
@@ -86,5 +86,50 @@ describe('yearSummary avec un mois en cours', () => {
   it('garde le mois en cours dans les totaux', () => {
     expect(summary.totals.plaisir).toBe(25500);
     expect(summary.monthsWithData).toBe(4);
+  });
+});
+
+describe('yearSummary : virements d’épargne sans catégorie', () => {
+  const accounts = [
+    anAccount({ id: 'courant' }),
+    anAccount({ id: 'livret', name: 'Épargne commune', kind: 'livret', group: 'securise' }),
+    anAccount({ id: 'bspce', name: 'BSPCE', kind: 'autre', group: 'investissement' }),
+  ];
+  const summary = yearSummary({
+    transactions: [
+      salary('2026-06'),
+      aTransaction({
+        date: '2026-06-30',
+        amount: -42000,
+        type: 'virement',
+        categoryId: null,
+        counterpartAccountId: 'livret',
+      }),
+      aTransaction({
+        date: '2026-06-30',
+        amount: -1173500,
+        type: 'investissement',
+        categoryId: null,
+        counterpartAccountId: 'bspce',
+      }),
+      av('2026-06'),
+    ],
+    categories: plaisirCategories,
+    year: 2026,
+    plaisirBudgetByMonth: () => 0,
+    accounts,
+  });
+
+  it('les compte dans l’épargne du mois, sans doubler ceux déjà catégorisés', () => {
+    expect(summary.months[5]?.totals.epargne).toBe(42000 + 1173500 + 10000);
+  });
+
+  it('les détaille par compte de destination dans le tableau annuel', () => {
+    const rows = summary.pivot.filter((row) => row.group === 'epargne');
+    expect(rows.map((row) => [row.name, row.total])).toEqual([
+      ['Assurance-vie', 10000],
+      ['Épargne commune', 42000],
+      ['BSPCE', 1173500],
+    ]);
   });
 });
