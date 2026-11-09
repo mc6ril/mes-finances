@@ -92,6 +92,52 @@ export const guessMapping = (headers: string[]): ColumnMapping => {
   };
 };
 
+/**
+ * Ligne d'en-tête du tableau : certaines banques (Crédit Agricole) placent quelques lignes
+ * d'informations avant. Première ligne où l'on reconnaît une date, un libellé et un montant.
+ */
+export const findHeaderRow = (rows: string[][]): number => {
+  const index = rows.slice(0, 40).findIndex((row) => {
+    const mapping = guessMapping(row);
+    return (
+      mapping.date !== null &&
+      mapping.label !== null &&
+      (mapping.amount !== null || mapping.debit !== null || mapping.credit !== null)
+    );
+  });
+  return Math.max(index, 0);
+};
+
+/**
+ * Libellé sur plusieurs lignes (Crédit Agricole : nature de l'opération, tiers, puis
+ * références de mandat) : on garde les deux premières lignes, espaces resserrés.
+ */
+export const cleanLabel = (label: string): string =>
+  label
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join(' · ');
+
+const DEFERRED_CARD_TOTAL = /^pr[ée]l[èe]vement carte\b|d[ée]penses carte\b/i;
+
+/**
+ * Carte à débit différé : le relevé contient le total mensuel (« Prélèvement carte ·
+ * DEPENSES CARTE … ») et, plus bas, le détail des achats. Quand le détail est présent
+ * (le tableau reprend avec un second en-tête), ces totaux feraient doublon.
+ */
+export const deferredCardTotals = (drafts: ImportDraft[], rows: string[][]): number[] => {
+  const headers = rows.filter((row) => {
+    const mapping = guessMapping(row);
+    return mapping.date !== null && mapping.label !== null;
+  });
+  if (headers.length < 2) {
+    return [];
+  }
+  return drafts.flatMap((draft, index) => (DEFERRED_CARD_TOTAL.test(draft.label) ? [index] : []));
+};
+
 const cell = (row: string[], index: number | null): string => {
   if (index === null) {
     return '';
@@ -144,11 +190,15 @@ export const mapRows = (
       return;
     }
     const date = parseFlexibleDate(cell(row, mapping.date));
+    const amount = amountFrom(row, mapping);
+    // Ni date ni montant : intertitre ou en-tête répété d'un relevé, pas une opération.
+    if (!date && amount === null) {
+      return;
+    }
     if (!date) {
       errors.push({ line, code: 'invalid-date' });
       return;
     }
-    const amount = amountFrom(row, mapping);
     if (amount === null) {
       errors.push({ line, code: 'invalid-amount' });
       return;
@@ -156,7 +206,7 @@ export const mapRows = (
     drafts.push({
       line,
       date,
-      label: cell(row, mapping.label) || 'Sans libellé',
+      label: cleanLabel(cell(row, mapping.label)) || 'Sans libellé',
       amount,
       accountId,
       type: typeFor(amount),

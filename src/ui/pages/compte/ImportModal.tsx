@@ -6,6 +6,8 @@ import { useReport } from '@/hooks/useReport';
 import {
   findDuplicates,
   guessMapping,
+  findHeaderRow,
+  deferredCardTotals,
   mapRows,
   suggestCategory,
   type ColumnMapping,
@@ -44,6 +46,7 @@ type ReviewRow = {
   type: TransactionType;
   imputation?: Imputation;
   rule: string | null;
+  cardTotal: boolean;
 };
 
 type ImportModalProps = { accountId: string; onClose: () => void };
@@ -85,8 +88,10 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       return;
     }
     setFileName(file.name);
-    setRows(parsed.value);
-    setMapping(guessMapping(parsed.value[0] ?? []));
+    // Les lignes d'informations au-dessus du tableau (Crédit Agricole) sont ignorées.
+    const table = parsed.value.slice(findHeaderRow(parsed.value));
+    setRows(table);
+    setMapping(guessMapping(table[0] ?? []));
     setStep('mapping');
   };
 
@@ -101,6 +106,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
   const prepareReview = () => {
     const { drafts, errors } = mapRows(rows, mapping, { accountId, hasHeader });
     const duplicates = new Set(findDuplicates(drafts, dataset.transactions));
+    const cardTotals = new Set(deferredCardTotals(drafts, rows));
     setLineErrors(errors);
     setReview(
       drafts.map((draft, index) => {
@@ -112,8 +118,9 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
         const imputation = rule ? imputationFromRule(rule, members) : undefined;
         return {
           draft,
-          include: !duplicates.has(index),
+          include: !duplicates.has(index) && !cardTotals.has(index),
           duplicate: duplicates.has(index),
+          cardTotal: cardTotals.has(index),
           type: rule?.type ?? draft.type,
           categoryId: rule ? (rule.categoryId ?? '') : guessed,
           ...(imputation ? { imputation } : {}),
@@ -258,6 +265,11 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
             <Badge tone="warning">
               {review.filter((row) => row.duplicate).length} doublon(s) potentiel(s), décoché(s)
             </Badge>
+            {review.some((row) => row.cardTotal) && (
+              <Badge tone="warning">
+                {review.filter((row) => row.cardTotal).length} total(aux) de carte décoché(s)
+              </Badge>
+            )}
             {lineErrors.length > 0 && (
               <Badge tone="critical">{lineErrors.length} ligne(s) illisible(s) ignorée(s)</Badge>
             )}
@@ -301,6 +313,9 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
                       <Text className="max-w-[260px] truncate">{row.draft.label}</Text>
                       {row.duplicate && <Badge tone="warning">Doublon potentiel</Badge>}
                       {row.rule && <Badge tone="brand">Règle « {row.rule} »</Badge>}
+                      {row.cardTotal && (
+                        <Badge tone="warning">Total carte : détail importé ligne à ligne</Badge>
+                      )}
                     </td>
                     <td>
                       <Select

@@ -1,5 +1,7 @@
 import {
+  deferredCardTotals,
   findDuplicates,
+  findHeaderRow,
   guessMapping,
   mapRows,
   suggestCategory,
@@ -253,5 +255,58 @@ describe('export CSV BoursoBank (en-têtes français)', () => {
     });
     expect(errors).toEqual([]);
     expect(drafts[0]).toMatchObject({ date: '2026-10-30', amount: -8046 });
+  });
+});
+
+describe('relevé Crédit Agricole', () => {
+  const rows = [
+    ['Téléchargement du 09/11/2026', ''],
+    ['M. TITULAIRE'],
+    ['Solde au 09/11/2026 247', '66 €'],
+    ['Liste des opérations du compte entre le 01/01/2026 et le 09/11/2026', ''],
+    ["Date d'opération", 'Libellé', 'Débit euros', 'Crédit euros', ''],
+    ['05/11/2026', 'Prélèvement\nORANGE SA-ORANGE - abonnement\n\nEPCB123\nFR18ZZZ002305', '7,99', '', ''],
+    ['30/10/2026', 'Prélèvement carte\nDEPENSES CARTE X0000 AU 20/10/26\n\n\n', '30,00', '', ''],
+    ['11/10/2026', 'Virement en votre faveur\nVIR INST de ALEX     MARTIN\n\n', '', '456,00', ''],
+    ['M. TITULAIRE - Titulaire', ''],
+    ['Encours débité le 30 octobre 2026', '-30.00 €'],
+    ['Date', 'Libellé', 'Débit euros', 'Crédit euros', ''],
+    ['19/09/2026', 'APPLE CORK ', '10,00', '', ''],
+    ['21/09/2026', 'CHOOSE 75009 PARIS ', '20,00', '', ''],
+  ];
+
+  it('trouve le tableau sous les lignes d’informations', () => {
+    expect(findHeaderRow(rows)).toBe(4);
+    expect(guessMapping(rows[4]!)).toEqual({
+      date: 0,
+      label: 1,
+      amount: null,
+      debit: 2,
+      credit: 3,
+      category: null,
+    });
+  });
+
+  it('lit le relevé et le détail de la carte, sans les intertitres', () => {
+    const table = rows.slice(findHeaderRow(rows));
+    const { drafts, errors } = mapRows(table, guessMapping(table[0]!), {
+      accountId: 'perso',
+      hasHeader: true,
+    });
+    expect(errors).toEqual([]);
+    expect(drafts.map((draft) => [draft.date, draft.label, draft.amount])).toEqual([
+      ['2026-11-05', 'Prélèvement · ORANGE SA-ORANGE - abonnement', -799],
+      ['2026-10-30', 'Prélèvement carte · DEPENSES CARTE X0000 AU 20/10/26', -3000],
+      ['2026-10-11', 'Virement en votre faveur · VIR INST de ALEX MARTIN', 45600],
+      ['2026-09-19', 'APPLE CORK', -1000],
+      ['2026-09-21', 'CHOOSE 75009 PARIS', -2000],
+    ]);
+    expect(deferredCardTotals(drafts, table)).toEqual([1]);
+  });
+
+  it('garde les totaux de carte quand le détail n’est pas dans le fichier', () => {
+    const table = rows.slice(4, 8);
+    const { drafts } = mapRows(table, guessMapping(table[0]!), { accountId: 'perso', hasHeader: true });
+    expect(deferredCardTotals(drafts, table)).toEqual([]);
   });
 });
