@@ -403,9 +403,10 @@ const BudgetPage = () => {
   const lines = useMemo(() => linesFor(dataset, month), [dataset, month]);
   const budget = budgetOf(dataset, month);
   const origin = budgetOriginOf(dataset, month);
-  const groups = visibleGroups(dataset);
   const isSimple = dataset.settings.mode === 'simple';
   const isCommon = dataset.settings.kind === 'commun';
+  // Dans le commun, les revenus figurent déjà dans le récapitulatif du mois.
+  const groups = visibleGroups(dataset).filter((group) => !isCommon || group !== 'revenu');
   const history = dataset.audit
     .filter((entry) => entry.entity === 'Budget')
     .sort((a, b) => b.at.localeCompare(a.at))
