@@ -13,9 +13,9 @@
     "format": "prettier --write"
   },
   "dependencies": {
-    "idb": "8.0.3",
+    "idb": "8.0.4",
     "lucide-react": "0.468.0",
-    "papaparse": "5.4.1",
+    "papaparse": "5.7.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-is": "18.3.1",
@@ -23,14 +23,14 @@
     "recharts": "3.10.1"
   },
   "devDependencies": {
-    "@types/papaparse": "5.3.15",
+    "@types/papaparse": "5.5.2",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "5.2.0",
-    "autoprefixer": "10.4.20",
-    "fake-indexeddb": "6.0.0",
+    "autoprefixer": "10.6.2",
+    "fake-indexeddb": "6.2.7",
     "postcss": "8.5.32",
-    "prettier": "3.4.2",
+    "prettier": "3.9.10",
     "tailwindcss": "3.4.16",
     "typescript": "5.6.3",
     "vite": "7.3.7",
