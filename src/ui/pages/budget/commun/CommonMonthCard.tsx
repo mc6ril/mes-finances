@@ -51,6 +51,46 @@ const RatePercent = ({ rate, onCommit, label }: RatePercentProps) => {
   );
 };
 
+type SavingsNameProps = { name: string; accountName?: string; onRename: (label: string) => void };
+
+/** Nom de l'enveloppe d'épargne, modifiable d'un clic ; le compte apparaît dessous s'il diffère. */
+const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
+  const [draft, setDraft] = useState<string | null>(null);
+  if (draft !== null) {
+    return (
+      <span className="min-w-0 flex-1">
+        <Input
+          value={draft}
+          onChange={setDraft}
+          autoFocus
+          label="Nom de l’épargne"
+          className="h-8 text-sm"
+          onBlur={() => {
+            if (draft.trim() !== name) {
+              onRename(draft.trim() === accountName ? '' : draft.trim());
+            }
+            setDraft(null);
+          }}
+          onKeyDown={(key) => key === 'Enter' && (document.activeElement as HTMLElement | null)?.blur()}
+        />
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={() => setDraft(name)}
+      title="Renommer"
+      className="min-w-0 flex-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-stone-100 dark:hover:bg-stone-800"
+    >
+      <span className="block text-sm text-stone-700 dark:text-stone-200">{name}</span>
+      {accountName && accountName !== name && (
+        <span className="block text-xs text-stone-400">sur {accountName}</span>
+      )}
+    </button>
+  );
+};
+
 type Tone = 'brand' | 'emerald' | 'stone';
 
 const TONES: Record<Tone, string> = {
@@ -206,7 +246,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               <ul className="flex flex-col">
                 {summary.savings.map((line, index) => {
                   const account = accountOf(line.accountId);
-                  const name = account?.name ?? 'Compte supprimé';
+                  const name = line.label?.trim() || account?.name || 'Compte supprimé';
                   return (
                     <li key={`${line.accountId}-${index}`} className="group flex items-center gap-3 py-1.5">
                       <span
@@ -214,9 +254,18 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                         style={{ background: account?.color ?? '#a8a29e' }}
                         aria-hidden
                       />
-                      <span className="min-w-0 flex-1 text-sm text-stone-700 dark:text-stone-200">
-                        {name}
-                      </span>
+                      <SavingsName
+                        key={`${month}-${index}-${name}`}
+                        name={name}
+                        accountName={account?.name}
+                        onRename={(label) =>
+                          saveRates(
+                            savingsRates.map((item, position) =>
+                              position === index ? { ...item, label: label || undefined } : item,
+                            ),
+                          )
+                        }
+                      />
                       <RatePercent
                         key={`${month}-${line.accountId}-${line.rate}`}
                         rate={line.rate}

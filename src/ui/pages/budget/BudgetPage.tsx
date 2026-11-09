@@ -406,8 +406,10 @@ const BudgetPage = () => {
   const origin = budgetOriginOf(dataset, month);
   const isSimple = dataset.settings.mode === 'simple';
   const isCommon = dataset.settings.kind === 'commun';
-  // Dans le commun, les revenus figurent déjà dans le récapitulatif du mois.
-  const groups = visibleGroups(dataset).filter((group) => !isCommon || group !== 'revenu');
+  // Dans le commun, revenus et épargne sont calculés dans le mois du commun : pas de budget à saisir.
+  const groups = visibleGroups(dataset).filter(
+    (group) => !isCommon || (group !== 'revenu' && group !== 'epargne'),
+  );
   const history = dataset.audit
     .filter((entry) => entry.entity === 'Budget')
     .sort((a, b) => b.at.localeCompare(a.at))

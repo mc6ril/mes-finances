@@ -149,7 +149,8 @@ export type Household = {
   contributionRate: number;
 };
 
-export type SavingsRate = { accountId: string; rate: number };
+/** Ligne d'épargne du mois ; `label` nomme l'enveloppe quand plusieurs lignes vont sur le même compte. */
+export type SavingsRate = { accountId: string; rate: number; label?: string };
 
 /** Mois du compte commun : enveloppe et épargne en % (les revenus viennent des opérations). */
 export type CommonMonth = {
