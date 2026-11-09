@@ -39,7 +39,12 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
   const update = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
 
   const save = async () => {
-    const rule: RuleForm = { ...form, memberId: memberLabel ? form.memberId : null };
+    const keepsMember = Boolean(memberLabel && form.memberId);
+    const rule: RuleForm = {
+      ...form,
+      memberId: keepsMember ? form.memberId : null,
+      receivedFor: keepsMember && form.type === 'revenu' && form.receivedFor === true,
+    };
     if (await report(finance.saveImportRule(rule), 'Règle enregistrée')) {
       onClose();
     }
@@ -73,7 +78,9 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
         <Field label="Type">
           <Select
             value={form.type}
-            onChange={(value) => update({ type: value as TransactionType, categoryId: null, memberId: null })}
+            onChange={(value) =>
+              update({ type: value as TransactionType, categoryId: null, memberId: null, receivedFor: false })
+            }
             options={RULE_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }))}
           />
         </Field>
@@ -92,13 +99,37 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
             />
           </Field>
         )}
-        {memberLabel && (
+        {memberLabel && form.type === 'revenu' && (
+          <Field label="Pour qui">
+            <Select
+              value={form.memberId ? `${form.receivedFor ? 'charge' : 'revenu'}:${form.memberId}` : ''}
+              onChange={(value) => {
+                const [kind, memberId] = value.split(':');
+                update({ memberId: memberId ?? null, receivedFor: kind === 'charge' });
+              }}
+              options={[
+                { value: '', label: 'Commun (intérêts, retrait d’épargne…)' },
+                ...members
+                  .filter((member) => member.salaryOnCommon || member.id === form.memberId)
+                  .map((member) => ({
+                    value: `revenu:${member.id}`,
+                    label: `Revenu de ${member.name || 'Sans prénom'}`,
+                  })),
+                ...members.map((member) => ({
+                  value: `charge:${member.id}`,
+                  label: `Reçu pour ${member.name || 'Sans prénom'} (remboursement à lui reverser)`,
+                })),
+              ]}
+            />
+          </Field>
+        )}
+        {memberLabel && form.type === 'depense' && (
           <Field label={memberLabel}>
             <Select
               value={form.memberId ?? ''}
               onChange={(value) => update({ memberId: value || null })}
               options={[
-                { value: '', label: form.type === 'revenu' ? 'Autre entrée (personne)' : 'Le commun' },
+                { value: '', label: 'Le commun' },
                 ...members.map((member) => ({ value: member.id, label: member.name || 'Sans prénom' })),
               ]}
             />
@@ -150,7 +181,7 @@ const ImportRulesCard = () => {
               <Badge tone="brand">{TYPE_LABELS[rule.type]}</Badge>
               {categoryName(rule.categoryId) && <Badge>{categoryName(rule.categoryId)}</Badge>}
               {memberName(rule.memberId) && (
-                <Badge>{`${rule.type === 'revenu' ? 'De' : 'Pour'} ${memberName(rule.memberId)}`}</Badge>
+                <Badge>{`${rule.receivedFor ? 'Reçu pour' : rule.type === 'revenu' ? 'De' : 'Pour'} ${memberName(rule.memberId)}`}</Badge>
               )}
               <Button
                 size="sm"

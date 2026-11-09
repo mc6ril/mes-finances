@@ -55,6 +55,13 @@ describe('imputationFromRule', () => {
     });
   });
 
+  it('rattache un revenu reçu pour un membre comme une somme que le commun lui doit', () => {
+    expect(imputationFromRule(rule({ type: 'revenu', memberId: 'm1', receivedFor: true }), members)).toEqual({
+      kind: 'charge',
+      memberId: 'm1',
+    });
+  });
+
   it('met une dépense à la charge du membre', () => {
     expect(imputationFromRule(rule({ type: 'depense', memberId: 'm1' }), members)).toEqual({
       kind: 'charge',

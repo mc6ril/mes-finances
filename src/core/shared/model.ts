@@ -190,7 +190,7 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 /**
  * Règle appliquée à l'import d'un relevé : si le libellé contient tous les mots de `match`,
  * l'opération prend ce type, cette catégorie et, dans un espace commun, ce membre
- * (« de qui » pour un revenu, « à la charge de » pour une dépense).
+ * (« de qui » ou « reçu pour » pour un revenu, « à la charge de » pour une dépense).
  */
 export type ImportRule = {
   id: string;
@@ -198,6 +198,8 @@ export type ImportRule = {
   type: TransactionType;
   categoryId: string | null;
   memberId: string | null;
+  /** Revenu : reçu pour le membre (remboursement que le commun lui doit), pas son revenu. */
+  receivedFor?: boolean;
 };
 
 export type Settings = {

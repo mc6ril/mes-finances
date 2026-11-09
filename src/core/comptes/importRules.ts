@@ -27,6 +27,9 @@ export const imputationFromRule = (rule: ImportRule, members: HouseholdMember[])
   if (!member) {
     return undefined;
   }
+  if (rule.type === 'revenu' && rule.receivedFor) {
+    return { kind: 'charge', memberId: member.id };
+  }
   if (rule.type === 'revenu') {
     return { kind: 'revenu', memberId: member.id, ...(member.salaryOnCommon ? {} : { outside: true }) };
   }
