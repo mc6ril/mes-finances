@@ -254,3 +254,47 @@ export const memberSettlement = (dataset: Dataset, month: MonthKey, memberId: st
   const settled = settledIn(dataset, month, memberId);
   return { lines, due, carriedOver, settled, toSettle: due + carriedOver - settled };
 };
+
+const normalizeWords = (text: string): string[] =>
+  text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word.length > 1);
+
+/**
+ * Virements du relevé pouvant régler le mois d'un membre : virements du compte commun
+ * sans contrepartie, pas encore rattachés, dans le sens attendu, datés du mois ou des deux
+ * suivants. Ceux dont le libellé contient le prénom du membre, puis les montants les plus
+ * proches, d'abord.
+ */
+export const settlementCandidates = (dataset: Dataset, month: MonthKey, memberId: string): Transaction[] => {
+  const { toSettle } = memberSettlement(dataset, month, memberId);
+  const linked = new Set(dataset.settlements.map((settlement) => settlement.transactionId));
+  const from = `${month}-01`;
+  const to = `${addMonths(month, 2)}-31`;
+  const name = normalizeWords(memberLabel(dataset, memberId));
+  const named = (transaction: Transaction) => {
+    const words = new Set(normalizeWords(transaction.label));
+    return name.length > 0 && name.every((word) => words.has(word));
+  };
+  const outgoing = toSettle > 0;
+  return dataset.transactions
+    .filter(
+      (transaction) =>
+        transaction.type === 'virement' &&
+        transaction.accountId === dataset.settings.mainAccountId &&
+        transaction.counterpartAccountId === null &&
+        !linked.has(transaction.id) &&
+        transaction.date >= from &&
+        transaction.date <= to &&
+        (outgoing ? transaction.amount < 0 : transaction.amount > 0),
+    )
+    .sort(
+      (a, b) =>
+        Number(named(b)) - Number(named(a)) ||
+        Math.abs(a.amount + toSettle) - Math.abs(b.amount + toSettle) ||
+        a.date.localeCompare(b.date),
+    );
+};

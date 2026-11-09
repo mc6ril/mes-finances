@@ -3,6 +3,7 @@ import {
   commonMonthSummary,
   contributionsFor,
   memberSettlement,
+  settlementCandidates,
   suggestedEnvelope,
 } from '@/core/commun/household';
 import type { CommonMonth, Dataset } from '@/core/shared/model';
@@ -251,5 +252,35 @@ describe('revenus versés hors du commun', () => {
       commonMonths: [{ ...october, outsideIncomes: { m1: 999900 } }],
     });
     expect(commonMonthSummary(data, '2026-10').incomes.m1).toBe(300000);
+  });
+});
+
+describe('settlementCandidates', () => {
+  const transfer = (id: string, date: string, amount: number, label: string) =>
+    aTransaction({ id, date, amount, accountId: 'acc-courant', type: 'virement', label });
+
+  it('propose les virements non rattachés, au nom du membre et au montant proche d’abord', () => {
+    const base = dataset();
+    const toSettle = memberSettlement(base, '2026-10', 'm1').toSettle;
+    expect(toSettle).toBeGreaterThan(0);
+    const data = dataset({
+      transactions: [
+        ...base.transactions,
+        transfer('far', '2026-11-05', -10000, 'VIR INST AUTRE'),
+        transfer('exact', '2026-11-12', -toSettle, 'VIR INST AUTRE'),
+        transfer('named', '2026-11-20', -5000, 'VIR INST ALEX DUPONT'),
+        transfer('wrong-way', '2026-11-12', toSettle, 'VIR INST ALEX'),
+        transfer('too-late', '2027-01-10', -toSettle, 'VIR INST ALEX'),
+        transfer('linked', '2026-11-12', -toSettle, 'VIR INST ALEX'),
+      ],
+      settlements: [
+        { id: 's', month: '2026-09', memberId: 'm1', amount: 1, date: '2026-10-01', transactionId: 'linked' },
+      ],
+    });
+    expect(settlementCandidates(data, '2026-10', 'm1').map((transaction) => transaction.id)).toEqual([
+      'named',
+      'exact',
+      'far',
+    ]);
   });
 });

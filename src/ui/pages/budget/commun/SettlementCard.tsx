@@ -1,16 +1,16 @@
 import { Check, Undo2 } from 'lucide-react';
 import { useState } from 'react';
-import { memberLabel, memberSettlement, membersOf } from '@/core/commun/household';
+import { memberLabel, memberSettlement, membersOf, settlementCandidates } from '@/core/commun/household';
 import { formatDateFr, formatEuros, monthLabel } from '@/core/shared/format';
 import type { HouseholdMember, MonthKey, Settlement } from '@/core/shared/model';
+import { Checkbox } from '@/ui/design-system/Field';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
 import Card from '@/ui/design-system/Card';
-import { ConfirmDialog } from '@/ui/design-system/Modal';
+import { ConfirmDialog, Modal } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 
 const KIND_HINT = {
@@ -20,13 +20,94 @@ const KIND_HINT = {
   avance: 'avancé',
 } as const;
 
+type LinkModalProps = { member: HouseholdMember; month: MonthKey; onClose: () => void };
+
+/** Choix des virements du relevé qui règlent le mois : le compte commun n'est pas modifié. */
+const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
+  const dataset = useDataset();
+  const finance = useFinanceUseCases();
+  const report = useReport();
+  const candidates = settlementCandidates(dataset, month, member.id);
+  const { toSettle } = memberSettlement(dataset, month, member.id);
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(candidates[0] && Math.abs(candidates[0].amount + toSettle) === 0 ? [candidates[0].id] : []),
+  );
+  const total = candidates
+    .filter((transaction) => selected.has(transaction.id))
+    .reduce((sum, transaction) => sum - transaction.amount, 0);
+  const toggle = (id: string, checked: boolean) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  const confirm = async () => {
+    if (await report(finance.linkSettlement(month, member.id, [...selected]), 'Règlement rattaché')) {
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      title={`Virement de ${memberLabel(dataset, member.id)} · ${monthLabel(month)}`}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Annuler</Button>
+          <Button variant="primary" disabled={selected.size === 0} onClick={() => void confirm()}>
+            Rattacher
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <Text variant="small">
+          Choisis le ou les virements du relevé qui règlent ce mois ({formatEuros(Math.abs(toSettle))}{' '}
+          attendus). Aucune opération n’est ajoutée : le relevé fait foi.
+        </Text>
+        {candidates.length === 0 ? (
+          <Text variant="small">
+            Aucun virement trouvé entre le début du mois et les deux mois suivants. Importe le relevé du
+            compte commun, puis reviens ici.
+          </Text>
+        ) : (
+          <ul className="flex flex-col divide-y divide-stone-100 dark:divide-stone-800">
+            {candidates.map((transaction) => (
+              <li key={transaction.id} className="flex items-center gap-3 py-2">
+                <Checkbox
+                  checked={selected.has(transaction.id)}
+                  label={`Rattacher ${transaction.label}`}
+                  onChange={(checked) => toggle(transaction.id, checked)}
+                />
+                <span className="w-24 shrink-0 text-sm text-stone-500">{formatDateFr(transaction.date)}</span>
+                <span className="min-w-0 flex-1 truncate text-sm">{transaction.label}</span>
+                <Amount cents={transaction.amount} signed />
+              </li>
+            ))}
+          </ul>
+        )}
+        {selected.size > 0 && (
+          <Text variant="small">
+            Sélection : {formatEuros(Math.abs(total))}
+            {total !== toSettle &&
+              ` · écart ${formatEuros(Math.abs(toSettle - total))}, reporté sur le mois suivant`}
+          </Text>
+        )}
+      </div>
+    </Modal>
+  );
+};
+
 type MemberBlockProps = { member: HouseholdMember; month: MonthKey };
 
 const MemberBlock = ({ member, month }: MemberBlockProps) => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
   const report = useReport();
-  const { today } = usePeriod();
   const [confirming, setConfirming] = useState(false);
   const [toCancel, setToCancel] = useState<Settlement | null>(null);
   const name = memberLabel(dataset, member.id);
@@ -100,22 +181,11 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           </Button>
         )}
       </div>
-      {confirming && (
-        <ConfirmDialog
-          title="Virement fait ?"
-          message={`${direction} : ${formatEuros(Math.abs(amount))} pour ${monthLabel(month)}. L’opération est ajoutée au compte commun à la date du jour.`}
-          confirmLabel="Confirmer"
-          onCancel={() => setConfirming(false)}
-          onConfirm={() => {
-            void report(finance.settle(month, member.id, amount, today), 'Règlement enregistré');
-            setConfirming(false);
-          }}
-        />
-      )}
+      {confirming && <LinkTransferModal member={member} month={month} onClose={() => setConfirming(false)} />}
       {toCancel && (
         <ConfirmDialog
           title="Annuler ce règlement ?"
-          message="Le règlement et son opération sur le compte commun seront supprimés."
+          message="Le virement reste sur le compte commun ; il n’est simplement plus rattaché à ce mois."
           confirmLabel="Annuler le règlement"
           onCancel={() => setToCancel(null)}
           onConfirm={() => {

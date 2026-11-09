@@ -1,8 +1,8 @@
 import { commonMonthOf, commonMonthSummary, memberLabel } from '../commun/household';
 import { monthEnd } from '../shared/dates';
-import type { Result } from '../shared/errors';
+import { ok, type Result } from '../shared/errors';
 import { formatEuros, monthLabel } from '../shared/format';
-import type { Cents, CommonMonth, IsoDate, MonthKey, Settlement, Transaction } from '../shared/model';
+import type { CommonMonth, MonthKey, Settlement, Transaction } from '../shared/model';
 import { loadedDataset, type FinanceDeps } from './shared';
 
 export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
@@ -14,14 +14,13 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     });
 
   /**
-   * Enregistre le virement de fin de mois et l'opération correspondante sur le compte commun.
-   * amount > 0 : le commun verse au membre ; amount < 0 : le membre verse au commun.
+   * Rattache au règlement du mois des virements déjà présents sur le compte commun
+   * (importés du relevé, qui fait foi) : aucune opération n'est créée.
    */
-  const settle = async (
+  const linkSettlement = async (
     month: MonthKey,
     memberId: string,
-    amount: Cents,
-    date: IsoDate,
+    transactionIds: string[],
   ): Promise<Result<void>> => {
     const loaded = loadedDataset(gateway);
     if (!loaded.ok) {
@@ -29,61 +28,39 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     }
     const dataset = loaded.value;
     const name = memberLabel(dataset, memberId);
-    const stamp = now().toISOString();
-    const transaction: Transaction = {
-      id: newId(),
-      date,
-      label: `Règlement ${name} · ${monthLabel(month)}`,
-      amount: -amount,
-      accountId: dataset.settings.mainAccountId,
-      counterpartAccountId: null,
-      categoryId: null,
-      type: 'virement',
-      status: 'realise',
-      paymentMethod: 'Virement',
-      comment: '',
-      recurringId: null,
-      createdAt: stamp,
-      updatedAt: stamp,
-    };
-    const saved = await gateway.upsert('transactions', [transaction], {
-      action: 'creation',
-      entity: 'Opération',
-      summary: transaction.label,
+    const settlements: Settlement[] = transactionIds.flatMap((id) => {
+      const transaction = dataset.transactions.find((candidate) => candidate.id === id);
+      return transaction
+        ? [
+            {
+              id: newId(),
+              month,
+              memberId,
+              amount: -transaction.amount,
+              date: transaction.date,
+              transactionId: id,
+            },
+          ]
+        : [];
     });
-    if (!saved.ok) {
-      return saved;
+    if (settlements.length === 0) {
+      return ok(undefined);
     }
-    const settlement: Settlement = {
-      id: newId(),
-      month,
-      memberId,
-      amount,
-      date,
-      transactionId: transaction.id,
-    };
-    return gateway.upsert('settlements', [settlement], {
+    const total = settlements.reduce((sum, settlement) => sum + settlement.amount, 0);
+    return gateway.upsert('settlements', settlements, {
       action: 'creation',
       entity: 'Règlement',
-      summary: `${name} · ${monthLabel(month)} : ${formatEuros(Math.abs(amount))}`,
+      summary: `${name} · ${monthLabel(month)} : ${formatEuros(Math.abs(total))}`,
     });
   };
 
-  const cancelSettlement = async (settlement: Settlement): Promise<Result<void>> => {
-    const removed = await gateway.remove('settlements', [settlement.id], {
+  /** Annule le rattachement : le virement reste sur le compte commun. */
+  const cancelSettlement = (settlement: Settlement): Promise<Result<void>> =>
+    gateway.remove('settlements', [settlement.id], {
       action: 'suppression',
       entity: 'Règlement',
       summary: monthLabel(settlement.month),
     });
-    if (!removed.ok || !settlement.transactionId) {
-      return removed;
-    }
-    return gateway.remove('transactions', [settlement.transactionId], {
-      action: 'suppression',
-      entity: 'Opération',
-      summary: `Règlement · ${monthLabel(settlement.month)}`,
-    });
-  };
 
   /** Vire l'épargne du mois : un virement du compte commun vers chaque compte d'épargne, en fin de mois. */
   const transferSavings = async (month: MonthKey): Promise<Result<void>> => {
@@ -145,5 +122,5 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     return saveCommonMonth({ ...entry, savingsTransfer: null });
   };
 
-  return { saveCommonMonth, settle, cancelSettlement, transferSavings, cancelSavingsTransfer };
+  return { saveCommonMonth, linkSettlement, cancelSettlement, transferSavings, cancelSavingsTransfer };
 };
