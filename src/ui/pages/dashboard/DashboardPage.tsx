@@ -46,6 +46,7 @@ import ChartTooltip from '@/ui/charts/ChartTooltip';
 import { axisProps, euroTick, sliceColor } from '@/ui/charts/axis';
 import Legend from '@/ui/charts/Legend';
 import PageHeader from '@/ui/layout/PageHeader';
+import CommonStats from './CommonStats';
 
 const savedInMonth = (dataset: Dataset, month: MonthKey, fromTransactions: Cents): Cents =>
   fromTransactions + depositsInMonth(dataset.savingsMovements, dataset.transactions, month);
@@ -87,6 +88,7 @@ const DashboardPage = () => {
   const { series, ink } = useChartTheme();
   const slices = useMemo(() => spendingSlices(dataset, month), [dataset, month]);
   const isSimple = dataset.settings.mode === 'simple';
+  const isCommon = dataset.settings.kind === 'commun';
   const saved = savedInMonth(dataset, month, overview.totals.epargne);
   const variable = overview.totals.plaisir + overview.totals.nonCategorise;
   const previousMonthEnd = monthEnd(addMonths(month, -1));
@@ -117,121 +119,128 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Tableau de bord" description={`Ta situation en ${monthLabel(month)}.`} />
+      <PageHeader
+        title="Tableau de bord"
+        description={`${isCommon ? 'Votre' : 'Ta'} situation en ${monthLabel(month)}${isCommon ? ' · compte commun' : ''}.`}
+      />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard
-          label="Solde du compte courant"
-          icon={Wallet}
-          value={<Amount cents={overview.balance} />}
-          hint={
-            <>
-              Fin de mois avec opérations prévues : <Amount cents={overview.projectedBalance} />
-            </>
-          }
-        />
-        {isSimple ? (
+      {isCommon ? (
+        <CommonStats dataset={dataset} month={month} overview={overview} />
+      ) : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCard
-            label="Enveloppe personnelle"
-            icon={Banknote}
-            value={<Amount cents={dataset.settings.personalEnvelope} rounded />}
-            hint="Après charges et projet immobilier"
-          />
-        ) : (
-          <StatCard
-            label="Revenus du mois"
-            icon={Banknote}
-            value={<Amount cents={overview.totals.revenus} />}
-            hint="Encaissés, hors virements entre tes comptes"
-          />
-        )}
-        {isSimple ? (
-          <StatCard
-            label="Charges fixes"
-            icon={Receipt}
-            value={
-              <Text variant="muted" as="span">
-                Hors suivi
-              </Text>
-            }
-            hint={`Déjà déduites des ${formatEurosRounded(dataset.settings.personalEnvelope)} (mode simplifié)`}
-          />
-        ) : (
-          <StatCard
-            label="Charges fixes"
-            icon={Receipt}
-            value={<Amount cents={overview.totals.fixes} />}
-            hint="Payées ce mois, impôts et santé inclus"
-          />
-        )}
-        <StatCard
-          label="Dépenses personnelles"
-          icon={ShoppingBag}
-          value={<Amount cents={variable} />}
-          hint={<PersonalSpendingHint totals={overview.totals} />}
-        />
-        <StatCard
-          label="Épargne du mois"
-          icon={PiggyBank}
-          value={<Amount cents={saved} />}
-          hint="Versés vers tes comptes d’épargne"
-          accent="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300"
-        />
-        <StatCard
-          label="Budget plaisir restant"
-          icon={PartyPopper}
-          value={<Amount cents={remainingPlaisir} colored={remainingPlaisir < 0} />}
-          hint={
-            <>
-              sur <Amount cents={overview.plaisirBudget} rounded /> de budget mensuel
-            </>
-          }
-          accent="text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-300"
-        />
-        <StatCard
-          label="Patrimoine financier"
-          icon={Landmark}
-          value={<Amount cents={overview.patrimoine.personalTotal} rounded />}
-          hint={
-            overview.patrimoine.joint.shareMissing
-              ? 'Hors épargne commune (quote-part à renseigner)'
-              : 'Avec ta part de l’épargne commune'
-          }
-          accent="text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-300"
-        />
-        {!hasPreviousMonth && (
-          <StatCard
-            label="Évolution du patrimoine"
-            icon={ArrowUpRight}
-            value={
-              <Text variant="muted" as="span">
-                —
-              </Text>
-            }
-            hint="Premier mois de suivi : la comparaison démarrera le mois prochain"
-            accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
-          />
-        )}
-        {hasPreviousMonth && (
-          <StatCard
-            label="Évolution du patrimoine"
-            icon={patrimoineDelta >= 0 ? ArrowUpRight : ArrowDownRight}
-            value={<Amount cents={patrimoineDelta} signed colored rounded />}
+            label="Solde du compte courant"
+            icon={Wallet}
+            value={<Amount cents={overview.balance} />}
             hint={
               <>
-                versements nets <Amount cents={contributionsDelta} signed rounded /> · performance{' '}
-                <Amount cents={patrimoineDelta - contributionsDelta} signed rounded />
+                Fin de mois avec opérations prévues : <Amount cents={overview.projectedBalance} />
               </>
             }
-            accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
           />
-        )}
-      </div>
+          {isSimple ? (
+            <StatCard
+              label="Enveloppe personnelle"
+              icon={Banknote}
+              value={<Amount cents={dataset.settings.personalEnvelope} rounded />}
+              hint="Après charges et projet immobilier"
+            />
+          ) : (
+            <StatCard
+              label="Revenus du mois"
+              icon={Banknote}
+              value={<Amount cents={overview.totals.revenus} />}
+              hint="Encaissés, hors virements entre tes comptes"
+            />
+          )}
+          {isSimple ? (
+            <StatCard
+              label="Charges fixes"
+              icon={Receipt}
+              value={
+                <Text variant="muted" as="span">
+                  Hors suivi
+                </Text>
+              }
+              hint={`Déjà déduites des ${formatEurosRounded(dataset.settings.personalEnvelope)} (mode simplifié)`}
+            />
+          ) : (
+            <StatCard
+              label="Charges fixes"
+              icon={Receipt}
+              value={<Amount cents={overview.totals.fixes} />}
+              hint="Payées ce mois, impôts et santé inclus"
+            />
+          )}
+          <StatCard
+            label="Dépenses personnelles"
+            icon={ShoppingBag}
+            value={<Amount cents={variable} />}
+            hint={<PersonalSpendingHint totals={overview.totals} />}
+          />
+          <StatCard
+            label="Épargne du mois"
+            icon={PiggyBank}
+            value={<Amount cents={saved} />}
+            hint="Versés vers tes comptes d’épargne"
+            accent="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+          />
+          <StatCard
+            label="Budget plaisir restant"
+            icon={PartyPopper}
+            value={<Amount cents={remainingPlaisir} colored={remainingPlaisir < 0} />}
+            hint={
+              <>
+                sur <Amount cents={overview.plaisirBudget} rounded /> de budget mensuel
+              </>
+            }
+            accent="text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-300"
+          />
+          <StatCard
+            label="Patrimoine financier"
+            icon={Landmark}
+            value={<Amount cents={overview.patrimoine.personalTotal} rounded />}
+            hint={
+              overview.patrimoine.joint.shareMissing
+                ? 'Hors épargne commune (quote-part à renseigner)'
+                : 'Avec ta part de l’épargne commune'
+            }
+            accent="text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-300"
+          />
+          {!hasPreviousMonth && (
+            <StatCard
+              label="Évolution du patrimoine"
+              icon={ArrowUpRight}
+              value={
+                <Text variant="muted" as="span">
+                  —
+                </Text>
+              }
+              hint="Premier mois de suivi : la comparaison démarrera le mois prochain"
+              accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
+            />
+          )}
+          {hasPreviousMonth && (
+            <StatCard
+              label="Évolution du patrimoine"
+              icon={patrimoineDelta >= 0 ? ArrowUpRight : ArrowDownRight}
+              value={<Amount cents={patrimoineDelta} signed colored rounded />}
+              hint={
+                <>
+                  versements nets <Amount cents={contributionsDelta} signed rounded /> · performance{' '}
+                  <Amount cents={patrimoineDelta - contributionsDelta} signed rounded />
+                </>
+              }
+              accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
+            />
+          )}
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card
           title="Évolution du solde"
-          subtitle="Compte courant, trois derniers mois"
+          subtitle={`${isCommon ? 'Compte commun' : 'Compte courant'}, trois derniers mois`}
           className="lg:col-span-3"
         >
           {hasTransactions ? (

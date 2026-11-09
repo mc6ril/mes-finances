@@ -125,3 +125,5 @@ export const spendingSlices = (dataset: Dataset, month: MonthKey): SpendingSlice
   }
   return head;
 };
+
+export type MonthOverview = ReturnType<typeof monthOverview>;

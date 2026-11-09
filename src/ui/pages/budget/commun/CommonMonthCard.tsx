@@ -1,4 +1,4 @@
-import { PiggyBank, ReceiptText, RotateCcw, Wallet, X, type LucideIcon } from 'lucide-react';
+import { Check, PiggyBank, ReceiptText, RotateCcw, Wallet, X, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import {
   commonMonthOf,
@@ -7,7 +7,7 @@ import {
   memberLabel,
   membersOf,
 } from '@/core/commun/household';
-import { formatEuros } from '@/core/shared/format';
+import { formatDateFr, formatEuros } from '@/core/shared/format';
 import type { Cents, CommonMonth, MonthKey, SavingsRate } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -314,6 +314,47 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                 <p className="mt-2 text-xs text-stone-400">
                   Taux repris du mois précédent. Une modification ne vaut qu’à partir de ce mois.
                 </p>
+              )}
+              {summary.savingsTotal > 0 && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50/60 px-3 py-2.5 dark:bg-emerald-500/5">
+                  {entry.savingsTransfer ? (
+                    <>
+                      <span className="flex items-center gap-2 text-sm text-emerald-800 dark:text-emerald-200">
+                        <Check className="h-4 w-4" aria-hidden />
+                        Épargne virée le {formatDateFr(entry.savingsTransfer.date)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void report(finance.cancelSavingsTransfer(month), 'Virement d’épargne annulé')
+                        }
+                        className="text-xs text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline dark:hover:text-stone-200"
+                      >
+                        Annuler
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm text-stone-600 dark:text-stone-300">
+                        À virer en fin de mois :{' '}
+                        <Amount cents={summary.savingsTotal} className="font-medium" />
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void report(
+                            finance.transferSavings(month),
+                            'Virement d’épargne ajouté au compte commun',
+                          )
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-sm ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50 dark:bg-stone-900 dark:text-emerald-300 dark:ring-emerald-500/30"
+                      >
+                        <Check className="h-3.5 w-3.5" aria-hidden />
+                        Virement fait
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </Indented>
           </div>

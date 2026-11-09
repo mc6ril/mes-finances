@@ -159,6 +159,8 @@ export type CommonMonth = {
   envelope: Cents | null;
   /** null = reprend les taux du mois précédent. */
   savingsRates: SavingsRate[] | null;
+  /** Virements d'épargne du mois, une fois faits (opérations créées sur le compte commun). */
+  savingsTransfer?: { date: IsoDate; transactionIds: string[] } | null;
 };
 
 /** Règlement de fin de mois effectué : positif = versé par le commun au membre. */

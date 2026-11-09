@@ -343,3 +343,78 @@ describe('compte commun', () => {
     ]);
   });
 });
+
+describe('virement de l’épargne du commun', () => {
+  const household = {
+    members: [
+      { id: 'm1', name: 'Alex', salaryOnCommon: true },
+      { id: 'm2', name: 'Sam', salaryOnCommon: false },
+    ],
+    contributionRate: 0.75,
+  };
+  const commun = (): Dataset => {
+    const dataset = createInitialDataset('2026-10-01', () => 'audit', 'commun');
+    return {
+      ...dataset,
+      settings: { ...dataset.settings, household },
+      commonMonths: [
+        {
+          month: '2026-10',
+          envelope: 400000,
+          savingsRates: [
+            { accountId: 'acc-ep-immo', rate: 0.2, label: 'Épargne immobilière' },
+            { accountId: 'acc-ep-vacances', rate: 0.1 },
+          ],
+        },
+      ],
+    };
+  };
+
+  it('crée un virement par ligne d’épargne en fin de mois et le note dans le mois', async () => {
+    const { useCases, calls } = setup(commun());
+    await useCases.transferSavings('2026-10');
+    expect(calls[0]).toMatchObject({
+      kind: 'upsert',
+      collection: 'transactions',
+      items: [
+        {
+          id: 'id-1',
+          date: '2026-10-31',
+          type: 'virement',
+          amount: -80000,
+          counterpartAccountId: 'acc-ep-immo',
+          label: 'Épargne immobilière',
+        },
+        {
+          id: 'id-2',
+          date: '2026-10-31',
+          type: 'virement',
+          amount: -40000,
+          counterpartAccountId: 'acc-ep-vacances',
+          label: 'Épargne vacances',
+        },
+      ],
+    });
+    expect(calls[1]).toMatchObject({
+      kind: 'upsert',
+      collection: 'commonMonths',
+      items: [
+        { month: '2026-10', savingsTransfer: { date: '2026-10-31', transactionIds: ['id-1', 'id-2'] } },
+      ],
+    });
+  });
+
+  it('annule le virement de l’épargne', async () => {
+    const dataset = commun();
+    dataset.commonMonths[0] = {
+      ...dataset.commonMonths[0]!,
+      savingsTransfer: { date: '2026-10-31', transactionIds: ['t1', 't2'] },
+    };
+    const { useCases, calls } = setup(dataset);
+    await useCases.cancelSavingsTransfer('2026-10');
+    expect(calls).toMatchObject([
+      { kind: 'remove', collection: 'transactions', keys: ['t1', 't2'] },
+      { kind: 'upsert', collection: 'commonMonths', items: [{ month: '2026-10', savingsTransfer: null }] },
+    ]);
+  });
+});
