@@ -44,13 +44,14 @@ import Badge from '@/ui/design-system/Badge';
 import { cx } from '@/ui/design-system/cx';
 import Button from '@/ui/design-system/Button';
 import Card from '@/ui/design-system/Card';
-import { Field, Input, Select } from '@/ui/design-system/Field';
+import { Input, Select } from '@/ui/design-system/Field';
 import { ConfirmDialog } from '@/ui/design-system/Modal';
 import MoneyInput from '@/ui/design-system/MoneyInput';
 import Segmented from '@/ui/design-system/Segmented';
 import Text from '@/ui/design-system/Text';
 import PageHeader from '@/ui/layout/PageHeader';
 import HouseholdSettings from './HouseholdSettings';
+import PreferenceRow from './SettingRow';
 import { DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
 import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './FilePickerButton';
@@ -81,8 +82,8 @@ const ProfileCard = () => {
     );
   return (
     <Card title="Type d’espace et réglages">
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-2">
+      <div className="divide-y divide-stone-100 dark:divide-stone-800">
+        <PreferenceRow label="Type d’espace" hint="Un compte commun se partage entre deux personnes.">
           <Segmented<WorkspaceKind>
             value={settings.kind}
             label="Type d’espace"
@@ -92,7 +93,7 @@ const ProfileCard = () => {
               { value: 'commun', label: 'Compte commun' },
             ]}
           />
-        </div>
+        </PreferenceRow>
         {settings.kind === 'commun' && settings.household ? (
           <HouseholdSettings household={settings.household} />
         ) : (
@@ -110,34 +111,40 @@ const PersonalSettings = () => {
   const report = useReport();
   return (
     <>
-      <div className="flex flex-col gap-2">
+      <PreferenceRow
+        label="Mode de suivi"
+        hint={
+          settings.mode === 'simple'
+            ? 'Seuls l’épargne personnelle et le budget plaisir sont suivis, dans ton enveloppe. Charges communes et projet immobilier sont considérés comme déjà déduits.'
+            : 'Revenus, charges, épargne et plaisir sont suivis à partir de toutes les opérations du compte courant.'
+        }
+      >
         <Segmented<TrackingMode>
           value={settings.mode}
           label="Mode de suivi"
           onChange={(mode) => void report(finance.updateSettings({ mode }, `Mode de suivi : ${mode}`))}
           options={[
-            { value: 'simple', label: 'Simplifié (enveloppe personnelle)' },
+            { value: 'simple', label: 'Simplifié' },
             { value: 'complet', label: 'Complet' },
           ]}
         />
-        <Text variant="small">
-          {settings.mode === 'simple'
-            ? 'Seuls l’épargne personnelle et le budget plaisir sont suivis, à l’intérieur de ton enveloppe. Les charges communes et le projet immobilier sont considérés comme déjà déduits : ils ne sont ni affichés ni comptés, ce qui évite tout double comptage.'
-            : 'Revenus, charges fixes, épargne et plaisir sont suivis à partir de toutes les opérations du compte courant. L’enveloppe personnelle n’est plus utilisée dans les calculs.'}
-        </Text>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Enveloppe personnelle mensuelle">
+      </PreferenceRow>
+      {settings.mode === 'simple' && (
+        <PreferenceRow
+          label="Enveloppe personnelle"
+          hint="Ce qui te reste chaque mois après charges et projet immobilier."
+        >
           <MoneyInput
             key={`env-${settings.personalEnvelope}`}
             cents={settings.personalEnvelope}
             label="Enveloppe personnelle"
+            className="w-40"
             onCommit={(personalEnvelope) =>
               void report(finance.updateSettings({ personalEnvelope }, 'Enveloppe personnelle modifiée'))
             }
           />
-        </Field>
-      </div>
+        </PreferenceRow>
+      )}
     </>
   );
 };
@@ -147,8 +154,7 @@ const ThemePicker = () => {
   const finance = useFinanceUseCases();
   const report = useReport();
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <Text variant="label">Thème</Text>
+    <PreferenceRow label="Thème">
       <Segmented<ThemePreference>
         value={settings.theme}
         label="Thème"
@@ -159,7 +165,7 @@ const ThemePicker = () => {
           { value: 'dark', label: 'Sombre' },
         ]}
       />
-    </div>
+    </PreferenceRow>
   );
 };
 
