@@ -33,10 +33,13 @@ const LineEditor = ({ lines, onChange, defaultLabel, addLabel, allowNegative = f
   };
 
   return (
-    <ul className="flex flex-col gap-1.5">
+    <ul className="flex flex-col">
       {lines.map((line) => (
-        <li key={line.id} className="group flex items-center justify-between gap-2 text-sm">
-          <span className="min-w-0 truncate text-stone-600 dark:text-stone-300">{line.label}</span>
+        <li
+          key={line.id}
+          className="flex items-center justify-between gap-3 border-b border-stone-100 py-1.5 text-sm dark:border-stone-800"
+        >
+          <span className="min-w-0 text-stone-700 dark:text-stone-200">{line.label}</span>
           <span className="flex items-center gap-1">
             <Amount cents={line.amount} className="font-medium text-stone-900 dark:text-stone-50" />
             <Button
@@ -50,7 +53,7 @@ const LineEditor = ({ lines, onChange, defaultLabel, addLabel, allowNegative = f
         </li>
       ))}
       {adding ? (
-        <li className="flex items-center gap-2">
+        <li className="flex items-center gap-2 pt-2">
           <Input value={label} onChange={setLabel} label="Libellé" className="h-9 flex-1" autoFocus />
           <MoneyInput
             cents={0}
@@ -61,7 +64,7 @@ const LineEditor = ({ lines, onChange, defaultLabel, addLabel, allowNegative = f
           />
         </li>
       ) : (
-        <li>
+        <li className="pt-1.5">
           <Button size="sm" variant="ghost" icon={Plus} onClick={() => setAdding(true)}>
             {addLabel}
           </Button>
