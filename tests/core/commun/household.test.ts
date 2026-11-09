@@ -16,29 +16,27 @@ const members = [
 
 const october: CommonMonth = {
   month: '2026-10',
-  incomes: [
-    { id: 'i1', memberId: 'm1', label: 'Salaire', amount: 300000 },
-    { id: 'i2', memberId: 'm2', label: 'Salaire', amount: 250000 },
-    { id: 'i3', memberId: 'm2', label: 'Prime', amount: 12000 },
-  ],
   envelope: null,
-  inflows: [{ id: 'x1', label: 'Intérêts', amount: 7051 }],
   savingsRates: [
     { accountId: 'acc-vacances', rate: 0.1 },
     { accountId: 'acc-immo', rate: 0.2 },
   ],
 };
 
-const november: CommonMonth = {
-  month: '2026-11',
-  incomes: [
-    { id: 'i4', memberId: 'm1', label: 'Salaire', amount: 300000 },
-    { id: 'i5', memberId: 'm2', label: 'Salaire', amount: 262000 },
-  ],
-  envelope: 400000,
-  inflows: [],
-  savingsRates: null,
-};
+const november: CommonMonth = { month: '2026-11', envelope: 400000, savingsRates: null };
+
+const income = (date: string, amount: number, memberId: string | null, outside = false) =>
+  aTransaction({
+    date,
+    amount,
+    accountId: 'acc-courant',
+    type: 'revenu',
+    categoryId: memberId ? 'cat-salaire' : 'cat-autres-entrees',
+    label: memberId ? 'Salaire' : 'Intérêts',
+    ...(memberId
+      ? { imputation: { kind: 'revenu' as const, memberId, ...(outside ? { outside: true } : {}) } }
+      : {}),
+  });
 
 const dataset = (overrides: Partial<Dataset> = {}): Dataset => {
   const base = createInitialDataset('2026-10-01', () => 'audit');
@@ -47,6 +45,12 @@ const dataset = (overrides: Partial<Dataset> = {}): Dataset => {
     settings: { ...base.settings, kind: 'commun', household: { members, contributionRate: 0.75 } },
     commonMonths: [october, november],
     transactions: [
+      income('2026-10-01', 300000, 'm1'),
+      income('2026-10-01', 250000, 'm2', true),
+      income('2026-10-15', 12000, 'm2', true),
+      income('2026-10-20', 7051, null),
+      income('2026-11-01', 300000, 'm1'),
+      income('2026-11-01', 262000, 'm2', true),
       aTransaction({ date: '2026-10-05', amount: -150000, accountId: 'acc-courant', type: 'depense' }),
       aTransaction({
         date: '2026-10-12',
@@ -171,7 +175,10 @@ describe('règlement de fin de mois', () => {
 describe('opération avancée par un membre', () => {
   it('compte dans les dépenses du commun mais ne touche pas le solde bancaire', () => {
     const account = anAccount({ id: 'acc-courant', openingDate: '2026-10-01' });
-    expect(accountBalanceAt(account, dataset().transactions, '2026-10-31')).toBe(-155000);
+    // salaire d’Alex et intérêts entrent ; salaire de Sam et avance restent hors du compte
+    expect(accountBalanceAt(account, dataset().transactions, '2026-10-31')).toBe(
+      300000 + 7051 - 150000 - 5000,
+    );
   });
 });
 

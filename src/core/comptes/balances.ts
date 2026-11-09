@@ -6,8 +6,13 @@ export const isCounted = (transaction: Transaction): boolean => transaction.stat
 export const isInternalMove = (transaction: Transaction): boolean =>
   transaction.type === 'virement' || transaction.type === 'investissement';
 
+/** Avance d'un membre, ou revenu arrivé sur son propre compte : rien ne passe par le compte. */
+export const isOutsideAccount = (transaction: Transaction): boolean =>
+  transaction.imputation?.kind === 'avance' ||
+  (transaction.imputation?.kind === 'revenu' && transaction.imputation.outside === true);
+
 export const signedEffectOn = (accountId: string, transaction: Transaction): Cents => {
-  if (transaction.imputation?.kind === 'avance') {
+  if (isOutsideAccount(transaction)) {
     return 0;
   }
   if (transaction.accountId === accountId) {

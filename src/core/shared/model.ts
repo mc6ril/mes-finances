@@ -33,8 +33,13 @@ export type Category = {
 export type TransactionType = 'revenu' | 'depense' | 'virement' | 'investissement';
 export type TransactionStatus = 'prevu' | 'realise' | 'rapproche';
 
-/** Dans un espace commun : opération à la charge d'un membre, ou avancée par lui. Absent = commun. */
-export type Imputation = { kind: 'charge' | 'avance'; memberId: string };
+/**
+ * Espace commun : à qui se rattache l'opération. Absent = commun.
+ * - charge : dépense payée par le commun, à la charge du membre ;
+ * - avance : dépense payée par le membre de sa poche, hors du compte ;
+ * - revenu : revenu du membre ; `outside` quand il arrive sur son propre compte.
+ */
+export type Imputation = { kind: 'charge' | 'avance' | 'revenu'; memberId: string; outside?: boolean };
 
 export type Transaction = {
   id: string;
@@ -144,17 +149,13 @@ export type Household = {
   contributionRate: number;
 };
 
-export type IncomeLine = { id: string; memberId: string; label: string; amount: Cents };
-export type ExtraLine = { id: string; label: string; amount: Cents };
 export type SavingsRate = { accountId: string; rate: number };
 
-/** Mois du compte commun : revenus du couple, enveloppe, entrées ponctuelles, épargne en %. */
+/** Mois du compte commun : enveloppe et épargne en % (les revenus viennent des opérations). */
 export type CommonMonth = {
   month: MonthKey;
-  incomes: IncomeLine[];
   /** Enveloppe saisie à la main ; null = enveloppe proposée (arrondie). */
   envelope: Cents | null;
-  inflows: ExtraLine[];
   /** null = reprend les taux du mois précédent. */
   savingsRates: SavingsRate[] | null;
 };
@@ -200,4 +201,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;

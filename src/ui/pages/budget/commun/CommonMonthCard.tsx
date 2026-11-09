@@ -19,7 +19,6 @@ import { Input, Select } from '@/ui/design-system/Field';
 import MoneyInput from '@/ui/design-system/MoneyInput';
 import Text from '@/ui/design-system/Text';
 import Title from '@/ui/design-system/Title';
-import LineEditor from './LineEditor';
 
 const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;
 
@@ -72,9 +71,23 @@ const Section = ({ title, hint, children }: SectionProps) => (
   </section>
 );
 
-type CalculationLineProps = { label: string; amount: Cents; sign?: '+' | '−'; total?: boolean };
+type CalculationLineProps = {
+  label: string;
+  amount: Cents;
+  detail?: string;
+  sign?: '+' | '−';
+  total?: boolean;
+  neutral?: boolean;
+};
 
-const CalculationLine = ({ label, amount, sign, total = false }: CalculationLineProps) => (
+const CalculationLine = ({
+  label,
+  amount,
+  detail,
+  sign,
+  total = false,
+  neutral = false,
+}: CalculationLineProps) => (
   <div
     className={cx(
       'flex items-baseline justify-between gap-4 py-1.5 text-sm',
@@ -83,15 +96,16 @@ const CalculationLine = ({ label, amount, sign, total = false }: CalculationLine
         : 'text-stone-600 dark:text-stone-300',
     )}
   >
-    <span>
+    <span className="min-w-0">
       {sign && <span className="inline-block w-4 text-stone-400">{sign}</span>}
       {label}
+      {detail && <span className="block text-xs font-normal text-stone-400">{detail}</span>}
     </span>
-    <Amount cents={amount} colored={total} />
+    <Amount cents={amount} colored={total && !neutral} />
   </div>
 );
 
-/** Le mois du compte commun : revenus, enveloppe, parts, épargne, report et reste du mois. */
+/** Le mois du compte commun : enveloppe et épargne à gauche, récapitulatif du calcul à droite. */
 const CommonMonthCard = ({ month }: { month: MonthKey }) => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
@@ -109,62 +123,18 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
   const saveRates = (rates: SavingsRate[]) => save({ savingsRates: rates });
   const accountName = (accountId: string) =>
     dataset.accounts.find((account) => account.id === accountId)?.name ?? 'Compte supprimé';
+  const shareOf = (memberId: string): string | undefined =>
+    summary.totalIncome > 0
+      ? `${percent((summary.incomes[memberId] ?? 0) / summary.totalIncome)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`
+      : undefined;
 
   return (
-    <Card title="Le mois du commun" subtitle="Revenus du couple, part de chacun, épargne et reste du mois">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <Card title="Le mois du commun" subtitle="Enveloppe, épargne et reste du mois">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div>
           <Section
-            title="Revenus et part de chacun"
-            hint="Chacun verse au commun au prorata de ses revenus du mois."
-          >
-            <div className="grid gap-4 xl:grid-cols-2">
-              {members.map((member) => {
-                const income = summary.incomes[member.id] ?? 0;
-                return (
-                  <div
-                    key={member.id}
-                    className="rounded-xl border border-stone-200 p-4 dark:border-stone-800"
-                  >
-                    <div className="mb-3 flex items-baseline justify-between gap-2">
-                      <Text variant="strong">{memberLabel(dataset, member.id)}</Text>
-                      <Text variant="small">
-                        Revenus{' '}
-                        <Amount cents={income} className="font-medium text-stone-900 dark:text-stone-50" />
-                      </Text>
-                    </div>
-                    <LineEditor
-                      lines={entry.incomes.filter((line) => line.memberId === member.id)}
-                      defaultLabel="Salaire"
-                      addLabel="Ajouter un revenu"
-                      onChange={(lines) =>
-                        save({
-                          incomes: [
-                            ...entry.incomes.filter((line) => line.memberId !== member.id),
-                            ...lines.map((line) => ({ ...line, memberId: member.id })),
-                          ],
-                        })
-                      }
-                    />
-                    <div className="mt-3 flex items-baseline justify-between border-t border-stone-100 pt-3 dark:border-stone-800">
-                      <Text variant="small">
-                        Part du commun
-                        {summary.totalIncome > 0 && ` · ${percent(income / summary.totalIncome)}`}
-                      </Text>
-                      <Amount
-                        cents={summary.contributions[member.id] ?? 0}
-                        className="font-semibold text-stone-900 dark:text-stone-50"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Section>
-
-          <Section
             title="Enveloppe commune"
-            hint={`Proposée : ${formatEuros(summary.suggestedEnvelope)}, soit ${percent(rate)} de ${formatEuros(summary.totalIncome)} arrondi aux 50 € supérieurs.`}
+            hint={`Proposée : ${formatEuros(summary.suggestedEnvelope)}, soit ${percent(rate)} des revenus du mois (${formatEuros(summary.totalIncome)}) arrondi aux 50 € supérieurs.`}
           >
             <div className="flex flex-wrap items-center gap-3">
               <MoneyInput
@@ -180,99 +150,101 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                 </Button>
               )}
             </div>
+            {summary.totalIncome === 0 && (
+              <Text variant="caption" className="mt-2">
+                Aucun revenu ce mois-ci : ajoute les salaires dans Compte courant (type Revenu, « De qui »).
+              </Text>
+            )}
           </Section>
 
-          <Section title="Épargne et entrées du mois">
-            <div className="flex flex-col gap-6">
-              <div>
-                <Text variant="label" className="mb-2">
-                  Épargne, en % de l’enveloppe
-                </Text>
-                <ul className="flex flex-col">
-                  {summary.savings.map((line, index) => (
-                    <li
-                      key={`${line.accountId}-${index}`}
-                      className="flex items-center gap-3 border-b border-stone-100 py-2 last:border-b-0 dark:border-stone-800"
-                    >
-                      <span className="min-w-0 flex-1 text-sm text-stone-700 dark:text-stone-200">
-                        {accountName(line.accountId)}
-                      </span>
-                      <RatePercent
-                        key={`${month}-${line.accountId}-${line.rate}`}
-                        rate={line.rate}
-                        label={`Pourcentage pour ${accountName(line.accountId)}`}
-                        onCommit={(next) =>
-                          saveRates(
-                            savingsRates.map((item, position) =>
-                              position === index ? { ...item, rate: next } : item,
-                            ),
-                          )
-                        }
-                      />
-                      <Amount cents={line.amount} className="w-24 text-right text-sm font-medium" />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        icon={X}
-                        label={`Retirer ${accountName(line.accountId)}`}
-                        onClick={() => saveRates(savingsRates.filter((_, position) => position !== index))}
-                      />
-                    </li>
-                  ))}
-                </ul>
-                {savingsAccounts.length > 0 && (
-                  <div className="mt-2 w-full sm:w-64">
-                    <Select
-                      value=""
-                      label="Ajouter une épargne"
-                      onChange={(accountId) =>
-                        accountId && saveRates([...savingsRates, { accountId, rate: 0.1 }])
-                      }
-                      options={[
-                        { value: '', label: '+ Ajouter une épargne…' },
-                        ...savingsAccounts.map((account) => ({ value: account.id, label: account.name })),
-                      ]}
-                    />
-                  </div>
-                )}
-                {entry.savingsRates === null && savingsRates.length > 0 && (
-                  <Text variant="caption" className="mt-2">
-                    Taux repris du mois précédent. Une modification ne vaut qu’à partir de ce mois.
-                  </Text>
-                )}
-              </div>
-              <div>
-                <Text variant="label" className="mb-2">
-                  Entrées ponctuelles
-                </Text>
-                <LineEditor
-                  lines={entry.inflows}
-                  defaultLabel="Intérêts"
-                  addLabel="Ajouter une entrée"
-                  allowNegative
-                  onChange={(inflows) => save({ inflows })}
+          <Section
+            title="Épargne du mois"
+            hint="En pourcentage de l’enveloppe, versé sur les comptes d’épargne."
+          >
+            <ul className="flex flex-col">
+              {summary.savings.map((line, index) => (
+                <li
+                  key={`${line.accountId}-${index}`}
+                  className="flex items-center gap-3 border-b border-stone-100 py-2 last:border-b-0 dark:border-stone-800"
+                >
+                  <span className="min-w-0 flex-1 text-sm text-stone-700 dark:text-stone-200">
+                    {accountName(line.accountId)}
+                  </span>
+                  <RatePercent
+                    key={`${month}-${line.accountId}-${line.rate}`}
+                    rate={line.rate}
+                    label={`Pourcentage pour ${accountName(line.accountId)}`}
+                    onCommit={(next) =>
+                      saveRates(
+                        savingsRates.map((item, position) =>
+                          position === index ? { ...item, rate: next } : item,
+                        ),
+                      )
+                    }
+                  />
+                  <Amount cents={line.amount} className="w-24 text-right text-sm font-medium" />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon={X}
+                    label={`Retirer ${accountName(line.accountId)}`}
+                    onClick={() => saveRates(savingsRates.filter((_, position) => position !== index))}
+                  />
+                </li>
+              ))}
+            </ul>
+            {savingsAccounts.length > 0 && (
+              <div className="mt-2 w-full sm:w-64">
+                <Select
+                  value=""
+                  label="Ajouter une épargne"
+                  onChange={(accountId) =>
+                    accountId && saveRates([...savingsRates, { accountId, rate: 0.1 }])
+                  }
+                  options={[
+                    { value: '', label: '+ Ajouter une épargne…' },
+                    ...savingsAccounts.map((account) => ({ value: account.id, label: account.name })),
+                  ]}
                 />
-                <Text variant="caption" className="mt-2">
-                  Intérêts, retrait d’épargne pour un projet… Un montant négatif est une sortie.
-                </Text>
               </div>
-            </div>
+            )}
+            {entry.savingsRates === null && savingsRates.length > 0 && (
+              <Text variant="caption" className="mt-2">
+                Taux repris du mois précédent. Une modification ne vaut qu’à partir de ce mois.
+              </Text>
+            )}
           </Section>
         </div>
+
         <aside className="lg:border-l lg:border-stone-100 lg:pl-8 dark:lg:border-stone-800">
           <div className="lg:sticky lg:top-6">
             <Title level={3}>Récapitulatif</Title>
             <div className="mt-4">
-              <CalculationLine label="Enveloppe commune" amount={summary.envelope} />
+              {members.map((member) => (
+                <CalculationLine
+                  key={member.id}
+                  label={`Revenus ${memberLabel(dataset, member.id)}`}
+                  detail={shareOf(member.id)}
+                  amount={summary.incomes[member.id] ?? 0}
+                />
+              ))}
+              <CalculationLine
+                label="Enveloppe commune"
+                detail={`${percent(rate)} des revenus, arrondie`}
+                amount={summary.envelope}
+                total
+                neutral
+              />
               <CalculationLine label="Report du mois précédent" amount={summary.carriedOver} sign="+" />
-              <CalculationLine label="Entrées ponctuelles" amount={summary.inflows} sign="+" />
+              <CalculationLine label="Autres entrées" amount={summary.inflows} sign="+" />
               <CalculationLine label="Épargne" amount={summary.savingsTotal} sign="−" />
               <CalculationLine label="Disponible" amount={summary.available} total />
               <CalculationLine label="Dépenses du mois" amount={summary.expenses} sign="−" />
               <CalculationLine label="Reste du mois" amount={summary.balance} total />
             </div>
             <Text variant="caption" className="mt-3">
-              Le reste du mois est reporté sur le mois suivant, arrondi à l’euro.
+              Les revenus viennent des opérations de type Revenu. Le reste du mois est reporté sur le mois
+              suivant, arrondi à l’euro.
             </Text>
           </div>
         </aside>

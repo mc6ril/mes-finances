@@ -266,7 +266,7 @@ describe('compte commun', () => {
 
   it('enregistre le mois du commun', async () => {
     const { useCases, calls } = setup(commun());
-    const entry = { month: '2026-10', incomes: [], envelope: 300000, inflows: [], savingsRates: null };
+    const entry = { month: '2026-10', envelope: 300000, savingsRates: null };
     await useCases.saveCommonMonth(entry);
     expect(calls).toEqual([
       {

@@ -6,6 +6,7 @@ import type {
   Goal,
   MonthBudget,
   Settings,
+  Transaction,
   YearBudget,
 } from '../shared/model';
 import { SCHEMA_VERSION } from '../shared/model';
@@ -141,6 +142,55 @@ const v7Fields = (dataset: LegacyDataset) => ({
 
 const toVersion7 = (dataset: Dataset): Dataset => ({ ...dataset, ...v7Fields(dataset) });
 
+type LegacyLine = { id: string; label: string; amount: number; memberId?: string };
+type LegacyCommonMonth = Dataset['commonMonths'][number] & { incomes?: LegacyLine[]; inflows?: LegacyLine[] };
+
+/** v8 : les revenus et entrées du mois du commun deviennent des opérations de revenu. */
+const toVersion8 = (dataset: Dataset): Dataset => {
+  const members = dataset.settings.household?.members ?? [];
+  const created: Transaction[] = [];
+  const commonMonths = (dataset.commonMonths as LegacyCommonMonth[]).map(
+    ({ incomes = [], inflows = [], ...entry }) => {
+      const date = `${entry.month}-01`;
+      const operation = (line: LegacyLine, index: number, partial: Partial<Transaction>): Transaction => ({
+        id: `mig8-${entry.month}-${index}`,
+        date,
+        label: line.label,
+        amount: line.amount,
+        accountId: dataset.settings.mainAccountId,
+        counterpartAccountId: null,
+        categoryId: null,
+        type: 'revenu',
+        status: 'realise',
+        paymentMethod: '',
+        comment: '',
+        recurringId: null,
+        createdAt: `${date}T00:00:00.000Z`,
+        updatedAt: `${date}T00:00:00.000Z`,
+        ...partial,
+      });
+      incomes.forEach((line, index) => {
+        const member = members.find((candidate) => candidate.id === line.memberId);
+        created.push(
+          operation(line, index, {
+            categoryId: 'cat-salaire',
+            imputation: {
+              kind: 'revenu',
+              memberId: line.memberId ?? '',
+              ...(member?.salaryOnCommon === false ? { outside: true } : {}),
+            },
+          }),
+        );
+      });
+      inflows.forEach((line, index) =>
+        created.push(operation(line, incomes.length + index, { categoryId: 'cat-autres-entrees' })),
+      );
+      return entry;
+    },
+  );
+  return { ...dataset, commonMonths, transactions: [...dataset.transactions, ...created] };
+};
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -149,6 +199,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 5, apply: toVersion5 },
   { version: 6, apply: toVersion6 },
   { version: 7, apply: toVersion7 },
+  { version: 8, apply: toVersion8 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

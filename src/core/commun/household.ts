@@ -40,13 +40,7 @@ export const contributionsFor = (
   return result;
 };
 
-const emptyMonth = (month: MonthKey): CommonMonth => ({
-  month,
-  incomes: [],
-  envelope: null,
-  inflows: [],
-  savingsRates: null,
-});
+const emptyMonth = (month: MonthKey): CommonMonth => ({ month, envelope: null, savingsRates: null });
 
 export const commonMonthOf = (dataset: Dataset, month: MonthKey): CommonMonth =>
   dataset.commonMonths.find((entry) => entry.month === month) ?? emptyMonth(month);
@@ -66,15 +60,32 @@ export const memberLabel = (dataset: Dataset, memberId: string): string => {
   return members[index]?.name.trim() || `Personne ${index + 1}`;
 };
 
-const incomesByMember = (entry: CommonMonth, members: HouseholdMember[]): Record<string, Cents> =>
+const inMonth = (transaction: Transaction, month: MonthKey): boolean => transaction.date.startsWith(month);
+
+const revenuesIn = (transactions: Transaction[], month: MonthKey): Transaction[] =>
+  transactions.filter(
+    (transaction) => transaction.type === 'revenu' && isCounted(transaction) && inMonth(transaction, month),
+  );
+
+/** Revenus de chaque membre : opérations de revenu rattachées à lui. */
+const incomesByMember = (transactions: Transaction[], month: MonthKey, members: HouseholdMember[]) =>
   Object.fromEntries(
     members.map((member) => [
       member.id,
-      entry.incomes.filter((line) => line.memberId === member.id).reduce((sum, line) => sum + line.amount, 0),
+      revenuesIn(transactions, month)
+        .filter(
+          (transaction) =>
+            transaction.imputation?.kind === 'revenu' && transaction.imputation.memberId === member.id,
+        )
+        .reduce((sum, transaction) => sum + transaction.amount, 0),
     ]),
-  );
+  ) as Record<string, Cents>;
 
-const inMonth = (transaction: Transaction, month: MonthKey): boolean => transaction.date.startsWith(month);
+/** Autres entrées : revenus du commun, rattachés à personne (intérêts, retrait d'épargne…). */
+const otherInflows = (transactions: Transaction[], month: MonthKey): Cents =>
+  revenuesIn(transactions, month)
+    .filter((transaction) => !transaction.imputation)
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
 const commonExpenses = (transactions: Transaction[], month: MonthKey): Cents =>
   0 -
@@ -109,11 +120,11 @@ const firstTrackedMonth = (dataset: Dataset): MonthKey | null =>
 const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): CommonMonthSummary => {
   const members = membersOf(dataset);
   const entry = commonMonthOf(dataset, month);
-  const incomes = incomesByMember(entry, members);
+  const incomes = incomesByMember(dataset.transactions, month, members);
   const totalIncome = Object.values(incomes).reduce((sum, value) => sum + value, 0);
   const suggested = suggestedEnvelope(totalIncome, dataset.settings.household?.contributionRate ?? 0);
   const envelope = entry.envelope ?? suggested;
-  const inflows = entry.inflows.reduce((sum, line) => sum + line.amount, 0);
+  const inflows = otherInflows(dataset.transactions, month);
   const savings = effectiveSavingsRates(dataset.commonMonths, month).map((line) => ({
     ...line,
     amount: Math.round(envelope * line.rate),

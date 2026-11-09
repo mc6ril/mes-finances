@@ -70,7 +70,7 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
   ];
 
   const submit = async () => {
-    const result = validateForm(form);
+    const result = validateForm(form, members);
     setErrors(result.errors);
     if (!result.draft) {
       return;
@@ -104,7 +104,9 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
         <Field label="Type" className="sm:col-span-2">
           <Select
             value={form.type}
-            onChange={(value) => update({ type: value as TransactionType, categoryId: '', isRefund: false })}
+            onChange={(value) =>
+              update({ type: value as TransactionType, categoryId: '', isRefund: false, imputation: '' })
+            }
             options={Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))}
           />
           <Text variant="caption">{TYPE_HINTS[form.type]}</Text>
@@ -168,6 +170,21 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
                 ...members.map((member) => ({
                   value: `avance:${member.id}`,
                   label: `Avancé par ${memberLabel(dataset, member.id)}`,
+                })),
+              ]}
+            />
+          </Field>
+        )}
+        {isCommon && form.type === 'revenu' && (
+          <Field label="De qui" hint="Le salaire de chacun sert à calculer sa part du commun.">
+            <Select
+              value={form.imputation}
+              onChange={(imputation) => update({ imputation })}
+              options={[
+                { value: '', label: 'Commun (intérêts, retrait d’épargne…)' },
+                ...members.map((member) => ({
+                  value: `revenu:${member.id}`,
+                  label: `Revenu de ${memberLabel(dataset, member.id)}${member.salaryOnCommon ? '' : ' (versé sur son compte)'}`,
                 })),
               ]}
             />

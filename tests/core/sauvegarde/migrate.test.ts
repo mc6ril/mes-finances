@@ -216,3 +216,47 @@ describe('migrateDataset v6 → v7', () => {
     expect(migrated.settlements).toEqual([]);
   });
 });
+
+describe('migrateDataset v7 → v8', () => {
+  it('transforme les revenus et entrées saisis dans le mois du commun en opérations', () => {
+    const base = createInitialDataset('2026-10-01', ids, 'commun');
+    const household = {
+      members: [
+        { id: 'm1', name: 'Alex', salaryOnCommon: true },
+        { id: 'm2', name: 'Sam', salaryOnCommon: false },
+      ],
+      contributionRate: 0.75,
+    };
+    const legacyMonth = {
+      month: '2026-10',
+      incomes: [
+        { id: 'i1', memberId: 'm1', label: 'Salaire', amount: 300000 },
+        { id: 'i2', memberId: 'm2', label: 'Salaire', amount: 250000 },
+      ],
+      envelope: 400000,
+      inflows: [{ id: 'x1', label: 'Intérêts', amount: 7051 }],
+      savingsRates: null,
+    };
+    const migrated = migrateDataset({
+      ...base,
+      settings: { ...base.settings, household },
+      schemaVersion: 7,
+      commonMonths: [legacyMonth as never],
+    });
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.commonMonths).toEqual([{ month: '2026-10', envelope: 400000, savingsRates: null }]);
+    expect(
+      migrated.transactions.map((transaction) => [
+        transaction.date,
+        transaction.type,
+        transaction.categoryId,
+        transaction.amount,
+        transaction.imputation ?? null,
+      ]),
+    ).toEqual([
+      ['2026-10-01', 'revenu', 'cat-salaire', 300000, { kind: 'revenu', memberId: 'm1' }],
+      ['2026-10-01', 'revenu', 'cat-salaire', 250000, { kind: 'revenu', memberId: 'm2', outside: true }],
+      ['2026-10-01', 'revenu', 'cat-autres-entrees', 7051, null],
+    ]);
+  });
+});

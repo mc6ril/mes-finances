@@ -2,6 +2,7 @@ import { parseEuros } from '@/core/shared/money';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import type {
   Category,
+  HouseholdMember,
   Imputation,
   CategoryGroup,
   Transaction,
@@ -84,13 +85,26 @@ export const emptyForm = (date: string, accountId: string): TransactionFormState
   imputation: '',
 });
 
-/** La répartition « pour qui » ne concerne que les dépenses. */
-const imputationOf = (form: TransactionFormState): { imputation?: Imputation } => {
+/**
+ * Espace commun : dépense « pour qui » (à la charge de / avancée par) ou revenu « de qui ».
+ * Le revenu d'un membre dont le salaire n'arrive pas sur le commun reste hors du compte.
+ */
+const imputationOf = (
+  form: TransactionFormState,
+  members: HouseholdMember[],
+): { imputation?: Imputation } => {
   const [kind, memberId] = form.imputation.split(':');
-  if (form.type !== 'depense' || (kind !== 'charge' && kind !== 'avance') || !memberId) {
+  if (!memberId) {
     return {};
   }
-  return { imputation: { kind, memberId } };
+  if (form.type === 'depense' && (kind === 'charge' || kind === 'avance')) {
+    return { imputation: { kind, memberId } };
+  }
+  if (form.type === 'revenu' && kind === 'revenu') {
+    const member = members.find((candidate) => candidate.id === memberId);
+    return { imputation: { kind, memberId, ...(member?.salaryOnCommon === false ? { outside: true } : {}) } };
+  }
+  return {};
 };
 
 const signFor = (form: TransactionFormState): 1 | -1 => {
@@ -107,6 +121,7 @@ export type FormErrors = Partial<Record<'date' | 'label' | 'amount' | 'counterpa
 
 export const validateForm = (
   form: TransactionFormState,
+  members: HouseholdMember[] = [],
 ): { draft: TransactionDraft | null; errors: FormErrors } => {
   const errors: FormErrors = {};
   const date = parseFlexibleDate(form.date);
@@ -143,7 +158,7 @@ export const validateForm = (
       status: form.status,
       comment: form.comment.trim(),
       recurringId: null,
-      ...imputationOf(form),
+      ...imputationOf(form, members),
     },
   };
 };

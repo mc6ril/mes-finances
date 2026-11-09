@@ -18,7 +18,13 @@ import { usePeriod } from '@/hooks/usePeriod';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/ui/errorMessages';
 import { useReport } from '@/hooks/useReport';
-import { cashflowSummary, livePosition, periodPhase, signedEffectOn } from '@/core/comptes/balances';
+import {
+  cashflowSummary,
+  isOutsideAccount,
+  livePosition,
+  periodPhase,
+  signedEffectOn,
+} from '@/core/comptes/balances';
 import { STATUS_LABELS, TYPE_LABELS } from '@/core/comptes/csvImport';
 import { monthEnd, monthStart } from '@/core/shared/dates';
 import { formatDateFr, monthLabel } from '@/core/shared/format';
@@ -27,6 +33,7 @@ import type {
   Account,
   Category,
   Dataset,
+  Imputation,
   IsoDate,
   Transaction,
   TransactionStatus,
@@ -582,7 +589,13 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                       <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABELS[row.status]}</Badge>
                     </td>
                     <td className="text-right font-medium">
-                      <Amount cents={signedEffectOn(account.id, row)} colored />
+                      {isOutsideAccount(row) ? (
+                        <span title="Hors du compte : ne change pas le solde">
+                          <Amount cents={row.amount} className="text-stone-400" />
+                        </span>
+                      ) : (
+                        <Amount cents={signedEffectOn(account.id, row)} colored />
+                      )}
                     </td>
                     <td>
                       <div className="flex justify-end gap-0.5">
@@ -648,6 +661,12 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
 
 type ImputationHintProps = { transaction: Transaction; dataset: Dataset };
 
+const IMPUTATION_HINTS: Record<Imputation['kind'], (name: string, outside: boolean) => string> = {
+  charge: (name) => `à la charge de ${name}`,
+  avance: (name) => `avancé par ${name}`,
+  revenu: (name, outside) => (outside ? `revenu de ${name}, versé sur son compte` : `revenu de ${name}`),
+};
+
 const ImputationHint = ({ transaction, dataset }: ImputationHintProps) => {
   if (!transaction.imputation) {
     return null;
@@ -655,7 +674,7 @@ const ImputationHint = ({ transaction, dataset }: ImputationHintProps) => {
   const name = memberLabel(dataset, transaction.imputation.memberId);
   return (
     <Text variant="caption" className="text-amber-700 dark:text-amber-400">
-      {transaction.imputation.kind === 'charge' ? `à la charge de ${name}` : `avancé par ${name}`}
+      {IMPUTATION_HINTS[transaction.imputation.kind](name, transaction.imputation.outside === true)}
     </Text>
   );
 };
@@ -691,15 +710,16 @@ const ComptePage = () => {
         actions={
           <>
             <MonthNoteButton month={month} onClick={() => setNoteMonth(month)} />
-            <Select
-              value={account.id}
-              onChange={setAccountId}
-              label="Compte affiché"
-              className="w-56"
-              options={dataset.accounts
-                .filter((item) => !item.archived)
-                .map((item) => ({ value: item.id, label: item.name }))}
-            />
+            <div className="w-56">
+              <Select
+                value={account.id}
+                onChange={setAccountId}
+                label="Compte affiché"
+                options={dataset.accounts
+                  .filter((item) => !item.archived)
+                  .map((item) => ({ value: item.id, label: item.name }))}
+              />
+            </div>
           </>
         }
       />
