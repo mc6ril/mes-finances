@@ -182,6 +182,19 @@ export type Settlement = {
 };
 export type ThemePreference = 'system' | 'light' | 'dark';
 
+/**
+ * Règle appliquée à l'import d'un relevé : si le libellé contient tous les mots de `match`,
+ * l'opération prend ce type, cette catégorie et, dans un espace commun, ce membre
+ * (« de qui » pour un revenu, « à la charge de » pour une dépense).
+ */
+export type ImportRule = {
+  id: string;
+  match: string;
+  type: TransactionType;
+  categoryId: string | null;
+  memberId: string | null;
+};
+
 export type Settings = {
   kind: WorkspaceKind;
   household: Household | null;
@@ -190,6 +203,7 @@ export type Settings = {
   plaisirBudget: Cents;
   theme: ThemePreference;
   mainAccountId: string;
+  importRules: ImportRule[];
 };
 
 export type Dataset = {
@@ -212,4 +226,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;

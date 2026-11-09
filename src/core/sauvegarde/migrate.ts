@@ -191,6 +191,12 @@ const toVersion8 = (dataset: Dataset): Dataset => {
   return { ...dataset, commonMonths, transactions: [...dataset.transactions, ...created] };
 };
 
+/** v9 : règles d'import des relevés. */
+const toVersion9 = (dataset: Dataset): Dataset => ({
+  ...dataset,
+  settings: { ...dataset.settings, importRules: dataset.settings.importRules ?? [] },
+});
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -200,6 +206,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 6, apply: toVersion6 },
   { version: 7, apply: toVersion7 },
   { version: 8, apply: toVersion8 },
+  { version: 9, apply: toVersion9 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

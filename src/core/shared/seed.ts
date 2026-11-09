@@ -170,6 +170,7 @@ export const initialSettings: Settings = {
   plaisirBudget: 0,
   theme: 'system',
   mainAccountId: MAIN_ACCOUNT_ID,
+  importRules: [],
 };
 
 export const DEFAULT_HOUSEHOLD: Household = {

@@ -14,6 +14,8 @@ import {
 } from '@/core/comptes/csvImport';
 import { formatDateFr } from '@/core/shared/format';
 import { categoryFromBankLabel } from '@/core/comptes/bankCategories';
+import { findImportRule, imputationFromRule } from '@/core/comptes/importRules';
+import type { Imputation, TransactionType } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
@@ -34,7 +36,15 @@ const MAPPING_FIELDS: { key: keyof ColumnMapping; label: string; required: boole
   { key: 'category', label: 'Catégorie (facultatif)', required: false },
 ];
 
-type ReviewRow = { draft: ImportDraft; include: boolean; duplicate: boolean; categoryId: string };
+type ReviewRow = {
+  draft: ImportDraft;
+  include: boolean;
+  duplicate: boolean;
+  categoryId: string;
+  type: TransactionType;
+  imputation?: Imputation;
+  rule: string | null;
+};
 
 type ImportModalProps = { accountId: string; onClose: () => void };
 
@@ -85,20 +95,31 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
     mapping.label !== null &&
     (mapping.amount !== null || mapping.debit !== null || mapping.credit !== null);
 
+  const rules = dataset.settings.importRules ?? [];
+  const members = dataset.settings.household?.members ?? [];
+
   const prepareReview = () => {
     const { drafts, errors } = mapRows(rows, mapping, { accountId, hasHeader });
     const duplicates = new Set(findDuplicates(drafts, dataset.transactions));
     setLineErrors(errors);
     setReview(
-      drafts.map((draft, index) => ({
-        draft,
-        include: !duplicates.has(index),
-        duplicate: duplicates.has(index),
-        categoryId:
+      drafts.map((draft, index) => {
+        const rule = findImportRule(draft.label, rules);
+        const guessed =
           suggestCategory(draft.label, dataset.transactions) ??
           categoryFromBankLabel(draft.categoryLabel, dataset.categories) ??
-          '',
-      })),
+          '';
+        const imputation = rule ? imputationFromRule(rule, members) : undefined;
+        return {
+          draft,
+          include: !duplicates.has(index),
+          duplicate: duplicates.has(index),
+          type: rule?.type ?? draft.type,
+          categoryId: rule ? (rule.categoryId ?? '') : guessed,
+          ...(imputation ? { imputation } : {}),
+          rule: rule?.match ?? null,
+        };
+      }),
     );
     setStep('review');
   };
@@ -113,8 +134,9 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       accountId: row.draft.accountId,
       counterpartAccountId: null,
       categoryId: row.categoryId || null,
-      type: row.draft.type,
+      type: row.type,
       status: row.draft.status,
+      ...(row.imputation ? { imputation: row.imputation } : {}),
       paymentMethod: '',
       comment: `Import ${fileName}`,
       recurringId: null,
@@ -250,8 +272,8 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
             </Text>
           )}
           <Text variant="small">
-            Les montants positifs sont importés comme revenus, les négatifs comme dépenses. Pour un virement
-            entre tes comptes, modifie le type après import afin qu’il ne soit pas compté comme dépense.
+            Les montants positifs sont importés comme revenus, les négatifs comme dépenses, sauf si une règle
+            d’import (Paramètres) s’applique : elle fixe alors le type, la catégorie et la personne.
           </Text>
           <div className="max-h-[50vh] overflow-auto rounded-xl border border-stone-100 dark:border-stone-800">
             <table className="table-base min-w-[720px]">
@@ -278,6 +300,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
                     <td>
                       <Text className="max-w-[260px] truncate">{row.draft.label}</Text>
                       {row.duplicate && <Badge tone="warning">Doublon potentiel</Badge>}
+                      {row.rule && <Badge tone="brand">Règle « {row.rule} »</Badge>}
                     </td>
                     <td>
                       <Select
@@ -287,7 +310,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
                         className="h-8 text-xs"
                         options={[
                           { value: '', label: 'Sans catégorie' },
-                          ...categoriesForType(dataset.categories, row.draft.type).map((category) => ({
+                          ...categoriesForType(dataset.categories, row.type).map((category) => ({
                             value: category.id,
                             label: category.name,
                           })),

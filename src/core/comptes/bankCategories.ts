@@ -18,7 +18,10 @@ const BANK_TO_APP: [RegExp, string[]][] = [
   [/pharmacie|medecin|frais medicaux|^sante|mutuelle|optique|dentiste/, ['cat-sante']],
   [/animaux/, ['cat-animaux']],
   [/mobilier|electromenager|bricolage|jardinage|electronique|informatique/, ['cat-maison', 'cat-shopping']],
-  [/vetements|bien etre|coiffeur|equipements sportifs|livres|bijoux|jouets|cadeaux/, ['cat-shopping', 'cat-divers']],
+  [
+    /vetements|bien etre|coiffeur|equipements sportifs|livres|bijoux|jouets|cadeaux/,
+    ['cat-shopping', 'cat-divers'],
+  ],
   [/carburant|entretien|reparation|parking|peage|taxis?\b|transports?/, ['cat-transports']],
   [/hebergement|hotel|agences? de voyages|voyages?$/, ['cat-voyages']],
   [/impots|taxes/, ['cat-impots']],

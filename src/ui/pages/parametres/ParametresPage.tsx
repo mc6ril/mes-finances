@@ -56,6 +56,7 @@ import { DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
 import { errorMessage } from '@/ui/errorMessages';
 import FilePickerButton from './FilePickerButton';
 import WorkspacesCard from './WorkspacesCard';
+import ImportRulesCard from './ImportRulesCard';
 
 const GROUP_BY_KIND: Record<AccountKind, AccountGroup> = {
   courant: 'courant',
@@ -750,6 +751,7 @@ const ParametresPage = () => (
     <BackupCard />
     <AccountsCard />
     <CategoriesCard />
+    <ImportRulesCard />
     <AuditCard />
   </div>
 );
