@@ -13,6 +13,20 @@ const goal: Goal = {
   startAmount: 0,
 };
 
+describe('goalProgress avec apports prévus', () => {
+  it('déduit les apports prévus du reste à constituer et du versement pour tenir la date', () => {
+    const withPlanned = {
+      ...goal,
+      targetDate: '2027-12-31',
+      plannedContributions: [{ id: 'p1', label: 'Famille', amount: 500000 }],
+    };
+    const progress = goalProgress(withPlanned, 228100, '2026-11-05');
+    expect(progress.percent).toBe(15.2);
+    expect(progress.remaining).toBe(1500000 - 228100 - 500000);
+    expect(progress.requiredMonthly).toBe(Math.ceil(771900 / 13));
+  });
+});
+
 describe('goalProgress', () => {
   it('calcule l’avancement et la date d’atteinte sans rendement', () => {
     const progress = goalProgress(goal, 1228100, '2026-11-05');

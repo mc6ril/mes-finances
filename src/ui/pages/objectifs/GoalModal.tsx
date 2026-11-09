@@ -22,6 +22,7 @@ type GoalForm = {
   initial: string;
   monthly: string;
   linked: string[];
+  withReturns: boolean;
   startDate: string;
   startAmount: string;
   planned: { id: string; label: string; amount: string }[];
@@ -43,6 +44,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
     initial: goal ? eurosInput(goal.initialAmount) : '',
     monthly: goal ? eurosInput(goal.monthlyContribution) : '',
     linked: goal?.linkedAccountIds ?? [],
+    withReturns: goal?.withReturns !== false,
     startDate: goal?.startDate ?? today,
     startAmount: goal ? eurosInput(goal.startAmount) : '',
     planned: (goal?.plannedContributions ?? []).map((line) => ({ ...line, amount: eurosInput(line.amount) })),
@@ -110,6 +112,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
       initialAmount: initial,
       monthlyContribution: monthly,
       linkedAccountIds: form.linked,
+      withReturns: form.withReturns,
       startDate,
       startAmount,
       plannedContributions,
@@ -177,6 +180,11 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
                 </Checkbox>
               ))}
           </div>
+        </div>
+        <div className="sm:col-span-2">
+          <Checkbox checked={form.withReturns} onChange={(withReturns) => update({ withReturns })}>
+            Placement avec rendement (afficher des hypothèses à 2 % et 4 %/an)
+          </Checkbox>
         </div>
         <div className="border-t border-stone-200 pt-3 dark:border-stone-800 sm:col-span-2">
           <Text variant="label">Point de départ</Text>

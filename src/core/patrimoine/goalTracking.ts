@@ -26,17 +26,25 @@ export const linkedValueAt = (
       { value: 0, contributions: 0, performance: 0 },
     );
 
-/** Trajectoire de référence : ligne droite du point de départ à la cible, figée à la création. */
+/** Total des apports prévus hors comptes : prévisionnel, jamais compté dans le montant constitué. */
+export const plannedContributionsOf = (goal: Goal): Cents =>
+  (goal.plannedContributions ?? []).reduce((total, line) => total + line.amount, 0);
+
+/**
+ * Trajectoire de référence : ligne droite du point de départ à ce qu'il faut réunir sur les comptes
+ * (la cible moins les apports prévus hors comptes).
+ */
 export const plannedAmountAt = (goal: Goal, date: IsoDate): Cents => {
+  const target = Math.max(goal.startAmount, goal.targetAmount - plannedContributionsOf(goal));
   if (date <= goal.startDate) {
     return goal.startAmount;
   }
   if (date >= goal.targetDate) {
-    return goal.targetAmount;
+    return target;
   }
   const span = daysBetween(goal.startDate, goal.targetDate);
   const elapsed = daysBetween(goal.startDate, date);
-  return goal.startAmount + Math.round(((goal.targetAmount - goal.startAmount) * elapsed) / span);
+  return goal.startAmount + Math.round(((target - goal.startAmount) * elapsed) / span);
 };
 
 const hasLinkedAccounts = (goal: Goal): boolean => goal.linkedAccountIds.length > 0;
@@ -50,10 +58,6 @@ export const goalCurrentAmount = (
   hasLinkedAccounts(goal)
     ? linkedValueAt(goal.linkedAccountIds, accounts, context, today).value
     : goal.initialAmount;
-
-/** Total des apports prévus hors comptes : prévisionnel, jamais compté dans le montant constitué. */
-export const plannedContributionsOf = (goal: Goal): Cents =>
-  (goal.plannedContributions ?? []).reduce((total, line) => total + line.amount, 0);
 
 export type GoalTracking = {
   actual: Cents;

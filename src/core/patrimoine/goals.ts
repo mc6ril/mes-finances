@@ -16,11 +16,13 @@ const roundOneDecimal = (value: number): number => Math.round(value * 10) / 10;
 export const goalProgress = (goal: Goal, current: Cents, today: IsoDate): GoalProgress => {
   const currentMonth = monthKeyOf(today);
   const targetMonth = monthKeyOf(goal.targetDate);
-  const remaining = Math.max(0, goal.targetAmount - current);
+  // Les apports prévus hors comptes réduisent ce qu'il reste à épargner, sans compter comme constitués.
+  const planned = (goal.plannedContributions ?? []).reduce((total, line) => total + line.amount, 0);
+  const remaining = Math.max(0, goal.targetAmount - current - planned);
   const monthsLeft = Math.max(0, monthsBetween(currentMonth, targetMonth));
   if (remaining === 0) {
     return {
-      percent: 100,
+      percent: Math.min(100, roundOneDecimal((current / goal.targetAmount) * 100)),
       remaining: 0,
       monthsToTarget: 0,
       projectedMonth: currentMonth,

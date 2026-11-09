@@ -123,6 +123,8 @@ export type Goal = {
   startAmount: Cents;
   /** Apports attendus hors des comptes suivis (famille, primes…) : prévisionnels, montrés seulement dans l'objectif. */
   plannedContributions?: PlannedContribution[];
+  /** false : épargne sans rendement (livret, apport), pas d'hypothèses de rendement. Absent = avec. */
+  withReturns?: boolean;
 };
 
 export type PlannedContribution = { id: string; label: string; amount: Cents };

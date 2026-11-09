@@ -34,6 +34,8 @@ import ChartTooltip from '@/ui/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/charts/axis';
 import Legend from '@/ui/charts/Legend';
 
+const NO_RETURNS = [0];
+
 const rateLabel = (rate: number): string => {
   if (rate === 0) {
     return 'Sans rendement (prudent)';
@@ -123,17 +125,24 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
   const plannedTotal = plannedContributionsOf(goal);
   const progress = goalProgress(goal, current, today);
   const month = monthKeyOf(today);
+  // Ce qu'il faut réunir sur les comptes : la cible moins les apports prévus hors comptes.
+  const savingsTarget = Math.max(0, goal.targetAmount - plannedTotal);
+  const rates = goal.withReturns === false ? NO_RETURNS : GOAL_RATE_HYPOTHESES;
   const scenarios = useMemo(
     () =>
       projectionScenarios({
         current,
         monthly: goal.monthlyContribution,
-        target: goal.targetAmount,
-        annualRates: GOAL_RATE_HYPOTHESES,
+        target: savingsTarget,
+        annualRates: rates,
         fromMonth: month,
       }),
-    [current, goal.monthlyContribution, goal.targetAmount, month],
+    [current, goal.monthlyContribution, savingsTarget, rates, month],
   );
+  const labelFor = (rate: number): string =>
+    goal.withReturns === false
+      ? `Projection à ${formatEuros(goal.monthlyContribution)} / mois`
+      : rateLabel(rate);
   const showProjections = goal.monthlyContribution > 0 && progress.remaining > 0;
   const chart = useMemo(() => {
     const startMonth = monthKeyOf(goal.startDate) < month ? monthKeyOf(goal.startDate) : month;
@@ -220,6 +229,9 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
           <Text variant="strong" className="mt-0.5">
             <Amount cents={progress.remaining} />
           </Text>
+          {plannedTotal > 0 && (
+            <Text variant="caption">objectif − constitué − apports prévus ({formatEuros(plannedTotal)})</Text>
+          )}
         </div>
         <div>
           <Text variant="label">Date d’atteinte projetée</Text>
@@ -248,7 +260,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
             { label: PLAN, color: ink.axis, dashed: true },
             ...(showProjections
               ? scenarios.map((scenario, index) => ({
-                  label: rateLabel(scenario.annualRate),
+                  label: labelFor(scenario.annualRate),
                   color: series[index] ?? '',
                 }))
               : []),
@@ -267,9 +279,14 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
               <YAxis {...axisProps(ink)} tickFormatter={euroTick} width={64} />
               <Tooltip content={<ChartTooltip labelFormatter={(value) => capitalize(monthLabel(value))} />} />
               <ReferenceLine
-                y={goal.targetAmount}
+                y={savingsTarget}
                 stroke={ink.grid}
-                label={{ value: 'Cible', fill: ink.axis, fontSize: 11, position: 'insideTopLeft' }}
+                label={{
+                  value: plannedTotal > 0 ? 'Cible sans les apports prévus' : 'Cible',
+                  fill: ink.axis,
+                  fontSize: 11,
+                  position: 'insideTopLeft',
+                }}
               />
               <Line
                 type="linear"
@@ -287,7 +304,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
                     key={scenario.annualRate}
                     type="monotone"
                     dataKey={`r${scenario.annualRate}`}
-                    name={rateLabel(scenario.annualRate)}
+                    name={labelFor(scenario.annualRate)}
                     stroke={series[index]}
                     strokeWidth={1.5}
                     strokeOpacity={0.8}
@@ -312,7 +329,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
             {scenarios.map((scenario) => (
               <li key={scenario.annualRate}>
                 <Badge>
-                  {rateLabel(scenario.annualRate)} :{' '}
+                  {labelFor(scenario.annualRate)} :{' '}
                   {scenario.reachedMonth
                     ? capitalize(monthLabel(scenario.reachedMonth))
                     : 'au-delà de 50 ans'}
@@ -322,8 +339,11 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
           </ul>
         )}
         <Text variant="caption" className="mt-2">
-          La trajectoire prévue relie ton point de départ à la cible. Les rendements sont des hypothèses de
-          calcul, jamais des gains garantis : les placements peuvent perdre de la valeur.
+          La trajectoire prévue relie ton point de départ à la cible
+          {plannedTotal > 0 ? ', apports prévus déduits' : ''}.
+          {goal.withReturns === false
+            ? ' Projection sans rendement, au versement mensuel prévu.'
+            : ' Les rendements sont des hypothèses de calcul, jamais des gains garantis : les placements peuvent perdre de la valeur.'}
         </Text>
       </div>
     </Card>

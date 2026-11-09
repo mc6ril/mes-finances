@@ -168,3 +168,11 @@ describe('apports prévus hors comptes', () => {
     expect(goalTracking(withPlanned, [pea], context, '2026-07-02').actual).toBe(170000);
   });
 });
+
+describe('trajectoire avec apports prévus', () => {
+  it('vise la cible moins les apports prévus', () => {
+    const withPlanned = { ...goal, plannedContributions: [{ id: 'p1', label: 'Famille', amount: 50000 }] };
+    expect(plannedAmountAt(withPlanned, '2027-06-01')).toBe(150000);
+    expect(plannedAmountAt(withPlanned, '2026-07-02')).toBe(100000 + Math.round((50000 * 182) / 365));
+  });
+});
