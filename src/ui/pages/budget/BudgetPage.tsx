@@ -247,7 +247,7 @@ const Summary = ({ lines, isSimple, envelope, provision, annualSpent }: SummaryP
   const plannedSaving = groupTotal(lines, 'epargne', 'available');
   return (
     <Card>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
         <BudgetFigure
           label="Revenus"
           actual={<Amount cents={income} signed className="text-emerald-600 dark:text-emerald-400" />}
