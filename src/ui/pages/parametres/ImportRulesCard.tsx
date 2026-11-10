@@ -38,16 +38,18 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
   const memberLabel = dataset.settings.kind === 'commun' ? memberLabelFor(form.type) : null;
   const update = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
 
+  const isTransfer = form.type === 'virement' || form.type === 'investissement';
+
   const save = async () => {
     const keepsMember = Boolean(memberLabel && form.memberId);
     const rule: RuleForm = {
       ...form,
       memberId: keepsMember ? form.memberId : null,
       receivedFor: keepsMember && form.type === 'revenu' && form.receivedFor === true,
-      counterpartAccountId:
-        form.type === 'virement' || form.type === 'investissement'
-          ? (form.counterpartAccountId ?? null)
-          : null,
+      counterpartAccountId: isTransfer ? (form.counterpartAccountId ?? null) : null,
+      // Virement ou investissement : la catégorie d'épargne suit le compte crédité, à l'import.
+      categoryId: isTransfer ? null : form.categoryId,
+      refund: form.type === 'depense' && form.refund === true,
     };
     if (await report(finance.saveImportRule(rule), 'Règle enregistrée')) {
       onClose();
@@ -81,17 +83,25 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
         </Field>
         <Field label="Type">
           <Select
-            value={form.type}
+            value={form.type === 'depense' && form.refund ? 'remboursement' : form.type}
             onChange={(value) =>
               update({
-                type: value as TransactionType,
+                type: value === 'remboursement' ? 'depense' : (value as TransactionType),
+                refund: value === 'remboursement',
                 categoryId: null,
                 memberId: null,
                 receivedFor: false,
                 counterpartAccountId: null,
               })
             }
-            options={RULE_TYPES.map((type) => ({ value: type, label: TYPE_LABELS[type] }))}
+            options={[
+              { value: 'depense', label: 'Dépense' },
+              { value: 'remboursement', label: 'Remboursement (mutuelle, avoir…)' },
+              ...RULE_TYPES.filter((type) => type !== 'depense').map((type) => ({
+                value: type,
+                label: TYPE_LABELS[type],
+              })),
+            ]}
           />
         </Field>
         {(form.type === 'virement' || form.type === 'investissement') && (
@@ -111,8 +121,8 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
             />
           </Field>
         )}
-        {(form.type !== 'virement' || form.counterpartAccountId) && (
-          <Field label="Catégorie">
+        {form.type !== 'virement' && form.type !== 'investissement' && (
+          <Field label={form.refund ? 'Remboursement de' : 'Catégorie'}>
             <Select
               value={form.categoryId ?? ''}
               onChange={(value) => update({ categoryId: value || null })}
@@ -207,7 +217,7 @@ const ImportRulesCard = () => {
               <Text variant="strong" className="mr-auto">
                 « {rule.match} »
               </Text>
-              <Badge tone="brand">{TYPE_LABELS[rule.type]}</Badge>
+              <Badge tone="brand">{rule.refund ? 'Remboursement' : TYPE_LABELS[rule.type]}</Badge>
               {categoryName(rule.categoryId) && <Badge>{categoryName(rule.categoryId)}</Badge>}
               {accountName(rule.counterpartAccountId) && (
                 <Badge>{`Vers ${accountName(rule.counterpartAccountId)}`}</Badge>

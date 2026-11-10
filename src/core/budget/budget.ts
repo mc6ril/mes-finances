@@ -431,3 +431,33 @@ export const plaisirAvailable = (lines: BudgetLine[], fallback: Cents): Cents =>
   }
   return fallback;
 };
+
+const comparable = (name: string): string =>
+  name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/**
+ * Catégorie d'épargne d'un virement ou d'un investissement : celle qui porte le nom du
+ * compte crédité (« LDDS », « Trade Republic »…), pour que la ligne du budget se remplisse
+ * sans choisir de catégorie.
+ */
+export const savingsCategoryFor = (
+  accountId: string | null,
+  accountName: (id: string) => string | undefined,
+  categories: Category[],
+): string | null => {
+  const name = accountId ? accountName(accountId) : undefined;
+  if (!name) {
+    return null;
+  }
+  return (
+    categories.find(
+      (category) =>
+        category.group === 'epargne' && !category.archived && comparable(category.name) === comparable(name),
+    )?.id ?? null
+  );
+};

@@ -582,7 +582,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                     </td>
                     <td>
                       <Text as="span" variant="small">
-                        {TYPE_LABELS[row.type]}
+                        {row.type === 'depense' && row.amount > 0 ? 'Remboursement' : TYPE_LABELS[row.type]}
                       </Text>
                     </td>
                     <td>
@@ -662,7 +662,8 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
 type ImputationHintProps = { transaction: Transaction; dataset: Dataset };
 
 const IMPUTATION_HINTS: Record<Imputation['kind'], (name: string, outside: boolean) => string> = {
-  charge: (name, outside) => (outside ? `à la charge de ${name}, réglé hors compte` : `à la charge de ${name}`),
+  charge: (name, outside) =>
+    outside ? `à la charge de ${name}, réglé hors compte` : `à la charge de ${name}`,
   avance: (name) => `avancé par ${name}`,
   revenu: (name, outside) => (outside ? `revenu de ${name}, versé sur son compte` : `revenu de ${name}`),
 };

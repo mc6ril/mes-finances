@@ -16,6 +16,7 @@ import {
 } from '@/core/comptes/csvImport';
 import { formatDateFr } from '@/core/shared/format';
 import { categoryFromBankLabel } from '@/core/comptes/bankCategories';
+import { savingsCategoryFor } from '@/core/budget/budget';
 import { findImportRule, imputationFromRule } from '@/core/comptes/importRules';
 import type { Imputation, TransactionType } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
@@ -102,6 +103,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
     (mapping.amount !== null || mapping.debit !== null || mapping.credit !== null);
 
   const rules = dataset.settings.importRules ?? [];
+  const accountName = (id: string) => dataset.accounts.find((account) => account.id === id)?.name;
   const members = dataset.settings.household?.members ?? [];
 
   const prepareReview = () => {
@@ -123,7 +125,11 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
           duplicate: duplicates.has(index),
           cardTotal: cardTotals.has(index),
           type: rule?.type ?? draft.type,
-          categoryId: rule ? (rule.categoryId ?? '') : guessed,
+          categoryId: rule
+            ? (rule.categoryId ??
+              savingsCategoryFor(rule.counterpartAccountId ?? null, accountName, dataset.categories) ??
+              '')
+            : guessed,
           ...(imputation ? { imputation } : {}),
           counterpartAccountId: rule?.counterpartAccountId ?? null,
           rule: rule?.match ?? null,

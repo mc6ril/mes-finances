@@ -207,6 +207,8 @@ export type ImportRule = {
   receivedFor?: boolean;
   /** Virement ou investissement : compte de destination (livret, assurance-vie, courtier…). */
   counterpartAccountId?: string | null;
+  /** Dépense : la règle vise des remboursements (montant entrant, déduit de la catégorie). */
+  refund?: boolean;
 };
 
 export type Settings = {

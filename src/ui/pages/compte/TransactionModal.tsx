@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import { PAYMENT_METHODS } from '@/ui/constants';
-import { STATUS_LABELS, TYPE_LABELS } from '@/core/comptes/csvImport';
+import { STATUS_LABELS } from '@/core/comptes/csvImport';
+import { savingsCategoryFor } from '@/core/budget/budget';
 import type { Transaction, TransactionStatus, TransactionType } from '@/core/shared/model';
 import Button from '@/ui/design-system/Button';
-import { Checkbox, Field, Input, Select, Textarea } from '@/ui/design-system/Field';
+import { Field, Input, Select, Textarea } from '@/ui/design-system/Field';
 import { Modal } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 import {
@@ -25,9 +26,21 @@ type TransactionModalProps = {
   onClose: () => void;
 };
 
-const TYPE_HINTS: Record<TransactionType, string> = {
+type TypeChoice = TransactionType | 'remboursement';
+
+const TYPE_CHOICES: { value: TypeChoice; label: string }[] = [
+  { value: 'depense', label: 'Dépense' },
+  { value: 'remboursement', label: 'Remboursement' },
+  { value: 'revenu', label: 'Revenu' },
+  { value: 'virement', label: 'Virement interne' },
+  { value: 'investissement', label: 'Investissement' },
+];
+
+const TYPE_HINTS: Record<TypeChoice, string> = {
   depense: 'Consommation : courses, sorties, abonnements…',
-  revenu: 'Salaire, prime, remboursement d’un tiers…',
+  remboursement:
+    'Mutuelle, assurance maladie, voyage ou achat remboursé, avoir : déduit de la dépense de la catégorie.',
+  revenu: 'Salaire, prime, vente…',
   virement: 'Entre tes propres comptes : jamais compté comme dépense ni revenu.',
   investissement: 'Versement vers un placement : compté comme épargne, pas comme dépense.',
 };
@@ -69,8 +82,15 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
     })),
   ];
 
+  const choice: TypeChoice = form.type === 'depense' && form.isRefund ? 'remboursement' : form.type;
+  const accountName = (id: string) => dataset.accounts.find((account) => account.id === id)?.name;
+
   const submit = async () => {
-    const result = validateForm(form, members);
+    // Virement ou investissement : la catégorie d'épargne suit le compte crédité.
+    const categoryId = needsCounterpart(form.type)
+      ? (savingsCategoryFor(form.counterpartAccountId, accountName, dataset.categories) ?? '')
+      : form.categoryId;
+    const result = validateForm({ ...form, categoryId }, members);
     setErrors(result.errors);
     if (!result.draft) {
       return;
@@ -103,13 +123,20 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
       >
         <Field label="Type" className="sm:col-span-2">
           <Select
-            value={form.type}
-            onChange={(value) =>
-              update({ type: value as TransactionType, categoryId: '', isRefund: false, imputation: '' })
-            }
-            options={Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))}
+            value={choice}
+            onChange={(value) => {
+              const refund = value === 'remboursement';
+              update({
+                type: refund ? 'depense' : (value as TransactionType),
+                isRefund: refund,
+                // Passer d'une dépense à son remboursement garde la catégorie.
+                categoryId: form.type === 'depense' && (refund || value === 'depense') ? form.categoryId : '',
+                imputation: '',
+              });
+            }}
+            options={TYPE_CHOICES}
           />
-          <Text variant="caption">{TYPE_HINTS[form.type]}</Text>
+          <Text variant="caption">{TYPE_HINTS[choice]}</Text>
         </Field>
         <Field label="Date" error={errors.date}>
           <Input type="date" value={form.date} onChange={(date) => update({ date })} />
@@ -130,13 +157,15 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
             placeholder="Restaurant, courses, salaire…"
           />
         </Field>
-        <Field label="Catégorie">
-          <Select
-            value={form.categoryId}
-            onChange={(categoryId) => update({ categoryId })}
-            options={categoryOptions}
-          />
-        </Field>
+        {!needsCounterpart(form.type) && (
+          <Field label={form.isRefund ? 'Remboursement de' : 'Catégorie'}>
+            <Select
+              value={form.categoryId}
+              onChange={(categoryId) => update({ categoryId })}
+              options={categoryOptions}
+            />
+          </Field>
+        )}
         <Field label={needsCounterpart(form.type) ? 'Compte débité' : 'Compte'}>
           <Select
             value={form.accountId}
@@ -214,13 +243,6 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
             ]}
           />
         </Field>
-        {form.type === 'depense' && (
-          <div className="flex items-end sm:col-span-2">
-            <Checkbox checked={form.isRefund} onChange={(isRefund) => update({ isRefund })}>
-              Remboursement ou avoir (montant entrant, déduit de la catégorie)
-            </Checkbox>
-          </div>
-        )}
         <Field label="Commentaire (facultatif)" className="sm:col-span-2">
           <Textarea value={form.comment} onChange={(comment) => update({ comment })} />
         </Field>
