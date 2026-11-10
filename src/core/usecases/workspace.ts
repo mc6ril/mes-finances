@@ -2,6 +2,7 @@ import { todayIso } from '../shared/dates';
 import type { Result } from '../shared/errors';
 import type { Dataset, ImportRule, Settings } from '../shared/model';
 import { createInitialDataset } from '../shared/seed';
+import { mergeSettings } from '../sauvegarde/settingsMerge';
 import { loadedDataset, type FinanceDeps } from './shared';
 
 export const createWorkspaceUseCases = ({ gateway, newId, now }: FinanceDeps) => {
@@ -49,5 +50,18 @@ export const createWorkspaceUseCases = ({ gateway, newId, now }: FinanceDeps) =>
     );
   };
 
-  return { updateSettings, restore, resetWorkspace, saveImportRule, deleteImportRule };
+  /** Reprend les réglages d'un fichier d'espace ; les opérations et budgets restent en place. */
+  const importSettings = (incoming: Dataset): Promise<Result<void>> => {
+    const loaded = loadedDataset(gateway);
+    if (!loaded.ok) {
+      return Promise.resolve(loaded);
+    }
+    return gateway.restore(mergeSettings(loaded.value, incoming).dataset, {
+      action: 'modification',
+      entity: 'Paramètres',
+      summary: 'Réglages importés (règles, catégories, comptes)',
+    });
+  };
+
+  return { updateSettings, restore, importSettings, resetWorkspace, saveImportRule, deleteImportRule };
 };

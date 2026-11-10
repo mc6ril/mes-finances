@@ -11,6 +11,7 @@ import {
   Receipt,
   RotateCcw,
   Share2,
+  SlidersHorizontal,
   ShieldCheck,
   ShoppingBag,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
 import { ACCOUNT_KIND_LABELS, GROUP_LABELS, groupLabel } from '@/ui/constants';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import { mergeSettings, type SettingsMergeSummary } from '@/core/sauvegarde/settingsMerge';
 import { parseFlexibleDate, todayIso } from '@/core/shared/dates';
 import { formatDateFr } from '@/core/shared/format';
 import type {
@@ -553,6 +555,23 @@ const restoreMessage = (pending: PendingRestore, workspaceName: string): string 
   return `Les données de l’espace « ${workspaceName} » seront remplacées par le fichier (${pending.dataset.transactions.length} opérations, ${pending.dataset.accounts.length} comptes). Tes autres espaces ne sont pas touchés.`;
 };
 
+const changes = (label: string, { added, updated }: { added: number; updated: number }): string | null =>
+  added + updated > 0
+    ? `${label} : ${[added && `${added} ajoutée(s)`, updated && `${updated} modifiée(s)`].filter(Boolean).join(', ')}`
+    : null;
+
+const settingsMessage = (summary: SettingsMergeSummary): string => {
+  const lines = [
+    changes('Règles d’import', summary.rules),
+    changes('Catégories', summary.categories),
+    changes('Comptes', summary.accounts),
+    summary.household ? 'Foyer du commun mis à jour' : null,
+  ].filter(Boolean);
+  return lines.length === 0
+    ? 'Ces réglages sont déjà identiques aux tiens.'
+    : `${lines.join(' · ')}. Rien n’est supprimé et tes opérations restent en place.`;
+};
+
 const BackupCard = () => {
   const dataset = useDataset();
   const files = useFileUseCases();
@@ -563,6 +582,24 @@ const BackupCard = () => {
   const { notify } = useToast();
   const [pending, setPending] = useState<PendingRestore | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [pendingSettings, setPendingSettings] = useState<Dataset | null>(null);
+
+  const onSettingsFile = async (file: File) => {
+    const result = await files.readBackupFile(file);
+    if (!result.ok) {
+      notify(errorMessage(result.error), 'error');
+      return;
+    }
+    const incoming =
+      result.value.kind === 'workspace'
+        ? result.value.dataset
+        : result.value.entries.find((entry) => entry.workspace.id === workspace.id)?.dataset;
+    if (!incoming) {
+      notify('Aucun espace de ce nom dans la sauvegarde complète : choisis le fichier d’un espace.', 'error');
+      return;
+    }
+    setPendingSettings(incoming);
+  };
   const [selectedSharedId, setSharedId] = useState(workspace.id);
   const sharedId = workspaces.some((item) => item.id === selectedSharedId) ? selectedSharedId : workspace.id;
 
@@ -670,6 +707,17 @@ const BackupCard = () => {
           />
         </SettingRow>
         <SettingRow
+          icon={SlidersHorizontal}
+          title="Importer des réglages"
+          description="Règles d’import, catégories, comptes et soldes de départ, foyer du commun. Les opérations, budgets et notes sont conservés."
+        >
+          <FilePickerButton
+            label="Choisir un fichier de réglages"
+            onFile={(file) => void onSettingsFile(file)}
+            iconOnly
+          />
+        </SettingRow>
+        <SettingRow
           icon={FileSpreadsheet}
           title="Opérations en CSV"
           description={`Espace « ${workspace.name} », lisible dans un tableur`}
@@ -703,6 +751,18 @@ const BackupCard = () => {
           onConfirm={() => {
             confirmRestore(pending);
             setPending(null);
+          }}
+        />
+      )}
+      {pendingSettings && (
+        <ConfirmDialog
+          title={`Importer les réglages dans « ${workspace.name} » ?`}
+          message={settingsMessage(mergeSettings(dataset, pendingSettings).summary)}
+          confirmLabel="Importer"
+          onCancel={() => setPendingSettings(null)}
+          onConfirm={() => {
+            void report(finance.importSettings(pendingSettings), 'Réglages importés');
+            setPendingSettings(null);
           }}
         />
       )}
