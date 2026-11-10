@@ -7,6 +7,25 @@ export type SettingsMergeSummary = {
   household: boolean;
 };
 
+/** Comparaison indépendante de l'ordre des clés et des champs absents (`undefined`). */
+const canonical = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(canonical);
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => item !== undefined)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, item]) => [key, canonical(item)]),
+    );
+  }
+  return value;
+};
+
+const sameValue = (a: unknown, b: unknown): boolean =>
+  JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+
 const ruleKey = (rule: ImportRule): string =>
   rule.match.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
 
@@ -20,7 +39,7 @@ const mergeBy = <T>(current: T[], incoming: T[], key: (item: T) => string) => {
     if (!replacement) {
       return item;
     }
-    if (JSON.stringify(replacement) !== JSON.stringify(item)) {
+    if (!sameValue(replacement, item)) {
       updated += 1;
     }
     return replacement;
@@ -73,7 +92,7 @@ export const mergeSettings = (
       rules: { added: rules.added, updated: rules.updated },
       categories: { added: categories.added, updated: categories.updated },
       accounts: { added: accounts.added, updated: accounts.updated },
-      household: JSON.stringify(household) !== JSON.stringify(current.settings.household),
+      household: !sameValue(household, current.settings.household),
     },
   };
 };

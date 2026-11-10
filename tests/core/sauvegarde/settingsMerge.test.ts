@@ -82,3 +82,14 @@ describe('mergeSettings', () => {
     expect(dataset.accounts).toEqual(mine.accounts);
   });
 });
+
+describe('mergeSettings · comptage des changements', () => {
+  it('ne compte pas comme modifié un compte identique dont les clés sont dans un autre ordre', () => {
+    const mine = current();
+    const reordered = mine.accounts.map((account) =>
+      Object.fromEntries(Object.entries({ ...account, extra: undefined }).reverse()),
+    ) as Dataset['accounts'];
+    const { summary } = mergeSettings(mine, { ...mine, accounts: reordered });
+    expect(summary.accounts).toEqual({ added: 0, updated: 0 });
+  });
+});
