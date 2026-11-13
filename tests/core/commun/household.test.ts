@@ -47,7 +47,7 @@ const dataset = (overrides: Partial<Dataset> = {}): Dataset => {
     settings: {
       ...base.settings,
       kind: 'commun',
-      household: { members, contributionRate: 0.75, savingsPaidBy: null },
+      household: { members, contributionRate: 0.75, savingsPaidBy: 'commun' },
     },
     commonMonths: [october, november],
     transactions: [
@@ -319,7 +319,8 @@ describe('épargne versée par un membre', () => {
 describe('savingsPayerOf', () => {
   it('par défaut, le membre dont le salaire n’arrive pas sur le commun verse l’épargne', () => {
     expect(savingsPayerOf({ members, contributionRate: 0.75 })).toBe('m2');
-    expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: null })).toBeNull();
+    expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: null })).toBe('m2');
+    expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: 'commun' })).toBeNull();
     expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: 'm1' })).toBe('m1');
     expect(savingsPayerOf(null)).toBeNull();
   });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { savingsPayerOf } from '@/core/commun/household';
+import { SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
 import type { Household, HouseholdMember } from '@/core/shared/model';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -102,13 +102,13 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
         hint="Le compte d’où partent les virements vers les livrets. Versée par une personne : elle compte dans sa part."
       >
         <Segmented<string>
-          value={savingsPayerOf(household) ?? ''}
+          value={savingsPayerOf(household) ?? SAVINGS_FROM_COMMON}
           label="Épargne du mois versée depuis"
           onChange={(payer) =>
-            save({ ...household, savingsPaidBy: payer || null }, 'Origine de l’épargne du commun modifiée')
+            save({ ...household, savingsPaidBy: payer }, 'Origine de l’épargne du commun modifiée')
           }
           options={[
-            { value: '', label: 'Compte commun' },
+            { value: SAVINGS_FROM_COMMON, label: 'Compte commun' },
             ...household.members.map((member, index) => ({
               value: member.id,
               label: member.name.trim() || `Personne ${index + 1}`,

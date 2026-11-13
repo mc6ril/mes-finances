@@ -62,6 +62,9 @@ export const effectiveOutsideIncome = (
     .filter((entry) => entry.month <= month && entry.outsideIncomes?.[memberId] !== undefined)
     .sort((a, b) => b.month.localeCompare(a.month))[0]?.outsideIncomes?.[memberId] ?? 0;
 
+/** Valeur du réglage quand l'épargne part du compte commun. */
+export const SAVINGS_FROM_COMMON = 'commun';
+
 /**
  * Qui verse l'épargne du mois : le réglage s'il est fait, sinon le membre dont le salaire
  * n'arrive pas sur le commun (c'est lui qui alimente les livrets depuis son compte).
@@ -70,10 +73,11 @@ export const savingsPayerOf = (household: Household | null): string | null => {
   if (!household) {
     return null;
   }
-  if (household.savingsPaidBy !== undefined) {
-    return household.savingsPaidBy;
+  if (household.savingsPaidBy === SAVINGS_FROM_COMMON) {
+    return null;
   }
-  return household.members.find((member) => !member.salaryOnCommon)?.id ?? null;
+  const chosen = household.members.find((member) => member.id === household.savingsPaidBy);
+  return chosen?.id ?? household.members.find((member) => !member.salaryOnCommon)?.id ?? null;
 };
 
 export const membersOf = (dataset: Dataset): HouseholdMember[] => dataset.settings.household?.members ?? [];
