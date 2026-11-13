@@ -258,6 +258,7 @@ describe('compte commun', () => {
       { id: 'm2', name: 'Sam', salaryOnCommon: false },
     ],
     contributionRate: 0.75,
+    savingsPaidBy: null,
   };
   const commun = (): Dataset => {
     const dataset = createInitialDataset('2026-11-01', () => 'audit', 'commun');
@@ -364,6 +365,7 @@ describe('virement de l’épargne du commun', () => {
       { id: 'm2', name: 'Sam', salaryOnCommon: false },
     ],
     contributionRate: 0.75,
+    savingsPaidBy: null,
   };
   const commun = (): Dataset => {
     const dataset = createInitialDataset('2026-10-01', () => 'audit', 'commun');

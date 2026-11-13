@@ -3,6 +3,7 @@ import {
   commonMonthSummary,
   contributionsFor,
   memberSettlement,
+  savingsPayerOf,
   settlementCandidates,
   suggestedEnvelope,
 } from '@/core/commun/household';
@@ -43,7 +44,11 @@ const dataset = (overrides: Partial<Dataset> = {}): Dataset => {
   const base = createInitialDataset('2026-10-01', () => 'audit');
   return {
     ...base,
-    settings: { ...base.settings, kind: 'commun', household: { members, contributionRate: 0.75 } },
+    settings: {
+      ...base.settings,
+      kind: 'commun',
+      household: { members, contributionRate: 0.75, savingsPaidBy: null },
+    },
     commonMonths: [october, november],
     transactions: [
       income('2026-10-01', 300000, 'm1'),
@@ -308,5 +313,14 @@ describe('épargne versée par un membre', () => {
     expect(memberSettlement(paidBySam, '2026-10', 'm1').due).toBe(
       memberSettlement(base, '2026-10', 'm1').due,
     );
+  });
+});
+
+describe('savingsPayerOf', () => {
+  it('par défaut, le membre dont le salaire n’arrive pas sur le commun verse l’épargne', () => {
+    expect(savingsPayerOf({ members, contributionRate: 0.75 })).toBe('m2');
+    expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: null })).toBeNull();
+    expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: 'm1' })).toBe('m1');
+    expect(savingsPayerOf(null)).toBeNull();
   });
 });

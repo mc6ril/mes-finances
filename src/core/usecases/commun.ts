@@ -1,4 +1,4 @@
-import { commonMonthOf, commonMonthSummary, memberLabel } from '../commun/household';
+import { commonMonthOf, commonMonthSummary, memberLabel, savingsPayerOf } from '../commun/household';
 import { monthEnd } from '../shared/dates';
 import { ok, type Result } from '../shared/errors';
 import { formatEuros, monthLabel } from '../shared/format';
@@ -78,7 +78,7 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     const accountName = (accountId: string) =>
       dataset.accounts.find((account) => account.id === accountId)?.name ?? 'Épargne';
     const lines = commonMonthSummary(dataset, month).savings.filter((line) => line.amount > 0);
-    const payer = dataset.settings.household?.savingsPaidBy ?? null;
+    const payer = savingsPayerOf(dataset.settings.household);
     const summary = `Épargne du commun · ${monthLabel(month)}`;
     if (payer) {
       const movements: SavingsMovement[] = lines.map((line) => ({

@@ -6,6 +6,7 @@ import {
   effectiveSavingsRates,
   memberLabel,
   membersOf,
+  savingsPayerOf,
 } from '@/core/commun/household';
 import { formatDateFr, formatEuros } from '@/core/shared/format';
 import type { Cents, CommonMonth, MonthKey, SavingsRate } from '@/core/shared/model';
@@ -184,7 +185,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
       ? `${percent((summary.incomes[memberId] ?? 0) / summary.totalIncome)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`
       : undefined;
   const positive = summary.balance >= 0;
-  const payer = dataset.settings.household?.savingsPaidBy ?? null;
+  const payer = savingsPayerOf(dataset.settings.household);
 
   return (
     <section className="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none">

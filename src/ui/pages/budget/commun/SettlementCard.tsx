@@ -17,14 +17,6 @@ import Card from '@/ui/design-system/Card';
 import { ConfirmDialog, Modal } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 
-const KIND_HINT = {
-  income: '',
-  contribution: '',
-  savings: '',
-  charge: 'à sa charge',
-  avance: 'avancé',
-} as const;
-
 type LinkModalProps = { member: HouseholdMember; month: MonthKey; onClose: () => void };
 
 /** Choix des virements du relevé qui règlent le mois : le compte commun n'est pas modifié. */
@@ -107,44 +99,102 @@ const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
   );
 };
 
-type Group = { key: string; label: string; hint?: string; lines: SettlementLine[] };
+type Group = { key: string; label: string; lines: SettlementLine[]; always: boolean; detailed: boolean };
 
 /**
- * Membre dont le salaire n'arrive pas sur le commun : tout est présenté de son point de vue,
- * ce qu'il doit (positif) ou ce qui vient en déduction (négatif).
+ * Récap du règlement, identique pour les deux membres. Celui dont le salaire arrive sur le
+ * commun le lit du côté de ce que le commun lui doit ; l'autre, du côté de ce qu'il doit au
+ * commun (sa part en positif). Tout vient des réglages, du mois du commun et des opérations.
  */
-const OwedLines = ({ name, lines }: { name: string; lines: SettlementLine[] }) => {
-  const of = (kind: SettlementLine['kind']) => lines.filter((line) => line.kind === kind);
+const SettlementLines = ({
+  name,
+  lines,
+  owes,
+  carriedOver,
+}: {
+  name: string;
+  lines: SettlementLine[];
+  owes: boolean;
+  carriedOver: number;
+}) => {
+  const sign = owes ? -1 : 1;
+  const of = (kind: SettlementLine['kind'], keep: (line: SettlementLine) => boolean = () => true) =>
+    lines.filter((line) => line.kind === kind && keep(line));
   const groups: Group[] = [
-    { key: 'contribution', label: 'Part du commun', lines: of('contribution') },
-    { key: 'savings', label: 'Épargne versée sur les livrets', lines: of('savings') },
-    { key: 'avance', label: 'Payé pour le commun depuis son compte', lines: of('avance') },
-    { key: 'charge', label: `Payé par le commun pour ${name}`, lines: of('charge') },
+    {
+      key: 'income',
+      label: 'Revenus arrivés sur le commun',
+      lines: of('income'),
+      always: !owes,
+      detailed: false,
+    },
+    {
+      key: 'contribution',
+      label: 'Part du commun',
+      lines: of('contribution'),
+      always: true,
+      detailed: false,
+    },
+    {
+      key: 'savings',
+      label: 'Épargne versée sur les livrets',
+      lines: of('savings'),
+      always: false,
+      detailed: false,
+    },
+    {
+      key: 'avance',
+      label: 'Payé pour le commun depuis son compte',
+      lines: of('avance'),
+      always: true,
+      detailed: true,
+    },
+    {
+      key: 'charge',
+      label: `Payé par le commun pour ${name}`,
+      lines: of('charge', (line) => line.amount < 0),
+      always: true,
+      detailed: true,
+    },
+    {
+      key: 'received',
+      label: `Reçu sur le commun pour ${name}`,
+      lines: of('charge', (line) => line.amount > 0),
+      always: false,
+      detailed: true,
+    },
   ];
   return (
     <>
-      {groups.map((group) => {
-        const total = -group.lines.reduce((sum, line) => sum + line.amount, 0);
-        const detailed = group.key === 'avance' || group.key === 'charge';
-        return (
-          <li key={group.key} className="flex flex-col gap-0.5">
-            <span className="flex justify-between gap-2">
-              <span className="text-stone-600 dark:text-stone-300">{group.label}</span>
-              <Amount cents={total} signed={group.key !== 'contribution'} />
-            </span>
-            {detailed &&
-              group.lines.map((line, index) => (
-                <span
-                  key={line.transactionId ?? index}
-                  className="flex justify-between gap-2 pl-3 text-xs text-stone-400"
-                >
-                  <span className="min-w-0 truncate">{line.label}</span>
-                  <Amount cents={-line.amount} signed />
-                </span>
-              ))}
-          </li>
-        );
-      })}
+      {groups
+        .filter((group) => group.always || group.lines.length > 0)
+        .map((group) => {
+          const total = sign * group.lines.reduce((sum, line) => sum + line.amount, 0);
+          return (
+            <li key={group.key} className="flex flex-col gap-0.5">
+              <span className="flex justify-between gap-2">
+                <span className="text-stone-600 dark:text-stone-300">{group.label}</span>
+                <Amount cents={total} signed={!(owes && group.key === 'contribution')} />
+              </span>
+              {group.detailed &&
+                group.lines.map((line, index) => (
+                  <span
+                    key={line.transactionId ?? index}
+                    className="flex justify-between gap-2 pl-3 text-xs text-stone-400"
+                  >
+                    <span className="min-w-0 truncate">{line.label}</span>
+                    <Amount cents={sign * line.amount} signed />
+                  </span>
+                ))}
+            </li>
+          );
+        })}
+      {carriedOver !== 0 && (
+        <li className="flex justify-between gap-2">
+          <span className="text-stone-600 dark:text-stone-300">Reste des mois précédents</span>
+          <Amount cents={sign * carriedOver} signed />
+        </li>
+      )}
     </>
   );
 };
@@ -181,28 +231,12 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
         {done.length > 0 && amount === 0 && <Badge tone="good">Réglé</Badge>}
       </div>
       <ul className="flex flex-col gap-1 text-sm">
-        {owes && <OwedLines name={name} lines={settlement.lines} />}
-        {!owes &&
-          settlement.lines.map((line, index) => (
-            <li key={line.transactionId ?? `${line.kind}-${index}`} className="flex justify-between gap-2">
-              <span className="min-w-0 truncate text-stone-600 dark:text-stone-300">
-                {line.label}
-                {KIND_HINT[line.kind] && (
-                  <span className="text-stone-400">
-                    {' '}
-                    · {line.kind === 'charge' && line.amount > 0 ? 'reçu pour lui' : KIND_HINT[line.kind]}
-                  </span>
-                )}
-              </span>
-              <Amount cents={line.amount} signed />
-            </li>
-          ))}
-        {settlement.carriedOver !== 0 && (
-          <li className="flex justify-between gap-2">
-            <span className="text-stone-600 dark:text-stone-300">Reste des mois précédents</span>
-            <Amount cents={owes ? -settlement.carriedOver : settlement.carriedOver} signed />
-          </li>
-        )}
+        <SettlementLines
+          name={name}
+          lines={settlement.lines}
+          owes={owes}
+          carriedOver={settlement.carriedOver}
+        />
         {done.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-1 text-stone-600 dark:text-stone-300">
@@ -235,16 +269,14 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           </Button>
         )}
       </div>
-      {owes && (
-        <button
-          type="button"
-          onClick={() => setAdding(true)}
-          className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
-        >
-          <Plus className="h-3.5 w-3.5" aria-hidden />
-          Ajouter une dépense payée par {name}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setAdding(true)}
+        className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
+      >
+        <Plus className="h-3.5 w-3.5" aria-hidden />
+        Ajouter une dépense payée par {name}
+      </button>
       {adding && (
         <TransactionModal
           transaction={null}

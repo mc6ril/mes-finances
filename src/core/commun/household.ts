@@ -4,6 +4,7 @@ import type {
   Cents,
   CommonMonth,
   Dataset,
+  Household,
   HouseholdMember,
   MonthKey,
   SavingsRate,
@@ -60,6 +61,20 @@ export const effectiveOutsideIncome = (
   [...commonMonths]
     .filter((entry) => entry.month <= month && entry.outsideIncomes?.[memberId] !== undefined)
     .sort((a, b) => b.month.localeCompare(a.month))[0]?.outsideIncomes?.[memberId] ?? 0;
+
+/**
+ * Qui verse l'épargne du mois : le réglage s'il est fait, sinon le membre dont le salaire
+ * n'arrive pas sur le commun (c'est lui qui alimente les livrets depuis son compte).
+ */
+export const savingsPayerOf = (household: Household | null): string | null => {
+  if (!household) {
+    return null;
+  }
+  if (household.savingsPaidBy !== undefined) {
+    return household.savingsPaidBy;
+  }
+  return household.members.find((member) => !member.salaryOnCommon)?.id ?? null;
+};
 
 export const membersOf = (dataset: Dataset): HouseholdMember[] => dataset.settings.household?.members ?? [];
 
@@ -217,7 +232,7 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
       : []),
     { kind: 'contribution', label: 'Part du commun', amount: -(summary.contributions[member.id] ?? 0) },
     // Épargne versée par ce membre depuis son compte : elle compte dans sa part.
-    ...(dataset.settings.household?.savingsPaidBy === member.id && summary.savingsTotal > 0
+    ...(savingsPayerOf(dataset.settings.household) === member.id && summary.savingsTotal > 0
       ? [{ kind: 'savings' as const, label: 'Épargne versée sur les livrets', amount: summary.savingsTotal }]
       : []),
     ...imputed('charge').map((transaction) => ({

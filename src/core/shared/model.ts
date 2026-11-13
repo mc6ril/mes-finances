@@ -157,7 +157,8 @@ export type Household = {
   contributionRate: number;
   /**
    * Membre qui verse l'épargne du mois directement de son compte vers les livrets ;
-   * absent ou null = virée depuis le compte commun.
+   * null = virée depuis le compte commun ; absent = le membre dont le salaire n'arrive
+   * pas sur le commun (voir savingsPayerOf).
    */
   savingsPaidBy?: string | null;
 };
