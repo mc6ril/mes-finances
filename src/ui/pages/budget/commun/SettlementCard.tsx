@@ -1,10 +1,14 @@
-import { Check, Undo2 } from 'lucide-react';
+import { Check, Plus, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { memberLabel, memberSettlement, membersOf, settlementCandidates } from '@/core/commun/household';
 import { formatDateFr, formatEuros, monthLabel } from '@/core/shared/format';
 import type { HouseholdMember, MonthKey, Settlement } from '@/core/shared/model';
+import type { SettlementLine } from '@/core/commun/household';
+import { monthEnd } from '@/core/shared/dates';
+import TransactionModal from '@/ui/pages/compte/TransactionModal';
 import { Checkbox } from '@/ui/design-system/Field';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
@@ -103,6 +107,48 @@ const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
   );
 };
 
+type Group = { key: string; label: string; hint?: string; lines: SettlementLine[] };
+
+/**
+ * Membre dont le salaire n'arrive pas sur le commun : tout est présenté de son point de vue,
+ * ce qu'il doit (positif) ou ce qui vient en déduction (négatif).
+ */
+const OwedLines = ({ name, lines }: { name: string; lines: SettlementLine[] }) => {
+  const of = (kind: SettlementLine['kind']) => lines.filter((line) => line.kind === kind);
+  const groups: Group[] = [
+    { key: 'contribution', label: 'Part du commun', lines: of('contribution') },
+    { key: 'savings', label: 'Épargne versée sur les livrets', lines: of('savings') },
+    { key: 'avance', label: 'Payé pour le commun depuis son compte', lines: of('avance') },
+    { key: 'charge', label: `Payé par le commun pour ${name}`, lines: of('charge') },
+  ];
+  return (
+    <>
+      {groups.map((group) => {
+        const total = -group.lines.reduce((sum, line) => sum + line.amount, 0);
+        const detailed = group.key === 'avance' || group.key === 'charge';
+        return (
+          <li key={group.key} className="flex flex-col gap-0.5">
+            <span className="flex justify-between gap-2">
+              <span className="text-stone-600 dark:text-stone-300">{group.label}</span>
+              <Amount cents={total} signed={group.key !== 'contribution'} />
+            </span>
+            {detailed &&
+              group.lines.map((line, index) => (
+                <span
+                  key={line.transactionId ?? index}
+                  className="flex justify-between gap-2 pl-3 text-xs text-stone-400"
+                >
+                  <span className="min-w-0 truncate">{line.label}</span>
+                  <Amount cents={-line.amount} signed />
+                </span>
+              ))}
+          </li>
+        );
+      })}
+    </>
+  );
+};
+
 type MemberBlockProps = { member: HouseholdMember; month: MonthKey };
 
 const MemberBlock = ({ member, month }: MemberBlockProps) => {
@@ -110,6 +156,9 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const [confirming, setConfirming] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const { today } = usePeriod();
+  const owes = !member.salaryOnCommon;
   const [toCancel, setToCancel] = useState<Settlement | null>(null);
   const name = memberLabel(dataset, member.id);
   const settlement = memberSettlement(dataset, month, member.id);
@@ -117,6 +166,8 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
   const amount = settlement.toSettle;
   const direction =
     amount > 0 ? `Le commun verse à ${name}` : amount < 0 ? `${name} verse au commun` : 'Rien à régler';
+  const lastDay = monthEnd(month);
+  const defaultDate = today < lastDay ? today : lastDay;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-stone-200 p-4 dark:border-stone-800">
@@ -130,24 +181,26 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
         {done.length > 0 && amount === 0 && <Badge tone="good">Réglé</Badge>}
       </div>
       <ul className="flex flex-col gap-1 text-sm">
-        {settlement.lines.map((line, index) => (
-          <li key={line.transactionId ?? `${line.kind}-${index}`} className="flex justify-between gap-2">
-            <span className="min-w-0 truncate text-stone-600 dark:text-stone-300">
-              {line.label}
-              {KIND_HINT[line.kind] && (
-                <span className="text-stone-400">
-                  {' '}
-                  · {line.kind === 'charge' && line.amount > 0 ? 'reçu pour lui' : KIND_HINT[line.kind]}
-                </span>
-              )}
-            </span>
-            <Amount cents={line.amount} signed />
-          </li>
-        ))}
+        {owes && <OwedLines name={name} lines={settlement.lines} />}
+        {!owes &&
+          settlement.lines.map((line, index) => (
+            <li key={line.transactionId ?? `${line.kind}-${index}`} className="flex justify-between gap-2">
+              <span className="min-w-0 truncate text-stone-600 dark:text-stone-300">
+                {line.label}
+                {KIND_HINT[line.kind] && (
+                  <span className="text-stone-400">
+                    {' '}
+                    · {line.kind === 'charge' && line.amount > 0 ? 'reçu pour lui' : KIND_HINT[line.kind]}
+                  </span>
+                )}
+              </span>
+              <Amount cents={line.amount} signed />
+            </li>
+          ))}
         {settlement.carriedOver !== 0 && (
           <li className="flex justify-between gap-2">
             <span className="text-stone-600 dark:text-stone-300">Reste des mois précédents</span>
-            <Amount cents={settlement.carriedOver} signed />
+            <Amount cents={owes ? -settlement.carriedOver : settlement.carriedOver} signed />
           </li>
         )}
         {done.map((item) => (
@@ -182,6 +235,26 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           </Button>
         )}
       </div>
+      {owes && (
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          Ajouter une dépense payée par {name}
+        </button>
+      )}
+      {adding && (
+        <TransactionModal
+          transaction={null}
+          template={null}
+          defaultDate={defaultDate}
+          title={`Dépense commune payée par ${name}`}
+          preset={{ type: 'depense', imputation: `avance:${member.id}`, paymentMethod: 'Carte' }}
+          onClose={() => setAdding(false)}
+        />
+      )}
       {confirming && <LinkTransferModal member={member} month={month} onClose={() => setConfirming(false)} />}
       {toCancel && (
         <ConfirmDialog

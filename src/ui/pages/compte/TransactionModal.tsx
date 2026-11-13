@@ -24,6 +24,9 @@ type TransactionModalProps = {
   template: Transaction | null;
   defaultDate: string;
   onClose: () => void;
+  /** Champs pré-remplis d'une nouvelle opération (ex. dépense avancée par un membre). */
+  preset?: Partial<TransactionFormState>;
+  title?: string;
 };
 
 type TypeChoice = TransactionType | 'remboursement';
@@ -61,13 +64,21 @@ const modalTitle = (transaction: Transaction | null, template: Transaction | nul
   return 'Nouvelle opération';
 };
 
-const TransactionModal = ({ transaction, template, defaultDate, onClose }: TransactionModalProps) => {
+const TransactionModal = ({
+  transaction,
+  template,
+  defaultDate,
+  onClose,
+  preset,
+  title,
+}: TransactionModalProps) => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
   const report = useReport();
-  const [form, setForm] = useState<TransactionFormState>(() =>
-    initialForm(transaction ?? template, defaultDate, dataset.settings.mainAccountId),
-  );
+  const [form, setForm] = useState<TransactionFormState>(() => ({
+    ...initialForm(transaction ?? template, defaultDate, dataset.settings.mainAccountId),
+    ...preset,
+  }));
   const [errors, setErrors] = useState<FormErrors>({});
   const update = (patch: Partial<TransactionFormState>) => setForm((current) => ({ ...current, ...patch }));
   const accounts = dataset.accounts.filter((account) => !account.archived);
@@ -102,7 +113,7 @@ const TransactionModal = ({ transaction, template, defaultDate, onClose }: Trans
 
   return (
     <Modal
-      title={modalTitle(transaction, template)}
+      title={title ?? modalTitle(transaction, template)}
       onClose={onClose}
       size="lg"
       footer={
