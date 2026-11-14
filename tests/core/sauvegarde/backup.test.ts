@@ -61,19 +61,19 @@ describe('configuration initiale', () => {
     expect(dataset.accounts.every((account) => account.openingBalance === 0)).toBe(true);
   });
 
-  it('propose une catégorie Impôts et taxes dans les dépenses fixes', () => {
-    expect(dataset.categories.find((category) => category.id === 'cat-impots')).toMatchObject({
+  it('propose les dépenses courantes, Voyages et Cadeaux en budget annuel', () => {
+    expect(dataset.categories.find((category) => category.id === 'cat-courses')).toMatchObject({
       group: 'fixe',
       period: 'mensuel',
     });
+    expect(dataset.categories.filter((category) => category.period === 'annuel').map((c) => c.id)).toEqual([
+      'cat-voyages',
+      'cat-cadeaux',
+    ]);
   });
 
-  it('laisse l’enveloppe personnelle vide, à saisir par l’utilisateur', () => {
-    expect(dataset.settings).toMatchObject({
-      mode: 'simple',
-      personalEnvelope: 0,
-      plaisirBudget: 0,
-    });
+  it('ne pré-remplit aucun budget plaisir', () => {
+    expect(dataset.settings.plaisirBudget).toBe(0);
   });
 
   it('ne pré-remplit aucun budget mensuel ni annuel', () => {

@@ -120,7 +120,7 @@ describe('dépôt d’un espace', () => {
       aTransaction({ id: 'cine', date: '2026-11-04', amount: -1800 }),
     ]);
     await repository.remove('transactions', ['salaire']);
-    await repository.saveSettings({ ...sample().settings, personalEnvelope: 50000 });
+    await repository.saveSettings({ ...sample().settings, plaisirBudget: 50000 });
     await monitor.flush(5000);
     await repository.close();
 
@@ -131,7 +131,7 @@ describe('dépôt d’un espace', () => {
     expect(courses?.amount).toBe(-5000);
     // Remplacement entier : l'imputation retirée ne survit pas.
     expect(courses?.imputation).toBeUndefined();
-    expect(read?.settings.personalEnvelope).toBe(50000);
+    expect(read?.settings.plaisirBudget).toBe(50000);
   });
 
   it('range le journal du plus récent au plus ancien', async () => {
@@ -235,7 +235,7 @@ describe('liste des espaces', () => {
     expect(loaded).toEqual({ ok: true, value: { workspaces: [DEFAULT_WORKSPACE], activeId: 'perso' } });
     await monitor.flush(5000);
     const main = await getDoc(doc(dbOf(OWNER), `workspaces/perso-${OWNER}`));
-    expect(main.data()).toMatchObject({ ownerId: OWNER, memberIds: [OWNER], kind: 'perso', name: 'Perso' });
+    expect(main.data()).toMatchObject({ ownerId: OWNER, memberIds: [OWNER], kind: 'perso', name: DEFAULT_WORKSPACE.name });
   });
 
   it('liste ses espaces avec leur rôle, sans ceux des autres', async () => {

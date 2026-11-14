@@ -95,14 +95,14 @@ describe('espaces de suivi', () => {
     const communId = store.getSnapshot().workspace.id;
     await store.restore(communFile(), { action: 'restauration', entity: 'Test', summary: 'Commun' });
     const saved = await store.allWorkspaceData();
-    expect(saved.ok && saved.value.map((entry) => entry.workspace.name)).toEqual(['Perso', 'Commun']);
+    expect(saved.ok && saved.value.map((entry) => entry.workspace.name)).toEqual(['Mon espace', 'Commun']);
     await store.createWorkspace('Brouillon');
     if (!saved.ok) {
       throw new Error('sauvegarde impossible');
     }
     expect((await store.restoreAll(saved.value, communId)).ok).toBe(true);
     const { workspaces, workspace, dataset } = store.getSnapshot();
-    expect(workspaces.map((item) => item.name)).toEqual(['Perso', 'Commun']);
+    expect(workspaces.map((item) => item.name)).toEqual(['Mon espace', 'Commun']);
     expect(workspace).toMatchObject({ id: communId, kind: 'commun', role: 'owner' });
     expect(dataset?.transactions.map((transaction) => transaction.id)).toEqual(['courses']);
   });

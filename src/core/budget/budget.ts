@@ -1,6 +1,7 @@
 import { isCounted } from '../comptes/balances';
 import { monthKeyOf, monthsOfYear } from '../shared/dates';
 import type {
+  Account,
   Category,
   CategoryGroup,
   Cents,
@@ -460,4 +461,34 @@ export const savingsCategoryFor = (
         category.group === 'epargne' && !category.archived && comparable(category.name) === comparable(name),
     )?.id ?? null
   );
+};
+
+/**
+ * Catégorie d'épargne qui suit un compte d'épargne : créée avec lui, renommée et archivée avec lui,
+ * pour que le budget n'affiche que les comptes réellement suivis. null : rien à changer.
+ */
+export const savingsCategoryOfAccount = (
+  account: Account,
+  previous: Account | undefined,
+  categories: Category[],
+  newId: () => string,
+): Category | null => {
+  if (account.group === 'courant') {
+    return null;
+  }
+  const named = (name: string) =>
+    categories.find(
+      (category) => category.group === 'epargne' && comparable(category.name) === comparable(name),
+    );
+  const existing = named(account.name) ?? (previous ? named(previous.name) : undefined);
+  if (!existing) {
+    if (account.archived) {
+      return null;
+    }
+    return { id: newId(), name: account.name, group: 'epargne', period: 'mensuel', archived: false };
+  }
+  if (existing.name === account.name && existing.archived === account.archived) {
+    return null;
+  }
+  return { ...existing, name: account.name, archived: account.archived };
 };

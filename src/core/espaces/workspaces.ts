@@ -18,7 +18,7 @@ export type WorkspaceRegistryState = { workspaces: Workspace[]; activeId: string
 
 export const DEFAULT_WORKSPACE: Workspace = {
   id: 'perso',
-  name: 'Perso',
+  name: 'Mon espace',
   kind: 'perso',
   role: 'owner',
 };

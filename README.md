@@ -83,7 +83,7 @@ src/
     recurring.ts        Opérations récurrentes
     backup.ts           Sauvegarde / restauration validée et versionnée
     seed.ts             Configuration initiale (vierge)
-    workspaces.ts       Espaces de suivi indépendants (Perso, Commun…)
+    workspaces.ts       Espaces de suivi indépendants (personnels ou communs)
     <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth, partage, sync)
     ports.ts            Ports transverses (lecture / enregistrement de fichiers, CSV, ids, horloge)
     auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur)
@@ -124,12 +124,13 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 - Une dépense **remboursée** se saisit comme dépense positive dans la même catégorie : elle réduit la catégorie.
 - Patrimoine : on distingue **sommes versées**, **intérêts**, **frais**, **plus/moins-values** et **valeur totale**. Les valorisations boursières n'entrent jamais dans les revenus.
 - Le compte commun immobilier est affiché à part ; il n'entre dans le patrimoine personnel qu'une fois la quote-part renseignée.
-- Catégories à **budget annuel** (par défaut Voyages, Cadeaux, Dépenses exceptionnelles ; réglable dans Paramètres → Catégories) : suivies sur l'année, hors du rythme mensuel du budget plaisir et du budget plaisir mensuel. Leur budget annuel ÷ 12 est compté comme provision dans l'enveloppe.
-- Mode **simplifié** : seules l'épargne personnelle et les dépenses plaisir sont suivies dans l'enveloppe de 460 € (charges déjà déduites). Mode **complet** : tout le compte courant. Les deux modes ne s'additionnent jamais.
+- Catégories à **budget annuel** (par défaut Voyages et Cadeaux ; réglable dans Paramètres → Catégories) : suivies sur l'année, hors du rythme mensuel du budget plaisir. Leur budget annuel ÷ 12 est compté comme provision dans les dépenses prévues.
+- **Épargne** : chaque compte d'épargne (livret, assurance-vie, placement…) a sa catégorie du même nom, créée, renommée et archivée avec lui. Un espace neuf n'en a donc aucune : le budget n'affiche que les comptes réellement suivis.
+- Un espace neuf démarre avec un compte courant et quelques catégories courantes, à compléter. Le tableau de bord n'affiche que ce qui a été saisi (revenus, charges, épargne…) ; tant qu'aucune opération n'existe, il présente les premiers pas.
 
 ## Espaces de suivi
 
-Chaque espace (Perso, Commun…) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
+Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on ajoute) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
 
 - **Créer** un espace : Paramètres → Espaces de suivi.
 - **Espaces perso** : visibles et modifiables uniquement par leur propriétaire.

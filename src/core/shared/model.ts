@@ -141,7 +141,6 @@ export type AuditEntry = {
   summary: string;
 };
 
-export type TrackingMode = 'simple' | 'complet';
 export type WorkspaceKind = 'perso' | 'commun';
 
 export type HouseholdMember = {
@@ -215,8 +214,6 @@ export type ImportRule = {
 export type Settings = {
   kind: WorkspaceKind;
   household: Household | null;
-  mode: TrackingMode;
-  personalEnvelope: Cents;
   plaisirBudget: Cents;
   theme: ThemePreference;
   mainAccountId: string;
@@ -243,4 +240,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;

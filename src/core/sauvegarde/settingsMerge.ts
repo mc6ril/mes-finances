@@ -81,8 +81,6 @@ export const mergeSettings = (
         importRules,
         household,
         mainAccountId,
-        mode: incoming.settings.mode,
-        personalEnvelope: incoming.settings.personalEnvelope,
         plaisirBudget: incoming.settings.plaisirBudget,
       },
       categories: categories.merged,

@@ -53,35 +53,23 @@ export const HEALTH_CATEGORY: Category = {
   archived: false,
 };
 
+/**
+ * Catégories d'un espace perso neuf : le minimum courant, à compléter dans Paramètres.
+ * Aucune catégorie d'épargne : chacune est créée avec le compte d'épargne du même nom.
+ */
 export const DEFAULT_CATEGORIES: Category[] = [
   category('cat-salaire', 'Salaire', 'revenu'),
-  category('cat-primes', 'Primes', 'revenu'),
-  category('cat-remboursements', 'Remboursements', 'revenu'),
-  category('cat-revenus-complementaires', 'Revenus complémentaires', 'revenu'),
-  category('cat-autres-entrees', 'Autres entrées', 'revenu'),
-  category('cat-compte-commun', 'Participation au compte commun', 'fixe'),
+  category('cat-autres-entrees', 'Autres revenus', 'revenu'),
   category('cat-logement', 'Logement', 'fixe'),
-  category('cat-assurances', 'Assurances', 'fixe'),
-  category('cat-abonnements', 'Abonnements', 'fixe'),
-  category('cat-telephone', 'Téléphone', 'fixe'),
-  category('cat-transports', 'Transports', 'fixe'),
   GROCERIES_CATEGORY,
+  category('cat-transports', 'Transports', 'fixe'),
   HEALTH_CATEGORY,
-  TAXES_CATEGORY,
-  category('cat-autres-charges', 'Autres charges récurrentes', 'fixe'),
-  category('cat-ep-livret-a', 'Livret A', 'epargne'),
-  category('cat-ep-ldds', 'LDDS', 'epargne'),
-  category('cat-ep-assurance-vie', 'Assurance-vie', 'epargne'),
-  category('cat-ep-trade-republic', 'Trade Republic', 'epargne'),
-  category('cat-ep-immo', 'Épargne commune immobilière', 'epargne'),
-  category('cat-ep-autres', 'Autres placements', 'epargne'),
+  category('cat-abonnements', 'Abonnements', 'fixe'),
   category('cat-restaurants', 'Restaurants et sorties', 'plaisir'),
+  category('cat-loisirs', 'Loisirs', 'plaisir'),
   category('cat-shopping', 'Shopping', 'plaisir'),
-  category('cat-loisirs', 'Jeux vidéo et loisirs', 'plaisir'),
-  category('cat-achats-en-ligne', 'Achats en ligne', 'plaisir'),
-  category('cat-cadeaux', 'Cadeaux', 'plaisir'),
   category('cat-voyages', 'Voyages', 'plaisir'),
-  category('cat-exceptionnelles', 'Dépenses exceptionnelles', 'plaisir'),
+  category('cat-cadeaux', 'Cadeaux', 'plaisir'),
   category('cat-divers', 'Divers', 'plaisir'),
 ];
 
@@ -108,8 +96,6 @@ export const initialAccounts = (openingDate: IsoDate): Account[] => [
 export const initialSettings: Settings = {
   kind: 'perso',
   household: null,
-  mode: 'simple',
-  personalEnvelope: 0,
   plaisirBudget: 0,
   theme: 'system',
   mainAccountId: MAIN_ACCOUNT_ID,
@@ -135,9 +121,6 @@ export const COMMON_CATEGORIES: Category[] = [
   HEALTH_CATEGORY,
   category('cat-transports', 'Transports', 'fixe'),
   TAXES_CATEGORY,
-  category('cat-ep-vacances', 'Épargne vacances', 'epargne'),
-  category('cat-ep-projets', 'Épargne projets', 'epargne'),
-  category('cat-ep-immo', 'Épargne immobilière', 'epargne'),
   category('cat-restaurants', 'Restaurants et sorties', 'plaisir'),
   category('cat-loisirs', 'Loisirs et culture', 'plaisir'),
   category('cat-maison', 'Maison et équipement', 'plaisir'),
@@ -153,7 +136,6 @@ const commonSettings: Settings = {
   ...initialSettings,
   kind: 'commun',
   household: DEFAULT_HOUSEHOLD,
-  mode: 'complet',
 };
 
 export const createInitialDataset = (
