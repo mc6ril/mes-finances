@@ -21,23 +21,21 @@ import { useReport } from '@/hooks/useReport';
 import {
   cashflowSummary,
   isOutsideAccount,
+  isVerified,
   livePosition,
   periodPhase,
   signedEffectOn,
 } from '@/core/comptes/balances';
-import { STATUS_LABELS, TYPE_LABELS } from '@/core/comptes/csvImport';
+import { statusLabel, TYPE_LABELS } from '@/core/comptes/csvImport';
+import { matchesStatus, needsCategory, STATUS_FILTERS } from '@/core/comptes/filters';
+import { Link, useSearchParams } from 'react-router';
+import Notice from '@/ui/design-system/Notice';
+import { firstRuleSuggestion, type RuleSuggestion } from '@/core/comptes/learnedRules';
+import RuleSuggestionBanner from './RuleSuggestionBanner';
 import { monthEnd, monthStart } from '@/core/shared/dates';
 import { formatDateFr, monthLabel } from '@/core/shared/format';
 import { parseEuros } from '@/core/shared/money';
-import type {
-  Account,
-  Category,
-  Dataset,
-  Imputation,
-  IsoDate,
-  Transaction,
-  TransactionStatus,
-} from '@/core/shared/model';
+import type { Account, Category, Dataset, Imputation, IsoDate, Transaction } from '@/core/shared/model';
 import Amount from '@/ui/design-system/Amount';
 import Badge, { type BadgeTone } from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
@@ -66,10 +64,11 @@ type Filters = {
   maxAmount: string;
 };
 
-const STATUS_TONE: Record<TransactionStatus, BadgeTone> = {
-  prevu: 'info',
-  realise: 'neutral',
-  rapproche: 'good',
+const statusTone = (transaction: Transaction): BadgeTone => {
+  if (transaction.status === 'prevu') {
+    return 'info';
+  }
+  return isVerified(transaction) ? 'good' : 'neutral';
 };
 
 const ALL = '';
@@ -83,6 +82,18 @@ const matchesAmount = (transaction: Transaction, accountId: string, min: string,
 
 const normalize = (text: string): string => text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
+const TO_CLASSIFY = 'a-classer';
+
+const matchesCategory = (transaction: Transaction, categoryId: string): boolean => {
+  if (categoryId === ALL) {
+    return true;
+  }
+  if (categoryId === TO_CLASSIFY) {
+    return needsCategory(transaction);
+  }
+  return (transaction.categoryId ?? 'none') === categoryId;
+};
+
 const applyFilters = (transactions: Transaction[], accountId: string, filters: Filters): Transaction[] => {
   const search = normalize(filters.search.trim());
   return transactions
@@ -93,12 +104,9 @@ const applyFilters = (transactions: Transaction[], accountId: string, filters: F
     .filter(
       (transaction) => !search || normalize(`${transaction.label} ${transaction.comment}`).includes(search),
     )
-    .filter(
-      (transaction) =>
-        filters.categoryId === ALL || (transaction.categoryId ?? 'none') === filters.categoryId,
-    )
+    .filter((transaction) => matchesCategory(transaction, filters.categoryId))
     .filter((transaction) => filters.type === ALL || transaction.type === filters.type)
-    .filter((transaction) => filters.status === ALL || transaction.status === filters.status)
+    .filter((transaction) => matchesStatus(transaction, filters.status))
     .filter((transaction) => matchesAmount(transaction, accountId, filters.minAmount, filters.maxAmount));
 };
 
@@ -171,9 +179,10 @@ type BulkBarProps = {
   categories: Category[];
   onClear: () => void;
   onDelete: () => void;
+  onRecategorized: (changes: { before: Transaction; after: Transaction }[]) => void;
 };
 
-const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
+const BulkBar = ({ selected, categories, onClear, onDelete, onRecategorized }: BulkBarProps) => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const [categoryId, setCategoryId] = useState('');
@@ -191,14 +200,14 @@ const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
         onClick={() =>
           void report(
             finance.updateTransactions(
-              selected.map((transaction) => ({ ...transaction, status: 'rapproche' })),
-              'Opérations rapprochées',
+              selected.map((transaction) => ({ ...transaction, status: 'realise', verified: true })),
+              'Opérations vérifiées',
             ),
-            'Opérations rapprochées',
+            'Opérations vérifiées sur le relevé',
           ).then(onClear)
         }
       >
-        Marquer rapprochées
+        Marquer vérifiées
       </Button>
       <div className="flex items-center gap-1">
         <Select
@@ -217,15 +226,21 @@ const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
           size="sm"
           icon={Tag}
           disabled={!categoryId}
-          onClick={() =>
+          onClick={() => {
+            const changes = selected.map((before) => ({ before, after: { ...before, categoryId } }));
             void report(
               finance.updateTransactions(
-                selected.map((transaction) => ({ ...transaction, categoryId })),
+                changes.map((change) => change.after),
                 'Catégorie mise à jour',
               ),
               'Catégorie mise à jour',
-            ).then(onClear)
-          }
+            ).then((done) => {
+              onClear();
+              if (done) {
+                onRecategorized(changes);
+              }
+            });
+          }}
         >
           Appliquer
         </Button>
@@ -273,7 +288,7 @@ const CurrentPeriodCards = ({ account, transactions, from, to }: Omit<SummaryCar
       <SummaryCard
         label="Solde actuel"
         value={<Amount cents={position.current} />}
-        caption="rapprochés à ce jour"
+        caption="opérations vérifiées sur ton relevé"
         valueClassName="text-brand-600 dark:text-brand-300"
       />
       <SummaryCard
@@ -281,7 +296,7 @@ const CurrentPeriodCards = ({ account, transactions, from, to }: Omit<SummaryCar
         value={<Amount cents={position.upcoming} signed colored />}
         caption={
           <>
-            réalisé <Amount cents={position.realised} signed /> · prévu{' '}
+            passé à vérifier <Amount cents={position.realised} signed /> · prévu{' '}
             <Amount cents={position.planned} signed />
           </>
         }
@@ -366,6 +381,9 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
+  const [ruleToSuggest, setRuleToSuggest] = useState<RuleSuggestion | null>(null);
+  const suggestRule = (changes: { before: Transaction; after: Transaction }[]) =>
+    setRuleToSuggest(firstRuleSuggestion(changes, dataset.settings.importRules ?? []));
   const categoryNames = useMemo(
     () => new Map(dataset.categories.map((category) => [category.id, category.name])),
     [dataset.categories],
@@ -422,6 +440,10 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
         today={today}
       />
 
+      {ruleToSuggest && (
+        <RuleSuggestionBanner suggestion={ruleToSuggest} onDone={() => setRuleToSuggest(null)} />
+      )}
+
       <Card padded={false}>
         <div className="flex flex-col gap-3 p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -464,6 +486,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
               label="Catégorie"
               options={[
                 { value: ALL, label: 'Toutes catégories' },
+                { value: TO_CLASSIFY, label: 'À classer' },
                 { value: 'none', label: 'Sans catégorie' },
                 ...dataset.categories.map((category) => ({ value: category.id, label: category.name })),
               ]}
@@ -481,10 +504,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
               value={filters.status}
               onChange={(status) => update({ status })}
               label="Statut"
-              options={[
-                { value: ALL, label: 'Tous statuts' },
-                ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-              ]}
+              options={STATUS_FILTERS}
             />
             <Input
               value={filters.minAmount}
@@ -506,6 +526,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
             categories={dataset.categories}
             onClear={() => setSelection(new Set())}
             onDelete={() => setPendingDelete(selected.map((row) => row.id))}
+            onRecategorized={suggestRule}
           />
         </div>
 
@@ -586,7 +607,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                       </Text>
                     </td>
                     <td>
-                      <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABELS[row.status]}</Badge>
+                      <Badge tone={statusTone(row)}>{statusLabel(row)}</Badge>
                     </td>
                     <td className="text-right font-medium">
                       {isOutsideAccount(row) ? (
@@ -636,6 +657,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
           template={editing.template}
           defaultDate={filters.to}
           onClose={() => setEditing(null)}
+          onSaved={(before, after) => suggestRule([{ before, after }])}
         />
       )}
       {importOpen && <ImportModal accountId={account.id} onClose={() => setImportOpen(false)} />}
@@ -694,10 +716,21 @@ const TransferHint = ({ transaction, accountId, accountNames }: TransferHintProp
   return <Text variant="caption">vers {accountNames.get(transaction.counterpartAccountId)}</Text>;
 };
 
+/** Période couvrant les opérations à classer d'un compte (vue « à classer », toutes dates). */
+const toClassifyRange = (dataset: Dataset, accountId: string, month: string) => {
+  const dates = dataset.transactions
+    .filter((transaction) => transaction.accountId === accountId && needsCategory(transaction))
+    .map((transaction) => transaction.date)
+    .sort();
+  return { from: dates[0] ?? monthStart(month), to: dates.at(-1) ?? monthEnd(month) };
+};
+
 const ComptePage = () => {
   const dataset = useDataset();
   const { month } = usePeriod();
-  const [accountId, setAccountId] = useState(dataset.settings.mainAccountId);
+  const [params] = useSearchParams();
+  const toClassifyView = params.get('categorie') === 'aucune';
+  const [accountId, setAccountId] = useState(params.get('compte') ?? dataset.settings.mainAccountId);
   const [noteMonth, setNoteMonth] = useState<string | null>(null);
   const account = dataset.accounts.find((item) => item.id === accountId) ?? dataset.accounts[0];
   if (!account) {
@@ -708,7 +741,7 @@ const ComptePage = () => {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Compte courant"
+        title="Opérations"
         description={`Opérations de ${monthLabel(month)} · suivi depuis le ${formatDateFr(account.openingDate)}`}
         actions={
           <>
@@ -732,15 +765,25 @@ const ComptePage = () => {
         editing={noteMonth === month}
         onEditingChange={(editing) => setNoteMonth(editing ? month : null)}
       />
+      {toClassifyView && (
+        <Notice>
+          Opérations à classer, toutes dates confondues. Choisis une catégorie pour chacune (ou sélectionne-en
+          plusieurs).{' '}
+          <Link to="/compte" className="font-medium underline">
+            Revenir aux opérations du mois
+          </Link>
+        </Notice>
+      )}
       <Ledger
-        key={`${account.id}-${month}`}
+        key={`${account.id}-${month}-${toClassifyView}`}
         dataset={dataset}
         account={account}
         initialFilters={{
-          from: monthStart(month),
-          to: monthEnd(month),
+          ...(toClassifyView
+            ? toClassifyRange(dataset, account.id, month)
+            : { from: monthStart(month), to: monthEnd(month) }),
           search: '',
-          categoryId: ALL,
+          categoryId: toClassifyView ? TO_CLASSIFY : ALL,
           type: ALL,
           status: ALL,
           minAmount: '',

@@ -27,6 +27,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useDataset } from '@/hooks/useFinance';
+import { groupLabel } from '@/ui/constants';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useChartTheme } from '@/hooks/useTheme';
 import { balanceSeries } from '@/core/comptes/balances';
@@ -47,6 +48,7 @@ import Legend from '@/ui/charts/Legend';
 import PageHeader from '@/ui/layout/PageHeader';
 import CommonStats from './CommonStats';
 import GettingStarted from './GettingStarted';
+import Attention from './Attention';
 
 const savedInMonth = (dataset: Dataset, month: MonthKey, fromTransactions: Cents): Cents =>
   fromTransactions + depositsInMonth(dataset.savingsMovements, dataset.transactions, month);
@@ -74,7 +76,7 @@ const PersonalSpendingHint = ({ totals }: PersonalSpendingHintProps) => {
   const annual = totals.plaisir - totals.plaisirMensuel;
   return (
     <>
-      plaisir <Amount cents={totals.plaisirMensuel} rounded />
+      mensuelles <Amount cents={totals.plaisirMensuel} rounded />
       {annual > 0 && (
         <>
           {' '}
@@ -134,6 +136,8 @@ const DashboardPage = () => {
         description={`${isCommon ? 'Votre' : 'Ta'} situation en ${monthLabel(month)}${isCommon ? ' · compte commun' : ''}.`}
       />
 
+      <Attention dataset={dataset} lines={overview.lines} />
+
       {!isCommon && content.isEmpty ? (
         <GettingStarted content={content} />
       ) : isCommon ? (
@@ -168,7 +172,7 @@ const DashboardPage = () => {
           )}
           {content.hasPersonalSpending && (
             <StatCard
-              label="Dépenses personnelles"
+              label={groupLabel('plaisir', dataset.settings.kind)}
               icon={ShoppingBag}
               value={<Amount cents={variable} />}
               hint={<PersonalSpendingHint totals={overview.totals} />}
@@ -185,7 +189,7 @@ const DashboardPage = () => {
           )}
           {overview.plaisirBudget > 0 && (
             <StatCard
-              label="Budget plaisir restant"
+              label={`${groupLabel('plaisir', dataset.settings.kind)} : reste`}
               icon={PartyPopper}
               value={<Amount cents={remainingPlaisir} colored={remainingPlaisir < 0} />}
               hint={
@@ -290,7 +294,7 @@ const DashboardPage = () => {
                     to="/compte"
                     className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-300"
                   >
-                    Aller au compte courant
+                    Voir les opérations
                   </Link>
                 }
               />

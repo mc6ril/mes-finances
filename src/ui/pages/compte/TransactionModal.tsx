@@ -7,7 +7,7 @@ import { STATUS_LABELS } from '@/core/comptes/csvImport';
 import { savingsCategoryFor } from '@/core/budget/budget';
 import type { Transaction, TransactionStatus, TransactionType } from '@/core/shared/model';
 import Button from '@/ui/design-system/Button';
-import { Field, Input, Select, Textarea } from '@/ui/design-system/Field';
+import { Checkbox, Field, Input, Select, Textarea } from '@/ui/design-system/Field';
 import { Modal } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
 import {
@@ -27,6 +27,8 @@ type TransactionModalProps = {
   /** Champs pré-remplis d'une nouvelle opération (ex. dépense avancée par un membre). */
   preset?: Partial<TransactionFormState>;
   title?: string;
+  /** Opération existante modifiée : état avant et après (règles d'import apprises). */
+  onSaved?: (before: Transaction, after: Transaction) => void;
 };
 
 type TypeChoice = TransactionType | 'remboursement';
@@ -49,9 +51,8 @@ const TYPE_HINTS: Record<TypeChoice, string> = {
 };
 
 const STATUS_HINTS: Record<TransactionStatus, string> = {
-  prevu: 'Passera automatiquement en « réalisé » à sa date',
+  prevu: 'Passera automatiquement en « passé » à sa date',
   realise: 'Comptée dans le solde et le budget',
-  rapproche: 'Vérifiée sur ton relevé bancaire',
 };
 
 const modalTitle = (transaction: Transaction | null, template: Transaction | null): string => {
@@ -71,6 +72,7 @@ const TransactionModal = ({
   onClose,
   preset,
   title,
+  onSaved,
 }: TransactionModalProps) => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
@@ -107,6 +109,9 @@ const TransactionModal = ({
       return;
     }
     if (await report(finance.saveTransaction(result.draft, transaction), 'Opération enregistrée')) {
+      if (transaction) {
+        onSaved?.(transaction, { ...transaction, ...result.draft });
+      }
       onClose();
     }
   };
@@ -237,13 +242,20 @@ const TransactionModal = ({
             />
           </Field>
         )}
-        <Field label="Statut" hint={STATUS_HINTS[form.status]}>
-          <Select
-            value={form.status}
-            onChange={(status) => update({ status: status as TransactionStatus })}
-            options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
-          />
-        </Field>
+        <div className="flex flex-col gap-2">
+          <Field label="Statut" hint={STATUS_HINTS[form.status]}>
+            <Select
+              value={form.status}
+              onChange={(status) => update({ status: status as TransactionStatus })}
+              options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
+            />
+          </Field>
+          {form.status === 'realise' && (
+            <Checkbox checked={form.verified} onChange={(verified) => update({ verified })}>
+              <span className="text-xs text-stone-500 dark:text-stone-400">Vérifiée sur mon relevé</span>
+            </Checkbox>
+          )}
+        </div>
         <Field label="Moyen de paiement (facultatif)">
           <Select
             value={form.paymentMethod}

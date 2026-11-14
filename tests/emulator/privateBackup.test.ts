@@ -10,6 +10,10 @@ import { readAnyBackup, type WorkspaceData } from '@/core/sauvegarde/fullBackup'
 import { COLLECTION_NAMES, itemKey } from '@/core/shared/collections';
 import type { Dataset } from '@/core/shared/model';
 import { FinanceStore } from '@/core/store/FinanceStore';
+import { isMirrored, mirroringTransfer } from '@/core/comptes/mirror';
+import { isCounted, isInternalMove } from '@/core/comptes/balances';
+import { accountPosition, type PatrimoineContext } from '@/core/patrimoine/patrimoine';
+import { addMonths, daysBetween, monthEnd, monthKeyOf, todayIso } from '@/core/shared/dates';
 
 /**
  * Vérifie localement qu'une vraie sauvegarde complète passe dans Firestore sans perte (émulateur).
@@ -54,6 +58,33 @@ const fingerprints = (dataset: Dataset, ignoredAudit: Set<string> = new Set()) =
     }),
   ),
 });
+
+/**
+ * Lot 4 (une seule saisie pour l'épargne), migration candidate : les mouvements doublant un
+ * virement (même montant, ±3 jours), aujourd'hui ignorés par le calcul, sont retirés.
+ */
+const withoutMirroredMovements = (dataset: Dataset): Dataset => ({
+  ...dataset,
+  savingsMovements: dataset.savingsMovements.filter(
+    (movement) => !isMirrored(movement, dataset.transactions),
+  ),
+});
+
+const contextOf = (dataset: Dataset): PatrimoineContext => ({
+  transactions: dataset.transactions,
+  movements: dataset.savingsMovements,
+  valuations: dataset.valuations,
+});
+
+/** Fins de mois depuis la première ouverture de compte, plus aujourd'hui. */
+const checkDates = (dataset: Dataset, today: string): string[] => {
+  const first = dataset.accounts.map((account) => account.openingDate).sort()[0] ?? today;
+  const dates = [today];
+  for (let month = monthKeyOf(first); month < monthKeyOf(today); month = addMonths(month, 1)) {
+    dates.push(monthEnd(month));
+  }
+  return dates;
+};
 
 const memoryStorage = () => {
   const values = new Map<string, string>();
@@ -121,5 +152,96 @@ describe.skipIf(!existsSync(BACKUP))('sauvegarde réelle vers Firestore', () => 
       expect(added.size).toBe(1);
       expect(fingerprints(dataset!, added)).toEqual(fingerprints(entry.dataset));
     }
+  });
+
+  it('une seule saisie pour l’épargne : valeur et sommes versées inchangées pour chaque compte', () => {
+    const today = todayIso();
+    // Repères seuls (espace:compte:champ), jamais de montant ni de nom.
+    const mismatches = new Set<string>();
+    const counts = {
+      removed: 0,
+      kept: 0,
+      keptDeposits: 0,
+      keptBroker: 0,
+      keptCommon: 0,
+      nearMirror: 0,
+      plannedMirror: 0,
+      sharedTransfer: 0,
+      broker: 0,
+    };
+    entries.forEach((entry, workspaceIndex) => {
+      const before = entry.dataset;
+      // Ancien calcul : les mouvements en miroir d'un virement sont ignorés à chaque calcul.
+      const legacy: PatrimoineContext = {
+        ...contextOf(before),
+        movements: before.savingsMovements.filter((movement) => !isMirrored(movement, before.transactions)),
+      };
+      const after = withoutMirroredMovements(before);
+      const migrated = contextOf(after);
+      const dates = checkDates(before, today);
+      before.accounts
+        .filter((account) => account.group !== 'courant')
+        .forEach((account, accountIndex) => {
+          dates.forEach((date) => {
+            const old = accountPosition(account, legacy, date);
+            const current = accountPosition(account, migrated, date);
+            if (old.value !== current.value) {
+              mismatches.add(`${workspaceIndex}:${accountIndex}:valeur`);
+            }
+            if (old.contributions !== current.contributions) {
+              mismatches.add(`${workspaceIndex}:${accountIndex}:verse`);
+            }
+          });
+        });
+
+      // Diagnostic de la migration, en nombres seulement.
+      const removed = before.savingsMovements.filter((movement) => isMirrored(movement, before.transactions));
+      counts.removed += removed.length;
+      counts.broker += removed.filter((movement) => movement.externalId !== undefined).length;
+      counts.kept += after.savingsMovements.length;
+      const kept = after.savingsMovements.filter(
+        (movement) => movement.kind === 'versement' || movement.kind === 'retrait',
+      );
+      counts.keptDeposits += kept.length;
+      counts.keptBroker += kept.filter((movement) => movement.externalId !== undefined).length;
+      const fromCommon = new Set(
+        before.commonMonths.flatMap((month) => month.savingsTransfer?.movementIds ?? []),
+      );
+      counts.keptCommon += kept.filter((movement) => fromCommon.has(movement.id)).length;
+      // Même compte, même montant qu'un virement passé, mais à plus de 3 jours : non rapprochés
+      // aujourd'hui (comptés deux fois si c'est le même argent).
+      counts.nearMirror += kept.filter((movement) =>
+        before.transactions.some(
+          (transaction) =>
+            isCounted(transaction) &&
+            isInternalMove(transaction) &&
+            transaction.counterpartAccountId === movement.accountId &&
+            Math.abs(transaction.amount) === movement.amount &&
+            Math.abs(daysBetween(transaction.date, movement.date)) <= 31,
+        ),
+      ).length;
+      // Versements gardés qui doubleront un virement encore prévu quand il passera.
+      counts.plannedMirror += kept.filter((movement) =>
+        before.transactions.some(
+          (transaction) =>
+            !isCounted(transaction) &&
+            isInternalMove(transaction) &&
+            transaction.counterpartAccountId === movement.accountId &&
+            Math.abs(transaction.amount) === movement.amount &&
+            Math.abs(daysBetween(transaction.date, movement.date)) <= 3,
+        ),
+      ).length;
+      // Un même virement qui « absorbait » plusieurs mouvements.
+      const byTransfer = new Map<string, number>();
+      removed.forEach((movement) => {
+        const transfer = mirroringTransfer(movement, before.transactions);
+        if (transfer) {
+          byTransfer.set(transfer.id, (byTransfer.get(transfer.id) ?? 0) + 1);
+        }
+      });
+      counts.sharedTransfer += [...byTransfer.values()].filter((count) => count > 1).length;
+    });
+    console.info(`Lot 4, diagnostic de migration : ${JSON.stringify(counts)}`);
+    expect([...mismatches]).toEqual([]);
   });
 });

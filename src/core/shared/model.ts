@@ -31,7 +31,8 @@ export type Category = {
 };
 
 export type TransactionType = 'revenu' | 'depense' | 'virement' | 'investissement';
-export type TransactionStatus = 'prevu' | 'realise' | 'rapproche';
+/** prevu : à venir ; realise : passée (affichée « Passé »). La vérification sur le relevé est à part (`verified`). */
+export type TransactionStatus = 'prevu' | 'realise';
 
 /**
  * Espace commun : à qui se rattache l'opération. Absent = commun.
@@ -57,6 +58,10 @@ export type Transaction = {
   comment: string;
   recurringId: string | null;
   imputation?: Imputation;
+  /** Passée et vérifiée sur le relevé bancaire (anciennement le statut « rapproché »). */
+  verified?: boolean;
+  /** Venue de l'import d'un relevé CSV (règles apprises). */
+  imported?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -91,7 +96,7 @@ export type YearBudget = {
   planned: Record<string, Cents>;
 };
 
-/** Note libre attachée à un mois, visible sur Budget et Compte courant. */
+/** Note libre attachée à un mois, visible sur Budget et Opérations. */
 export type MonthNote = {
   month: MonthKey;
   text: string;
@@ -240,4 +245,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;

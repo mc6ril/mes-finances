@@ -3,7 +3,8 @@ import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { yearBudgetOf, yearBudgetOriginOf } from '@/core/budget/overview';
 import { useReport } from '@/hooks/useReport';
 import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget/budget';
-import type { Cents } from '@/core/shared/model';
+import type { Cents, WorkspaceKind } from '@/core/shared/model';
+import { groupLabel } from '@/ui/constants';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
 import Card from '@/ui/design-system/Card';
@@ -36,8 +37,8 @@ const Remaining = ({ line }: RemainingProps) => {
   return <Amount cents={line.remaining} signed colored />;
 };
 
-const annualSubtitle = (origin: string | null): string => {
-  const base = 'Dépenses ponctuelles suivies sur l’année, hors du rythme mensuel du budget plaisir';
+const annualSubtitle = (origin: string | null, kind: WorkspaceKind): string => {
+  const base = `Dépenses ponctuelles suivies sur l’année, hors du budget mensuel des ${groupLabel('plaisir', kind).toLowerCase()}`;
   if (origin) {
     return `${base} · montants repris de ${origin}, modifiables pour cette année`;
   }
@@ -62,7 +63,7 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
   return (
     <Card
       title={`Budgets annuels ${year}`}
-      subtitle={annualSubtitle(yearBudgetOriginOf(dataset, yearKey))}
+      subtitle={annualSubtitle(yearBudgetOriginOf(dataset, yearKey), dataset.settings.kind)}
       padded={false}
       action={
         <Text variant="small">
@@ -76,7 +77,7 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
           <EmptyState
             icon={CalendarClock}
             title="Aucune catégorie annuelle"
-            description="Dans Paramètres → Catégories, passe une catégorie en « Annuel » pour la suivre sur l’année."
+            description="Dans Paramètres → Catégories et règles, passe une catégorie en « Annuel » pour la suivre sur l’année."
           />
         </div>
       ) : (

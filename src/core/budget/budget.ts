@@ -492,3 +492,13 @@ export const savingsCategoryOfAccount = (
   }
   return { ...existing, name: account.name, archived: account.archived };
 };
+
+/**
+ * Catégories de dépenses (charges fixes, dépenses personnelles) qui dépassent un budget prévu ce
+ * mois-ci. Une catégorie sans budget n'est pas comptée : rien n'a été prévu, rien n'est dépassé.
+ */
+export const overBudgetLines = (lines: BudgetLine[]): BudgetLine[] =>
+  lines.filter(
+    (line) =>
+      (line.group === 'fixe' || line.group === 'plaisir') && line.available > 0 && line.status === 'depasse',
+  );

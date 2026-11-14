@@ -375,9 +375,34 @@ describe('fin du partage', () => {
   });
 });
 
+describe('suivi des sauvegardes (users/{uid})', () => {
+  const AT = '2026-11-14T10:00:00.000Z';
+
+  it('chacun écrit et lit ses dates, rien d’autre', async () => {
+    const ref = doc(verified(OWNER), `users/${OWNER}`);
+    await assertSucceeds(setDoc(ref, { lastFullBackupAt: AT }, { merge: true }));
+    await assertSucceeds(setDoc(ref, { reminderHiddenUntil: '2026-11-21' }, { merge: true }));
+    await assertSucceeds(setDoc(ref, { reminderHiddenUntil: null }, { merge: true }));
+    await assertSucceeds(getDoc(ref));
+    await assertFails(setDoc(ref, { name: 'Jean D.' }, { merge: true }));
+    await assertFails(setDoc(ref, { lastFullBackupAt: 42 }, { merge: true }));
+    await assertSucceeds(deleteDoc(ref));
+  });
+
+  it('personne d’autre ne lit ni n’écrit le document d’un utilisateur', async () => {
+    await seed({ [`users/${OWNER}`]: { lastFullBackupAt: AT } });
+    await assertFails(getDoc(doc(verified(PARTNER), `users/${OWNER}`)));
+    await assertFails(setDoc(doc(verified(PARTNER), `users/${OWNER}`), { lastFullBackupAt: AT }));
+    await assertFails(deleteDoc(doc(verified(PARTNER), `users/${OWNER}`)));
+    await assertFails(getDoc(doc(unverified(OWNER), `users/${OWNER}`)));
+    await assertFails(getDoc(doc(anonymous(), `users/${OWNER}`)));
+  });
+});
+
 describe('chemins non prévus', () => {
   it('refuse tout le reste', async () => {
     await assertFails(setDoc(doc(verified(OWNER), 'users/owner-a'), { name: 'Jean D.' }));
+    await assertFails(getDoc(doc(verified(OWNER), 'users/owner-a/autre/x')));
     await assertFails(getDoc(doc(verified(OWNER), 'autre/x')));
   });
 });

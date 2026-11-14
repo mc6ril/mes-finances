@@ -22,6 +22,8 @@ export type TransactionFormState = {
   counterpartAccountId: string;
   paymentMethod: string;
   status: TransactionStatus;
+  /** Passée et vérifiée sur le relevé bancaire. */
+  verified: boolean;
   comment: string;
   /** Espace commun : '' (commun), 'charge:<membre>' ou 'avance:<membre>'. */
   imputation: string;
@@ -53,6 +55,7 @@ export const formFromTransaction = (transaction: Transaction): TransactionFormSt
   counterpartAccountId: transaction.counterpartAccountId ?? '',
   paymentMethod: transaction.paymentMethod,
   status: transaction.status,
+  verified: transaction.verified === true,
   comment: transaction.comment,
   imputation: transaction.imputation
     ? `${transaction.imputation.kind}:${transaction.imputation.memberId}`
@@ -81,6 +84,7 @@ export const emptyForm = (date: string, accountId: string): TransactionFormState
   counterpartAccountId: '',
   paymentMethod: 'Carte',
   status: 'realise',
+  verified: false,
   comment: '',
   imputation: '',
 });
@@ -159,6 +163,7 @@ export const validateForm = (
       counterpartAccountId: needsCounterpart(form.type) ? form.counterpartAccountId : null,
       paymentMethod: form.paymentMethod,
       status: form.status,
+      ...(form.status === 'realise' && form.verified ? { verified: true } : {}),
       comment: form.comment.trim(),
       recurringId: null,
       ...imputationOf(form, members),

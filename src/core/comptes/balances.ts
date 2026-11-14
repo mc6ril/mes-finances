@@ -1,7 +1,11 @@
 import { addDays } from '../shared/dates';
-import type { Account, Cents, IsoDate, Transaction, TransactionStatus } from '../shared/model';
+import type { Account, Cents, IsoDate, Transaction } from '../shared/model';
 
 export const isCounted = (transaction: Transaction): boolean => transaction.status !== 'prevu';
+
+/** Passée et cochée « vérifiée sur mon relevé ». */
+export const isVerified = (transaction: Transaction): boolean =>
+  transaction.status === 'realise' && transaction.verified === true;
 
 export const isInternalMove = (transaction: Transaction): boolean =>
   transaction.type === 'virement' || transaction.type === 'investissement';
@@ -123,13 +127,12 @@ export const livePosition = (
     (transaction) =>
       transaction.date >= from && transaction.date <= to && transaction.date >= account.openingDate,
   );
-  const totalOf = (status: TransactionStatus): Cents =>
-    inRange
-      .filter((transaction) => transaction.status === status)
-      .reduce((total, transaction) => total + signedEffectOn(account.id, transaction), 0);
-  const current = opening + totalOf('rapproche');
-  const realised = totalOf('realise');
-  const planned = totalOf('prevu');
+  const totalOf = (keep: (transaction: Transaction) => boolean): Cents =>
+    inRange.filter(keep).reduce((total, transaction) => total + signedEffectOn(account.id, transaction), 0);
+  // Solde actuel : ce qui est vérifié sur le relevé ; « à venir » : passé non vérifié et prévu.
+  const current = opening + totalOf(isVerified);
+  const realised = totalOf((transaction) => transaction.status === 'realise' && !isVerified(transaction));
+  const planned = totalOf((transaction) => transaction.status === 'prevu');
   const upcoming = realised + planned;
   return { opening, current, realised, planned, upcoming, projected: current + upcoming };
 };

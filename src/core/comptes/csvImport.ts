@@ -257,9 +257,14 @@ export const TYPE_LABELS: Record<TransactionType, string> = {
 
 export const STATUS_LABELS: Record<TransactionStatus, string> = {
   prevu: 'Prévu',
-  realise: 'Réalisé',
-  rapproche: 'Rapproché',
+  realise: 'Passé',
 };
+
+/** Statut lisible, vérification comprise (export CSV, liste des opérations). */
+export const statusLabel = (transaction: Pick<Transaction, 'status' | 'verified'>): string =>
+  transaction.status === 'realise' && transaction.verified === true
+    ? `${STATUS_LABELS.realise} · vérifiée`
+    : STATUS_LABELS[transaction.status];
 
 const escapeCsv = (value: string): string => {
   if (/[;"\n]/.test(value)) {
@@ -298,7 +303,7 @@ export const transactionsToCsv = (
         categoryNames.get(transaction.categoryId ?? '') ?? '',
         accountNames.get(transaction.accountId) ?? '',
         TYPE_LABELS[transaction.type],
-        STATUS_LABELS[transaction.status],
+        statusLabel(transaction),
         transaction.paymentMethod,
         transaction.comment,
       ]

@@ -14,6 +14,8 @@ import {
   type KeyValueStorage,
 } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { FirestoreBackupHistory } from '@/adapters/firestore/sauvegarde/FirestoreBackupHistory';
+import type { BackupHistoryInterface } from '@/core/sauvegarde/interface';
 import { toDocumentId } from '@/adapters/firestore/espaces/workspaceIds';
 
 export type FirestoreBackendDeps = {
@@ -31,6 +33,7 @@ type Connection = {
   registry: FirestoreWorkspaceRegistry;
   accountData: FirestoreAccountData;
   sharing: FirestoreSharing;
+  backups: FirestoreBackupHistory;
 };
 
 const disconnected = async <T>(): Promise<Result<T>> => fail('sync-failed');
@@ -67,6 +70,7 @@ export class FirestoreBackend implements UserDataBackendInterface {
       registry: new FirestoreWorkspaceRegistry(db, userId, this.sync, this.#deps.storage),
       accountData: new FirestoreAccountData(db, userId),
       sharing: new FirestoreSharing(db, userId, this.sync),
+      backups: new FirestoreBackupHistory(db, userId, this.sync),
     };
   }
 
@@ -119,6 +123,12 @@ export class FirestoreBackend implements UserDataBackendInterface {
     cancelInvitation: (token) => this.#connection?.sharing.cancelInvitation(token) ?? disconnected(),
     revokeGuest: (workspaceId) => this.#connection?.sharing.revokeGuest(workspaceId) ?? disconnected(),
     leaveWorkspace: (workspaceId) => this.#connection?.sharing.leaveWorkspace(workspaceId) ?? disconnected(),
+  };
+
+  /** Suivi des sauvegardes de l'utilisateur connecté. */
+  readonly backups: BackupHistoryInterface = {
+    load: () => this.#connection?.backups.load() ?? disconnected(),
+    save: (patch) => this.#connection?.backups.save(patch) ?? fail('sync-failed'),
   };
 
   /** Liste des espaces de l'utilisateur connecté. */

@@ -1,4 +1,4 @@
-import { ChevronRight, Landmark, Users } from 'lucide-react';
+import { ArchiveRestore, ChevronRight, Landmark, Plus, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
   Bar,
@@ -43,6 +43,9 @@ import { axisProps, euroTick } from '@/ui/charts/axis';
 import Legend from '@/ui/charts/Legend';
 import PageHeader from '@/ui/layout/PageHeader';
 import AccountModal from './AccountModal';
+import SavingsAccountForm from './SavingsAccountForm';
+import EmptyState from '@/ui/design-system/EmptyState';
+import { isSavingsAccount } from '@/core/comptes/accounts';
 
 type Range = '1' | '3' | '6' | '12' | 'annee';
 
@@ -183,6 +186,7 @@ const PatrimoinePage = () => {
   const { series, ink } = useChartTheme();
   const [range, setRange] = useState<Range>('12');
   const [openAccount, setOpenAccount] = useState<Account | null>(null);
+  const [editedAccount, setEditedAccount] = useState<Account | 'new' | null>(null);
   const context = useMemo(() => patrimoineContext(dataset), [dataset]);
   const date = referenceDate(month, today);
   const snapshot = useMemo(
@@ -204,7 +208,8 @@ const PatrimoinePage = () => {
     [dataset.accounts, context, months, today],
   );
   const active = dataset.accounts.filter((account) => !account.archived);
-  const savingsAccounts = active.filter((account) => account.group !== 'courant' && !account.isJoint);
+  const savingsAccounts = active.filter((account) => isSavingsAccount(account) && !account.isJoint);
+  const archivedSavings = dataset.accounts.filter((account) => account.archived && isSavingsAccount(account));
   const jointAccounts = active.filter((account) => account.isJoint);
   const positionOf = (account: Account) =>
     snapshot.positions.find((position) => position.accountId === account.id);
@@ -232,6 +237,11 @@ const PatrimoinePage = () => {
       <PageHeader
         title="Épargne et patrimoine"
         description={`Situation au ${formatDateFr(date)} · ${capitalize(monthLabel(month))}`}
+        actions={
+          <Button icon={Plus} variant="primary" onClick={() => setEditedAccount('new')}>
+            Ajouter un compte
+          </Button>
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -316,6 +326,18 @@ const PatrimoinePage = () => {
         <Text variant="label" className="mb-3">
           Mes comptes d’épargne et placements
         </Text>
+        {savingsAccounts.length === 0 && jointAccounts.length === 0 && (
+          <EmptyState
+            icon={Landmark}
+            title="Aucun compte d’épargne suivi"
+            description="Ajoute un livret, une assurance-vie ou un compte-titres : il apparaîtra ici et dans ton budget. Les virements depuis ton compte courant compteront comme versements."
+            action={
+              <Button icon={Plus} variant="primary" onClick={() => setEditedAccount('new')}>
+                Ajouter un compte
+              </Button>
+            }
+          />
+        )}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {savingsAccounts.map((account) => {
             const position = positionOf(account);
@@ -454,6 +476,33 @@ const PatrimoinePage = () => {
           </ResponsiveContainer>
         </div>
       </Card>
+
+      {archivedSavings.length > 0 && (
+        <Card title="Comptes archivés" subtitle="Ils restent dans l’historique mais ne sont plus suivis">
+          <ul className="divide-y divide-stone-100 dark:divide-stone-800">
+            {archivedSavings.map((account) => (
+              <li key={account.id} className="flex items-center justify-between gap-3 py-2">
+                <Text>{account.name}</Text>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={ArchiveRestore}
+                  onClick={() => setEditedAccount(account)}
+                >
+                  Gérer
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {editedAccount && (
+        <SavingsAccountForm
+          account={editedAccount === 'new' ? undefined : editedAccount}
+          onClose={() => setEditedAccount(null)}
+        />
+      )}
 
       {openAccount && (
         <AccountModal

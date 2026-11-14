@@ -53,6 +53,7 @@ export const createContainer = (): Container => {
     csv: new PapaCsvParser(),
     saver: new BrowserFileSaver(),
     workspaces: store,
+    backups: backend.backups,
   });
   const finance = createFinanceUseCases({ gateway: store, newId: randomId, now: () => new Date() });
   const sharing = createSharingUseCases({

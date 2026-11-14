@@ -319,9 +319,73 @@ describe('migrateDataset v10 → v11', () => {
       settings: { ...current.settings, mode: 'simple', personalEnvelope: 46000 },
     };
     const migrated = migrateDataset(v10 as never);
-    expect(migrated.schemaVersion).toBe(11);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.settings).not.toHaveProperty('mode');
     expect(migrated.settings).not.toHaveProperty('personalEnvelope');
     expect(migrated.settings.mainAccountId).toBe(current.settings.mainAccountId);
+  });
+});
+
+describe('migrateDataset v11 → v12', () => {
+  const current = createInitialDataset('2026-11-05', ids);
+  const operation = (id: string, status: string) => ({
+    id,
+    date: '2026-11-02',
+    label: 'Courses',
+    amount: -4590,
+    accountId: current.settings.mainAccountId,
+    counterpartAccountId: null,
+    categoryId: null,
+    type: 'depense',
+    status,
+    paymentMethod: 'Carte',
+    comment: '',
+    recurringId: null,
+    createdAt: '2026-11-02T00:00:00.000Z',
+    updatedAt: '2026-11-02T00:00:00.000Z',
+  });
+
+  it('fait d’une opération rapprochée une opération passée et vérifiée', () => {
+    const v11 = {
+      ...current,
+      schemaVersion: 11,
+      transactions: [operation('a', 'rapproche'), operation('b', 'realise'), operation('c', 'prevu')],
+    };
+    const migrated = migrateDataset(v11 as never);
+    expect(migrated.schemaVersion).toBe(12);
+    expect(migrated.transactions.map(({ id, status, verified }) => ({ id, status, verified }))).toEqual([
+      { id: 'a', status: 'realise', verified: true },
+      { id: 'b', status: 'realise', verified: undefined },
+      { id: 'c', status: 'prevu', verified: undefined },
+    ]);
+    expect(migrated.transactions[1]).not.toHaveProperty('verified');
+  });
+
+  it('relit une sauvegarde v11 avec des opérations rapprochées', () => {
+    const backup = {
+      app: 'mes-finances',
+      schemaVersion: 11,
+      exportedAt: '2026-11-05T10:00:00.000Z',
+      data: { ...current, schemaVersion: 11, transactions: [operation('a', 'rapproche')] },
+    };
+    const read = readBackup(backup);
+    expect(read.ok && read.value.dataset.transactions[0]).toMatchObject({
+      status: 'realise',
+      verified: true,
+    });
+  });
+
+  it('refuse le statut « rapproché » dans un fichier v12 et un statut inconnu', () => {
+    const backup = (status: string, schemaVersion: number) => ({
+      app: 'mes-finances',
+      schemaVersion,
+      exportedAt: '2026-11-05T10:00:00.000Z',
+      data: { ...current, schemaVersion, transactions: [operation('a', status)] },
+    });
+    expect(readBackup(backup('rapproche', 12))).toMatchObject({
+      ok: false,
+      error: { code: 'backup-corrupted', detail: 'transactions' },
+    });
+    expect(readBackup(backup('annule', 11))).toMatchObject({ ok: false });
   });
 });

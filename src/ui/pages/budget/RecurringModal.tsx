@@ -1,6 +1,7 @@
 import type { Draft } from '@/core/usecases/shared';
 import { Pencil, Plus, Repeat, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { detectRecurring, recurringFromSuggestion } from '@/core/budget/recurring';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
@@ -53,7 +54,7 @@ type RecurringModalProps = { onClose: () => void };
 
 const RecurringModal = ({ onClose }: RecurringModalProps) => {
   const dataset = useDataset();
-  const { month } = usePeriod();
+  const { month, today } = usePeriod();
   const finance = useFinanceUseCases();
   const report = useReport();
   const blank: RecurringForm = {
@@ -75,6 +76,10 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
     .filter((account) => !account.archived)
     .map((account) => ({ value: account.id, label: account.name }));
   const categoryName = new Map(dataset.categories.map((category) => [category.id, category.name]));
+  const suggestions = useMemo(
+    () => detectRecurring(dataset.transactions, dataset.recurrings, today),
+    [dataset.transactions, dataset.recurrings, today],
+  );
 
   const generatedUntilFor = (id: string | null): string | null =>
     dataset.recurrings.find((recurring) => recurring.id === id)?.generatedUntil ?? null;
@@ -130,7 +135,7 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
       <Text variant="muted" className="mb-4">
         Chaque récurrence ajoute automatiquement son opération « prévue » au début du mois. Si tu l’as déjà
         saisie à la main (même compte, même montant), elle est reconnue au lieu d’être dupliquée, et une
-        opération prévue que tu supprimes ne revient pas. Elle passe en « réalisé » à sa date.
+        opération prévue que tu supprimes ne revient pas. Elle passe en « passé » à sa date.
       </Text>
       {editing ? (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -260,6 +265,43 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
               Ajouter une récurrence
             </Button>
           </div>
+          {suggestions.length > 0 && (
+            <div className="mt-6 rounded-xl bg-stone-50 p-4 dark:bg-stone-800/40">
+              <Text variant="strong">Détectées dans tes opérations</Text>
+              <Text variant="small" className="mb-2">
+                Elles reviennent chaque mois depuis au moins 3 mois, au même montant à 10 % près. La
+                récurrence commence le mois suivant la dernière opération.
+              </Text>
+              <ul className="flex flex-col divide-y divide-stone-200/70 dark:divide-stone-700/60">
+                {suggestions.map((suggestion) => (
+                  <li key={suggestion.key} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <Text className="truncate font-medium">{suggestion.label}</Text>
+                      <Text variant="small">
+                        Le {suggestion.dayOfMonth} · {suggestion.months} mois de suite ·{' '}
+                        {categoryName.get(suggestion.categoryId ?? '') ?? 'Sans catégorie'}
+                      </Text>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Amount cents={suggestion.amount} colored className="text-sm" />
+                      <Button
+                        size="sm"
+                        icon={Plus}
+                        onClick={() =>
+                          void report(
+                            finance.saveRecurring(recurringFromSuggestion(suggestion)),
+                            'Récurrence créée',
+                          )
+                        }
+                      >
+                        Créer
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
       {toDelete && (

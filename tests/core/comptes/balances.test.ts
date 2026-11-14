@@ -12,9 +12,9 @@ const courant = anAccount({ id: 'courant', openingBalance: 100000, openingDate: 
 const livret = anAccount({ id: 'livret', kind: 'livret', group: 'securise', openingBalance: 50000 });
 
 describe('isCounted', () => {
-  it('ne compte que les opérations réalisées ou rapprochées', () => {
+  it('ne compte que les opérations passées, vérifiées ou non', () => {
     expect(isCounted(aTransaction({ status: 'realise' }))).toBe(true);
-    expect(isCounted(aTransaction({ status: 'rapproche' }))).toBe(true);
+    expect(isCounted(aTransaction({ status: 'realise', verified: true }))).toBe(true);
     expect(isCounted(aTransaction({ status: 'prevu' }))).toBe(false);
   });
 });
@@ -111,22 +111,28 @@ describe('periodPhase', () => {
 describe('livePosition', () => {
   const compte = anAccount({ id: 'courant', openingBalance: 35765, openingDate: '2026-11-01' });
   const novembre = [
-    aTransaction({ date: '2026-11-01', amount: -10000, status: 'rapproche', type: 'investissement' }),
-    aTransaction({ date: '2026-11-05', amount: -799, status: 'rapproche' }),
-    aTransaction({ date: '2026-11-06', amount: -200, status: 'rapproche' }),
+    aTransaction({
+      date: '2026-11-01',
+      amount: -10000,
+      status: 'realise',
+      verified: true,
+      type: 'investissement',
+    }),
+    aTransaction({ date: '2026-11-05', amount: -799, status: 'realise', verified: true }),
+    aTransaction({ date: '2026-11-06', amount: -200, status: 'realise', verified: true }),
     aTransaction({ date: '2026-11-30', amount: -35009, status: 'realise' }),
     aTransaction({ date: '2026-11-26', amount: -26700, status: 'prevu' }),
     aTransaction({ date: '2026-11-20', amount: -10000, status: 'prevu', type: 'investissement' }),
     aTransaction({ date: '2026-11-15', amount: 65000, status: 'prevu', type: 'revenu' }),
   ];
 
-  it('le solde actuel ajoute seulement les opérations rapprochées au solde initial', () => {
+  it('le solde actuel ajoute seulement les opérations vérifiées au solde initial', () => {
     const position = livePosition(compte, novembre, '2026-11-01', '2026-11-30');
     expect(position.opening).toBe(35765);
     expect(position.current).toBe(24766);
   });
 
-  it('« à venir » regroupe les opérations réalisées non rapprochées et les prévues', () => {
+  it('« à venir » regroupe les opérations passées non vérifiées et les prévues', () => {
     const position = livePosition(compte, novembre, '2026-11-01', '2026-11-30');
     expect(position.realised).toBe(-35009);
     expect(position.planned).toBe(28300);

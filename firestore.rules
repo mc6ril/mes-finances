@@ -3,7 +3,8 @@ rules_version = '2';
 // Règles Firestore de « Mes finances ». Tout ce qui n'est pas explicitement permis est refusé.
 // - workspaces/{id} : espace de suivi (perso : un seul membre ; commun : propriétaire + un invité) ;
 // - workspaces/{id}/data/{doc} : données de l'espace, réparties en paquets ;
-// - invitations/{token} : lien d'invitation à usage unique, valable 7 jours au plus.
+// - invitations/{token} : lien d'invitation à usage unique, valable 7 jours au plus ;
+// - users/{uid} : suivi des sauvegardes de l'utilisateur (date de la dernière, rappel masqué).
 // Tests : tests/emulator/firestoreRules.test.ts (npm run test:emulator).
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -156,6 +157,27 @@ service cloud.firestore {
       allow create: if validCreation();
       allow update: if validUse();
       allow delete: if concerned();
+    }
+
+    // Réservé à son utilisateur : deux dates (horodatage ISO ou null), rien d'autre.
+    match /users/{userId} {
+      function own() {
+        return signedIn() && uid() == userId;
+      }
+
+      function dateOrNull(value) {
+        return value == null || (value is string && value.size() <= 40);
+      }
+
+      function validPreferences() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['lastFullBackupAt', 'reminderHiddenUntil'])
+          && dateOrNull(data.get('lastFullBackupAt', null))
+          && dateOrNull(data.get('reminderHiddenUntil', null));
+      }
+
+      allow get, delete: if own();
+      allow create, update: if own() && validPreferences();
     }
   }
 }

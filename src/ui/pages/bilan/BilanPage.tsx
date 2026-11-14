@@ -232,7 +232,7 @@ const BilanPage = () => {
           label="Total des revenus"
           icon={Wallet}
           value={<Amount cents={summary.totals.revenus} rounded />}
-          info="Opérations réalisées ou rapprochées des catégories Revenus (salaire, remboursements, revenus complémentaires…). Les virements entre tes comptes et les opérations seulement prévues ne sont pas comptés."
+          info="Opérations passées des catégories Revenus (salaire, remboursements, revenus complémentaires…). Les virements entre tes comptes et les opérations seulement prévues ne sont pas comptés."
         />
         <StatCard
           label="Total des dépenses"
@@ -252,16 +252,16 @@ const BilanPage = () => {
           info="Catégories du groupe Dépenses fixes : abonnements, téléphone, transports, courses… ainsi que les budgets annuels fixes comme les impôts et la santé."
         />
         <StatCard
-          label="Dépenses personnelles"
+          label={groupLabel('plaisir', kind)}
           icon={ShoppingBag}
           value={<Amount cents={summary.totals.plaisir} rounded />}
           hint={
             <>
-              plaisir <Amount cents={summary.totals.plaisirMensuel} rounded /> · budgets annuels{' '}
+              mensuelles <Amount cents={summary.totals.plaisirMensuel} rounded /> · budgets annuels{' '}
               <Amount cents={summary.totals.plaisir - summary.totals.plaisirMensuel} rounded />
             </>
           }
-          info="Catégories du groupe Dépenses personnelles : le plaisir mensuel (restaurants, shopping, loisirs…) et les budgets annuels comme les voyages, les cadeaux et les dépenses exceptionnelles."
+          info={`Catégories du groupe ${groupLabel('plaisir', kind)} : les dépenses mensuelles (restaurants, shopping, loisirs…) et les budgets annuels comme les voyages, les cadeaux et les dépenses exceptionnelles.`}
           accent="text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-300"
         />
         <StatCard
@@ -340,8 +340,8 @@ const BilanPage = () => {
           </div>
         </Card>
         <Card
-          title="Budget plaisir consommé"
-          subtitle={`Plaisir mensuel (hors budgets annuels) comparé au budget du mois · budget tenu ${summary.plaisirBudgetRespected.respected}/${summary.plaisirBudgetRespected.measured} mois`}
+          title={`${groupLabel('plaisir', kind)} face au budget`}
+          subtitle={`Dépenses mensuelles (hors budgets annuels) comparées au budget du mois · budget tenu ${summary.plaisirBudgetRespected.respected}/${summary.plaisirBudgetRespected.measured} mois`}
         >
           <Legend
             items={[
@@ -368,7 +368,12 @@ const BilanPage = () => {
                   dot={{ r: 3, fill: ink.axis }}
                   isAnimationActive={false}
                 />
-                <Bar dataKey="plaisir" name="Plaisir" radius={[4, 4, 0, 0]} maxBarSize={24}>
+                <Bar
+                  dataKey="plaisir"
+                  name={groupLabel('plaisir', kind)}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={24}
+                >
                   {monthly.map((entry) => (
                     <Cell
                       key={entry.month}

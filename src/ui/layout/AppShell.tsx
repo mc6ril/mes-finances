@@ -1,7 +1,10 @@
-import { CloudOff, Menu, X } from 'lucide-react';
+import { Archive, CloudOff, Menu, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
-import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
+import { useDataset, useFinanceState, useFinanceStore } from '@/hooks/useFinance';
+import { useBackupHistory } from '@/hooks/useBackupHistory';
+import { usePeriod } from '@/hooks/usePeriod';
+import { backupReminder } from '@/core/sauvegarde/reminder';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useToast } from '@/hooks/useToast';
@@ -13,7 +16,7 @@ import Text from '@/ui/design-system/Text';
 import { cx } from '@/ui/design-system/cx';
 import AccountMenu from './AccountMenu';
 import Brand from './Brand';
-import { NAV_ITEMS } from './navigation';
+import { NAV_ITEMS, navItemOf } from './navigation';
 import PeriodPicker from './PeriodPicker';
 
 type NavListProps = { onNavigate?: () => void };
@@ -97,6 +100,42 @@ const OfflineBanner = () => {
   );
 };
 
+/** Rappel discret quand la dernière sauvegarde complète date de plus de 30 jours (ou n'existe pas). */
+const BackupReminderBanner = () => {
+  const { history, exportAll, hideReminder } = useBackupHistory();
+  const dataset = useDataset();
+  const { today } = usePeriod();
+  const reminder = history && backupReminder(history, dataset.transactions.length > 0, today);
+  if (!reminder) {
+    return null;
+  }
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-stone-100 px-4 py-2 text-center text-xs text-stone-700 dark:bg-stone-800/70 dark:text-stone-200"
+    >
+      <Archive className="h-3.5 w-3.5" aria-hidden />
+      {reminder.kind === 'never'
+        ? 'Tu n’as encore jamais exporté de sauvegarde complète.'
+        : `Ta dernière sauvegarde complète date de ${reminder.days} jours.`}
+      <button
+        type="button"
+        onClick={() => void exportAll()}
+        className="font-medium text-brand-700 hover:underline dark:text-brand-300"
+      >
+        Sauvegarder maintenant
+      </button>
+      <button
+        type="button"
+        onClick={hideReminder}
+        className="text-stone-500 hover:underline dark:text-stone-400"
+      >
+        Masquer 7 jours
+      </button>
+    </div>
+  );
+};
+
 const Toasts = () => {
   const { toasts, dismiss } = useToast();
   return (
@@ -132,13 +171,14 @@ const AppShell = ({ children }: AppShellProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   useSyncErrorNotice();
-  const current = NAV_ITEMS.find((item) => item.path === location.pathname) ?? NAV_ITEMS[0];
+  const current = navItemOf(location.pathname);
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location.pathname]);
   return (
     <div className="min-h-screen">
       <OfflineBanner />
+      <BackupReminderBanner />
       <div className="flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-stone-200/80 bg-white/70 px-3 py-5 backdrop-blur-sm dark:border-stone-800 dark:bg-[#161615] lg:flex">
           <Brand />

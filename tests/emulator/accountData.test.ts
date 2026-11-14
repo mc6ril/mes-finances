@@ -67,6 +67,8 @@ beforeEach(async () => {
       'workspaces/commun-ca': workspace(C, [C, A], 'commun'),
       'workspaces/commun-ca/data/transactions__0': { items: { t3: { id: 't3' } } },
       [`workspaces/perso-${B}`]: workspace(B, [B], 'perso'),
+      [`users/${A}`]: { lastFullBackupAt: '2026-11-01T10:00:00.000Z' },
+      [`users/${B}`]: { lastFullBackupAt: '2026-11-02T10:00:00.000Z' },
       'invitations/a-utilisee-par-b-000000000000000000': invitation(A, 'commun-ab', B),
       'invitations/a-en-attente-0000000000000000000000': invitation(A, 'commun-seul', null),
       'invitations/c-utilisee-par-a-000000000000000000': invitation(C, 'commun-ca', A),
@@ -91,6 +93,7 @@ describe('effacement des données d’un compte supprimé', () => {
       invite: (await getDoc(doc(db, 'workspaces/commun-ca'))).data(),
       persoB: (await getDoc(doc(db, `workspaces/perso-${B}`))).exists(),
       invitations: (await getDocs(collection(db, 'invitations'))).docs.map((item) => item.id),
+      users: (await getDocs(collection(db, 'users'))).docs.map((item) => item.id),
     }));
     expect(state).toMatchObject({
       perso: false,
@@ -102,6 +105,7 @@ describe('effacement des données d’un compte supprimé', () => {
       invite: { ownerId: C, memberIds: [C] },
       persoB: true,
       invitations: ['c-autre-00000000000000000000000000'],
+      users: [B],
     });
   });
 
