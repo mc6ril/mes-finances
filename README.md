@@ -4,7 +4,7 @@ Application web de finances personnelles, sans connexion bancaire. L'accès est 
 
 ## Installation
 
-Prérequis : Node.js 20 ou plus récent (`node -v`).
+Prérequis : Node.js 24.12 ou plus récent (`node -v` ; avec nvm : `nvm use`, d'après `.nvmrc`). Firebase et ses outils de test l'exigent.
 
 ```bash
 cd ~/Projects/perso/finances
