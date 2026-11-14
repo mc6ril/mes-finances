@@ -1,5 +1,5 @@
 import { fail, ok, type Result } from '../shared/errors';
-import type { SignInForm, SignUpCredentials, SignUpForm } from './model';
+import type { Reauthentication, SignInForm, SignUpCredentials, SignUpForm } from './model';
 
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -39,4 +39,11 @@ export const validateSignUp = (form: SignUpForm): Result<SignUpCredentials> => {
     return fail('auth-password-mismatch');
   }
   return ok({ displayName, email: validEmail.value, password: form.password });
+};
+
+export const validateReauthentication = (reauthentication: Reauthentication): Result<Reauthentication> => {
+  if (reauthentication.method === 'password' && reauthentication.password.length === 0) {
+    return fail('auth-password-empty');
+  }
+  return ok(reauthentication);
 };

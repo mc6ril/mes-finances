@@ -1,6 +1,12 @@
-import type { AuthUser, SignInForm, SignUpForm } from '../auth/model';
-import { validateEmail, validateSignIn, validateSignUp } from '../auth/validation';
-import type { Result } from '../shared/errors';
+import {
+  needsEmailVerification,
+  type AuthUser,
+  type Reauthentication,
+  type SignInForm,
+  type SignUpForm,
+} from '../auth/model';
+import { validateEmail, validateReauthentication, validateSignIn, validateSignUp } from '../auth/validation';
+import { fail, ok, type Result } from '../shared/errors';
 import type { AuthGatewayInterface } from '../auth/interface';
 
 export type AuthPorts = { gateway: AuthGatewayInterface };
@@ -47,7 +53,36 @@ export const createAuthUseCases = ({ gateway }: AuthPorts) => {
 
   const resendEmailVerification = (): Promise<Result<void>> => gateway.sendEmailVerification();
 
-  return { signUp, signIn, signInWithGoogle, signOut, requestPasswordReset, resendEmailVerification };
+  /** Vérifie auprès du fournisseur que l'adresse a été confirmée via le lien reçu. */
+  const confirmEmailVerified = async (): Promise<Result<AuthUser>> => {
+    const reloaded = await gateway.reloadUser();
+    if (!reloaded.ok) {
+      return reloaded;
+    }
+    if (!reloaded.value) {
+      return fail('auth-failed');
+    }
+    return needsEmailVerification(reloaded.value) ? fail('auth-email-not-verified') : ok(reloaded.value);
+  };
+
+  const deleteAccount = async (reauthentication: Reauthentication): Promise<Result<void>> => {
+    const valid = validateReauthentication(reauthentication);
+    if (!valid.ok) {
+      return valid;
+    }
+    return gateway.deleteAccount(valid.value);
+  };
+
+  return {
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    requestPasswordReset,
+    resendEmailVerification,
+    confirmEmailVerified,
+    deleteAccount,
+  };
 };
 
 export type AuthUseCases = ReturnType<typeof createAuthUseCases>;

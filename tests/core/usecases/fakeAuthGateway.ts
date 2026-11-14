@@ -1,4 +1,4 @@
-import type { AuthUser, SignUpCredentials } from '@/core/auth/model';
+import type { AuthUser, Reauthentication, SignUpCredentials } from '@/core/auth/model';
 import { ok, type Result } from '@/core/shared/errors';
 import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
 
@@ -8,13 +8,15 @@ export type AuthCall =
   | { kind: 'signInWithGoogle' }
   | { kind: 'signOut' }
   | { kind: 'sendPasswordReset'; email: string }
-  | { kind: 'sendEmailVerification' };
+  | { kind: 'sendEmailVerification' }
+  | { kind: 'reloadUser' }
+  | { kind: 'deleteAccount'; reauthentication: Reauthentication };
 
 export const aUser = (patch: Partial<AuthUser> = {}): AuthUser => ({
   id: 'user-1',
   email: 'jean.d@example.com',
   displayName: 'Jean D.',
-  emailVerified: false,
+  emailVerified: true,
   providers: ['password'],
   ...patch,
 });
@@ -26,6 +28,8 @@ type Answers = Partial<{
   signOut: Result<void>;
   sendPasswordReset: Result<void>;
   sendEmailVerification: Result<void>;
+  reloadUser: Result<AuthUser | null>;
+  deleteAccount: Result<void>;
 }>;
 
 /** Faux fournisseur d'identité : enregistre les appels et permet d'émettre des changements de session. */
@@ -60,6 +64,14 @@ export const fakeAuthGateway = (answers: Answers = {}) => {
     sendEmailVerification: async () => {
       calls.push({ kind: 'sendEmailVerification' });
       return answers.sendEmailVerification ?? ok(undefined);
+    },
+    reloadUser: async () => {
+      calls.push({ kind: 'reloadUser' });
+      return answers.reloadUser ?? ok(aUser());
+    },
+    deleteAccount: async (reauthentication) => {
+      calls.push({ kind: 'deleteAccount', reauthentication });
+      return answers.deleteAccount ?? ok(undefined);
     },
   };
   const emit = (user: AuthUser | null) => listeners.forEach((listener) => listener(user));

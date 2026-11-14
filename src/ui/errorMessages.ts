@@ -47,6 +47,10 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'auth-user-disabled': () => 'Ce compte a été désactivé.',
   'auth-provider-disabled': () => 'Cette méthode de connexion n’est pas activée sur le projet.',
   'auth-unauthorized-domain': () => 'Ce domaine n’est pas autorisé pour la connexion.',
+  'auth-email-not-verified': () =>
+    'Ton adresse n’est pas encore confirmée. Clique sur le lien reçu par e-mail, puis réessaie.',
+  'auth-requires-recent-login': () => 'Par sécurité, reconnecte-toi avant de faire cette action.',
+  'auth-user-mismatch': () => 'Ce n’est pas le compte Google connecté. Choisis le même compte.',
   'auth-failed': () => 'La connexion a échoué. Réessaie dans un instant.',
 };
 

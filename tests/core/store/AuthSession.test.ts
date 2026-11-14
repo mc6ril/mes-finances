@@ -1,4 +1,4 @@
-import { fail } from '@/core/shared/errors';
+import { fail, ok } from '@/core/shared/errors';
 import { AuthSession } from '@/core/store/AuthSession';
 import { aUser, fakeAuthGateway } from '../usecases/fakeAuthGateway';
 
@@ -54,6 +54,69 @@ describe('session d’authentification', () => {
     expect(session.getSnapshot().status).toBe('signed-out');
   });
 
+  describe('adresse e-mail non confirmée', () => {
+    it('met la session en attente de confirmation', () => {
+      const { gateway, emit } = fakeAuthGateway();
+      const session = new AuthSession(gateway);
+      session.start();
+      emit(aUser({ emailVerified: false }));
+      expect(session.getSnapshot()).toEqual({
+        status: 'unverified',
+        user: aUser({ emailVerified: false }),
+        error: null,
+      });
+    });
+
+    it('attend la confirmation juste après une inscription par e-mail', async () => {
+      const { gateway } = fakeAuthGateway({ signUp: ok(aUser({ emailVerified: false })) });
+      const session = new AuthSession(gateway);
+      session.start();
+      await session.signUp({ displayName: 'Jean', email: 'jean.d@example.com', password: 'motdepasse' });
+      expect(session.getSnapshot().status).toBe('unverified');
+    });
+
+    it('passe connecté quand le rechargement indique l’adresse confirmée', async () => {
+      const { gateway, emit } = fakeAuthGateway({ reloadUser: ok(aUser({ emailVerified: true })) });
+      const session = new AuthSession(gateway);
+      session.start();
+      emit(aUser({ emailVerified: false }));
+      await session.reloadUser();
+      expect(session.getSnapshot().status).toBe('signed-in');
+    });
+
+    it('ne recharge l’utilisateur au retour sur l’onglet que s’il attend une confirmation', async () => {
+      const { gateway, emit, calls } = fakeAuthGateway();
+      const session = new AuthSession(gateway);
+      session.start();
+      emit(aUser({ emailVerified: true }));
+      await session.refresh();
+      expect(calls).toEqual([]);
+      emit(aUser({ emailVerified: false }));
+      await session.refresh();
+      expect(calls).toEqual([{ kind: 'reloadUser' }]);
+    });
+  });
+
+  describe('suppression du compte', () => {
+    it('déconnecte une fois le compte supprimé', async () => {
+      const { gateway, emit } = fakeAuthGateway();
+      const session = new AuthSession(gateway);
+      session.start();
+      emit(aUser());
+      await session.deleteAccount({ method: 'google' });
+      expect(session.getSnapshot()).toEqual({ status: 'signed-out', user: null, error: null });
+    });
+
+    it('reste connecté si la suppression échoue', async () => {
+      const { gateway, emit } = fakeAuthGateway({ deleteAccount: fail('auth-invalid-credentials') });
+      const session = new AuthSession(gateway);
+      session.start();
+      emit(aUser());
+      await session.deleteAccount({ method: 'password', password: 'faux' });
+      expect(session.getSnapshot().status).toBe('signed-in');
+    });
+  });
+
   describe('sans fournisseur configuré', () => {
     it('est indisponible au démarrage', () => {
       const session = new AuthSession(null);
@@ -72,6 +135,8 @@ describe('session d’authentification', () => {
       expect(await session.signInWithGoogle()).toEqual(notConfigured);
       expect(await session.signOut()).toEqual(notConfigured);
       expect(await session.sendPasswordReset('jean@example.com')).toEqual(notConfigured);
+      expect(await session.reloadUser()).toEqual(notConfigured);
+      expect(await session.deleteAccount({ method: 'google' })).toEqual(notConfigured);
     });
   });
 });

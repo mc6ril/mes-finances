@@ -1,7 +1,12 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
+  EmailAuthProvider,
   GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  reload,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -11,7 +16,7 @@ import {
   type Auth,
   type User,
 } from 'firebase/auth';
-import type { AuthProviderId, AuthUser, SignUpCredentials } from '@/core/auth/model';
+import type { AuthProviderId, AuthUser, Reauthentication, SignUpCredentials } from '@/core/auth/model';
 import { fail, ok, type AppErrorCode, type Result } from '@/core/shared/errors';
 import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
 
@@ -35,6 +40,8 @@ const ERROR_CODES: Record<string, AppErrorCode> = {
   'auth/user-disabled': 'auth-user-disabled',
   'auth/operation-not-allowed': 'auth-provider-disabled',
   'auth/unauthorized-domain': 'auth-unauthorized-domain',
+  'auth/requires-recent-login': 'auth-requires-recent-login',
+  'auth/user-mismatch': 'auth-user-mismatch',
 };
 
 const PROVIDERS: Record<string, AuthProviderId> = { password: 'password', 'google.com': 'google' };
@@ -51,6 +58,12 @@ const toAuthUser = (user: User): AuthUser => ({
   emailVerified: user.emailVerified,
   providers: user.providerData.flatMap(({ providerId }) => PROVIDERS[providerId] ?? []),
 });
+
+const googleProvider = (): GoogleAuthProvider => {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return provider;
+};
 
 const attempt = async <T>(operation: () => Promise<T>): Promise<Result<T>> => {
   try {
@@ -88,9 +101,7 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
   }
 
   async signInWithGoogle(): Promise<Result<AuthUser>> {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    const signedIn = await attempt(() => signInWithPopup(this.#auth, provider));
+    const signedIn = await attempt(() => signInWithPopup(this.#auth, googleProvider()));
     return signedIn.ok ? ok(toAuthUser(signedIn.value.user)) : signedIn;
   }
 
@@ -113,5 +124,40 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
       return fail('auth-failed');
     }
     return attempt(() => sendEmailVerification(user));
+  }
+
+  async reloadUser(): Promise<Result<AuthUser | null>> {
+    const user = this.#auth.currentUser;
+    if (!user) {
+      return ok(null);
+    }
+    // Nouveau jeton forcé : la confirmation d'adresse doit aussi être visible côté règles de sécurité.
+    const reloaded = await attempt(async () => {
+      await reload(user);
+      await user.getIdToken(true);
+    });
+    return reloaded.ok ? ok(toAuthUser(user)) : reloaded;
+  }
+
+  async deleteAccount(reauthentication: Reauthentication): Promise<Result<void>> {
+    const user = this.#auth.currentUser;
+    if (!user) {
+      return fail('auth-failed');
+    }
+    const { email } = user;
+    if (reauthentication.method === 'password' && !email) {
+      return fail('auth-failed');
+    }
+    return attempt(async () => {
+      if (reauthentication.method === 'password') {
+        await reauthenticateWithCredential(
+          user,
+          EmailAuthProvider.credential(email ?? '', reauthentication.password),
+        );
+      } else {
+        await reauthenticateWithPopup(user, googleProvider());
+      }
+      await deleteUser(user);
+    });
   }
 }
