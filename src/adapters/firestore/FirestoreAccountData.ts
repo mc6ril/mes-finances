@@ -31,13 +31,14 @@ export class FirestoreAccountData implements AccountDataInterface {
 
   async erase(): Promise<Result<void>> {
     try {
-      await this.#eraseInvitations();
       const memberships = await getDocsFromServer(
         query(collection(this.#db, 'workspaces'), where('memberIds', 'array-contains', this.#userId)),
       );
       for (const workspace of memberships.docs) {
         await this.#release(workspace.ref, workspace.data() as Membership);
       }
+      // En dernier : rattrape aussi une invitation créée pendant la suppression (autre onglet).
+      await this.#eraseInvitations();
       return ok(undefined);
     } catch (error) {
       return toSyncFailure(error);

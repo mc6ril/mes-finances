@@ -41,6 +41,26 @@ export const createSharingUseCases = ({ sharing, pending, newToken, now }: Shari
     return ok(listed.value.filter((invitation) => invitationStatus(invitation, now()) === 'valid'));
   };
 
+  const opening = new Map<string, Promise<Result<NewInvitation>>>();
+
+  /**
+   * Invitation à montrer pour un espace : celle en attente, sinon une nouvelle. Des ouvertures
+   * simultanées (double rendu de l'écran) partagent la même création au lieu d'en faire deux.
+   */
+  const openInvitation = (workspace: Workspace): Promise<Result<NewInvitation>> => {
+    const running = opening.get(workspace.id);
+    if (running) {
+      return running;
+    }
+    const opened = (async (): Promise<Result<NewInvitation>> => {
+      const listed = await pendingInvitations(workspace);
+      const reused = listed.ok ? listed.value[0] : undefined;
+      return reused ? ok(reused) : invite(workspace);
+    })().finally(() => opening.delete(workspace.id));
+    opening.set(workspace.id, opened);
+    return opened;
+  };
+
   /** Invitation encore utilisable par l'utilisateur connecté. */
   const readInvitation = async (token: string, userId: string): Promise<Result<Invitation>> => {
     const read = await sharing.readInvitation(token);
@@ -102,6 +122,7 @@ export const createSharingUseCases = ({ sharing, pending, newToken, now }: Shari
 
   return {
     invite,
+    openInvitation,
     pendingInvitations,
     readInvitation,
     accept,
