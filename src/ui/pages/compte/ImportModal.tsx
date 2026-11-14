@@ -199,7 +199,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
         <div className="flex flex-col gap-4">
           <Text variant="muted">
             Exporte un relevé CSV depuis l’espace en ligne de ta banque, puis sélectionne-le. Le fichier est
-            lu uniquement dans ton navigateur : rien n’est envoyé sur Internet.
+            lu dans ton navigateur : seules les opérations importées sont enregistrées dans ton espace.
           </Text>
           <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-200 px-6 py-10 text-center hover:border-brand-400 dark:border-stone-700">
             <FileUp className="h-6 w-6 text-brand-600" aria-hidden />

@@ -1,6 +1,6 @@
 # Mes finances
 
-Application web de finances personnelles, sans connexion bancaire. Les données sont stockées dans le navigateur (IndexedDB) et se sauvegardent en JSON. L'accès est protégé par un compte (Firebase Authentication : e-mail + mot de passe ou Google) ; la synchronisation des données via Firestore est en cours.
+Application web de finances personnelles, sans connexion bancaire. L'accès est protégé par un compte (Firebase Authentication : e-mail + mot de passe ou Google). Les données sont enregistrées dans Firestore, synchronisées en temps réel entre appareils, utilisables hors ligne (cache local persistant), et se sauvegardent en JSON. Un espace commun peut être partagé avec une seule personne, par lien d'invitation.
 
 ## Installation
 
@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Puis ouvrir http://127.0.0.1:5173 dans le navigateur. La connexion nécessite Internet et la configuration Firebase ci-dessous.
+Puis ouvrir http://127.0.0.1:5173 dans le navigateur. La connexion nécessite Internet et la configuration Firebase ci-dessous ; ensuite, la saisie continue hors ligne.
 
 Version optimisée (plus rapide au quotidien) :
 
@@ -26,14 +26,15 @@ npm run build
 npm run preview        # http://127.0.0.1:4173
 ```
 
-> Les données sont liées au navigateur **et** à l'adresse utilisée (`127.0.0.1:5173` et `127.0.0.1:4173` ont chacune leurs données). Choisis-en une et garde-la, et exporte régulièrement une sauvegarde depuis « Paramètres et sauvegardes ».
+> Le plan gratuit (Spark) n'a pas de sauvegarde automatique de la base : exporte régulièrement une sauvegarde complète depuis « Paramètres → Sauvegardes ».
 
 ## Commandes
 
 | Commande            | Rôle                                       |
 | ------------------- | ------------------------------------------ |
 | `npm run dev`       | Serveur de développement                   |
-| `npm test`          | Tests des calculs (Vitest)                 |
+| `npm test`          | Tests (Vitest), sans émulateur             |
+| `npm run test:emulator` | Règles Firestore et adapter sur l'émulateur (Java 21 requis) |
 | `npm run typecheck` | Vérification TypeScript                    |
 | `npm run build`     | Build de production dans `dist/`           |
 | `npm run format -- <fichiers>` | Prettier sur les fichiers modifiés |
@@ -47,9 +48,24 @@ npm run preview        # http://127.0.0.1:4173
 
 Sans ces variables, l'application affiche « Connexion indisponible ».
 
+## Base de données (Firestore)
+
+1. Console Firebase → Firestore Database → Créer une base : édition **Standard**, emplacement européen (`europe-west9` Paris ou `eur3` ; **définitif**), démarrer en **mode production** (tout refusé, jamais le mode test).
+2. Déployer les règles et index versionnés : `npx firebase login`, puis `npx firebase deploy --only firestore --project <id-du-projet>`. À refaire à chaque modification de `firestore.rules`.
+3. Reprendre les données d'avant : se connecter, puis Paramètres → Sauvegardes → Restaurer, avec le fichier de sauvegarde complète. Chaque espace du fichier est recréé à son nom (le commun reçu par fichier compris).
+
+Modèle (voir `firestore.rules`, testées dans `tests/emulator/firestoreRules.test.ts`) :
+
+- `workspaces/{id}` : `ownerId`, `memberIds` (un seul membre pour un perso, propriétaire + un invité pour un commun), `kind`, `name`, `settings`, `schemaVersion`, `layout`. L'espace principal d'un utilisateur est `perso-{uid}`.
+- `workspaces/{id}/data/{collection}__{n}` : `{ items: { [clé]: élément } }`. Chaque collection est répartie en paquets (hash de la clé) : une ouverture coûte quelques dizaines de lectures au lieu d'une par opération, pour rester dans le quota gratuit (50 000 lectures/jour) sur la durée. Une collection est redécoupée automatiquement au-delà de 640 Ko par paquet (limite Firestore : 1 Mio).
+- `invitations/{token}` : lien à usage unique, valable 7 jours, lisible avec le lien, jamais listable.
+
+Tests sur l'émulateur : `npm run test:emulator` (Java 21 : `brew install openjdk@21`, puis `JAVA_HOME=/opt/homebrew/opt/openjdk@21`). Si `private/mes-finances-sauvegarde-complete-*.json` existe (ou `FINANCES_BACKUP=chemin`), la restauration de cette vraie sauvegarde est vérifiée sans perte, localement, en ne comparant que des empreintes.
+
 Comportement :
 - Un compte créé par e-mail doit **confirmer son adresse** (lien reçu à l'inscription) avant d'accéder à l'application ; un compte Google est confirmé d'office.
-- **Paramètres → Mon compte** : déconnexion et suppression définitive du compte (mot de passe ou fenêtre Google redemandés). La suppression n'efface pas les données stockées dans le navigateur.
+- **Déconnexion** : attend l'envoi des modifications faites hors ligne, puis efface tout ce que l'application a laissé sur l'appareil (cache Firestore, anciennes bases IndexedDB, préférences).
+- **Suppression du compte** (Paramètres → Mon compte, mot de passe ou fenêtre Google redemandés) : supprime d'abord les données en ligne (espaces perso, communs sans invité, invitations), transfère à l'invité un espace commun partagé, retire l'utilisateur des communs où il est invité ; puis le compte. Sans réseau, rien n'est supprimé.
 
 ## Architecture (hexagonale)
 
@@ -68,15 +84,22 @@ src/
     backup.ts           Sauvegarde / restauration validée et versionnée
     seed.ts             Configuration initiale (vierge)
     workspaces.ts       Espaces de suivi indépendants (Perso, Commun…)
-    <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth)
+    <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth, partage, sync)
     ports.ts            Ports transverses (lecture / enregistrement de fichiers, CSV, ids, horloge)
     auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur)
     store/AuthSession   Session observable (vérification, adresse à confirmer, connecté, déconnecté)
+    store/FinanceStore  Espace affiché, écoute des changements venus d'ailleurs
+    partage/            Invitation (validité, statut), ports du partage
+    sync/               État d'envoi (hors ligne, en attente), ports des données de l'utilisateur
     usecases/auth       Inscription, connexion, Google, déconnexion, mot de passe oublié,
-                        confirmation d'adresse, suppression du compte
+                        confirmation d'adresse, suppression du compte (données comprises)
+    usecases/sharing    Inviter, rejoindre, retirer l'accès, quitter
+    usecases/dataSession  Données ouvertes à la connexion, effacées à la déconnexion
   adapters/             Secondary adapters
     auth/               Firebase Authentication (erreurs traduites en codes auth-*)
-    storage/            IndexedDB (une base par espace) et liste des espaces
+    firebase/           Configuration et application Firebase partagée
+    firestore/          Espaces, paquets, partage, effacement du compte, suivi d'envoi (codes sync-*)
+    storage/            Effacement des données locales, lien d'invitation en attente
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
   app/                  Primary adapters : store, actions, sélecteurs, thème
   ui/
@@ -100,22 +123,24 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 
 ## Espaces de suivi
 
-Chaque espace (Perso, Commun…) est une base IndexedDB indépendante : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
+Chaque espace (Perso, Commun…) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
 
 - **Créer** un espace : Paramètres → Espaces de suivi.
-- **Sauvegarder** : « Tout sauvegarder » exporte tous les espaces (importés compris) dans un seul fichier ; « Restaurer » ce fichier recrée tous les espaces.
-- **Partager** un espace : Sauvegardes → Partager un espace, puis envoyer le fichier JSON. Seul l’espace choisi est dans le fichier.
-- **Recevoir** un espace : Paramètres → Importer un espace. Il est créé en lecture seule ; un import suivant du même espace le remplace.
-
-La base historique « mes-finances » est l’espace « Perso » : aucune migration n’est nécessaire.
+- **Espaces perso** : visibles et modifiables uniquement par leur propriétaire.
+- **Partager un espace commun** : bouton « Inviter », puis envoyer le lien (usage unique, 7 jours) à la personne de son choix. Elle se connecte ou crée son compte, puis rejoint l'espace ; personne d'autre n'y a accès. Le propriétaire peut retirer l'accès, l'invité peut quitter l'espace.
+- **Temps réel et hors ligne** : une modification apparaît chez l'autre sans recharger ; sans réseau, la saisie continue et part au retour de la connexion (bandeau « Hors ligne »).
+- **Sauvegarder** : « Tout sauvegarder » exporte tous les espaces dans un seul fichier ; « Restaurer » ce fichier recrée tous les espaces (ceux rejoints comme invité ne sont pas touchés). Les anciens fichiers, y compris ceux d'un espace reçu par fichier, restent lisibles.
 
 ## Évolutions et compatibilité
 
-Le schéma est versionné (`SCHEMA_VERSION` dans `core/model.ts`, version de base IndexedDB dans l'adapter). Toute évolution passe par une migration dans `core/migrate.ts` (appliquée à l'ouverture de la base et à la restauration d'une sauvegarde) et dans l'`upgrade` IndexedDB, pour ne jamais casser les données déjà enregistrées.
+Le schéma est versionné (`SCHEMA_VERSION` dans `core/shared/model.ts`). Toute évolution passe par une migration dans `core/sauvegarde/migrate.ts`, appliquée à l'ouverture d'un espace et à la restauration d'une sauvegarde, pour ne jamais casser les données déjà enregistrées. Un appareil resté sur une ancienne version de l'application refuse d'ouvrir un espace écrit par une version plus récente (« recharge la page ») au lieu de l'écraser.
+
+Les opérations générées par les récurrences ont un identifiant déterministe (`rec-{récurrence}-{mois}`) : deux appareils ouverts en même temps ne les doublent pas.
 
 ## Sécurité et déploiement
 
-- `netlify.toml` : build (`npm run build` → `dist/`) et en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google »).
+- `firestore.rules` : tout est refusé sauf ce qui est explicitement permis, adresse confirmée obligatoire. Testées sur l'émulateur (propriétaire, invité, autre compte, invitation expirée ou déjà utilisée, adresse non confirmée) en CI.
+- `netlify.toml` : build (`npm run build` → `dist/`) et en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google ») et aux données (`firestore.googleapis.com`).
 - `overrides` dans `package.json` : force une version corrigée de `@grpc/grpc-js` (dépendance Node de Firestore, absente du bundle navigateur) pour que `npm audit` reste propre.
 - `.github/dependabot.yml` : mises à jour hebdomadaires des dépendances npm (et mensuelles des GitHub Actions), proposées en pull requests.
-- `.github/workflows/ci.yml` : typecheck, tests, build et `npm audit` à chaque push sur `main` et sur chaque pull request.
+- `.github/workflows/ci.yml` : typecheck, tests, build et `npm audit` à chaque push sur `main` et sur chaque pull request ; tests des règles et de l'adapter sur l'émulateur Firestore.
