@@ -1,12 +1,14 @@
 import type { Firestore } from 'firebase/firestore';
 import type { AccountDataInterface } from '@/core/auth/interface';
 import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
+import type { SharingGatewayInterface } from '@/core/partage/interface';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import type { Dataset } from '@/core/shared/model';
 import type { FinanceRepositoryInterface } from '@/core/store/interface';
 import type { UserDataBackendInterface } from '@/core/sync/interface';
 import { FirestoreAccountData } from './FirestoreAccountData';
 import { FirestoreFinanceRepository } from './FirestoreFinanceRepository';
+import { FirestoreSharing } from './FirestoreSharing';
 import { FirestoreWorkspaceRegistry, type KeyValueStorage } from './FirestoreWorkspaceRegistry';
 import { SyncMonitor } from './SyncMonitor';
 import { toDocumentId } from './workspaceIds';
@@ -25,6 +27,7 @@ type Connection = {
   userId: string;
   registry: FirestoreWorkspaceRegistry;
   accountData: FirestoreAccountData;
+  sharing: FirestoreSharing;
 };
 
 const disconnected = async <T>(): Promise<Result<T>> => fail('sync-failed');
@@ -60,6 +63,7 @@ export class FirestoreBackend implements UserDataBackendInterface {
       userId,
       registry: new FirestoreWorkspaceRegistry(db, userId, this.sync, this.#deps.storage),
       accountData: new FirestoreAccountData(db, userId),
+      sharing: new FirestoreSharing(db, userId, this.sync),
     };
   }
 
@@ -98,6 +102,20 @@ export class FirestoreBackend implements UserDataBackendInterface {
   /** Données en ligne de l'utilisateur connecté, effacées avant la suppression de son compte. */
   readonly accountData: AccountDataInterface = {
     erase: () => this.#connection?.accountData.erase() ?? disconnected(),
+  };
+
+  /** Partage des espaces communs de l'utilisateur connecté. */
+  readonly sharing: SharingGatewayInterface = {
+    createInvitation: (invitation) =>
+      this.#connection?.sharing.createInvitation(invitation) ?? disconnected(),
+    readInvitation: (token) => this.#connection?.sharing.readInvitation(token) ?? disconnected(),
+    acceptInvitation: (invitation) =>
+      this.#connection?.sharing.acceptInvitation(invitation) ?? disconnected(),
+    pendingInvitations: (workspaceId) =>
+      this.#connection?.sharing.pendingInvitations(workspaceId) ?? disconnected(),
+    cancelInvitation: (token) => this.#connection?.sharing.cancelInvitation(token) ?? disconnected(),
+    revokeGuest: (workspaceId) => this.#connection?.sharing.revokeGuest(workspaceId) ?? disconnected(),
+    leaveWorkspace: (workspaceId) => this.#connection?.sharing.leaveWorkspace(workspaceId) ?? disconnected(),
   };
 
   /** Liste des espaces de l'utilisateur connecté. */

@@ -245,8 +245,8 @@ describe('liste des espaces', () => {
     const partner = await registryOf(PARTNER).registry.load();
     expect(partner.ok && partner.value.workspaces).toEqual(
       expect.arrayContaining([
-        { id: 'perso', name: 'Perso', kind: 'perso', role: 'owner' },
-        { id: COMMON, name: 'Commun', kind: 'commun', role: 'guest' },
+        { id: 'perso', name: 'Perso', kind: 'perso', role: 'owner', shared: false },
+        { id: COMMON, name: 'Commun', kind: 'commun', role: 'guest', shared: true },
       ]),
     );
     expect(partner.ok && partner.value.workspaces).toHaveLength(2);

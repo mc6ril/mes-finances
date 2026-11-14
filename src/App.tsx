@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router';
+import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import type { Container } from '@/app/container';
 import FinanceProvider from '@/ui/providers/FinanceProvider';
@@ -7,6 +7,7 @@ import ToastProvider from '@/ui/providers/ToastProvider';
 import type { ReactNode } from 'react';
 import { useAuthState } from '@/hooks/useAuth';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
+import { INVITATION_PATH, usePendingInvitation } from '@/hooks/useSharing';
 import { useApplyTheme } from '@/hooks/useTheme';
 import Button from '@/ui/design-system/Button';
 import Text from '@/ui/design-system/Text';
@@ -20,6 +21,8 @@ import SignUpPage from '@/ui/pages/auth/SignUpPage';
 import VerifyEmailPage from '@/ui/pages/auth/VerifyEmailPage';
 import BilanPage from '@/ui/pages/bilan/BilanPage';
 import BudgetPage from '@/ui/pages/budget/BudgetPage';
+import InvitationPage from '@/ui/pages/invitation/InvitationPage';
+import RememberInvitation from '@/ui/pages/invitation/RememberInvitation';
 import ComptePage from '@/ui/pages/compte/ComptePage';
 import DashboardPage from '@/ui/pages/dashboard/DashboardPage';
 import ObjectifsPage from '@/ui/pages/objectifs/ObjectifsPage';
@@ -50,6 +53,7 @@ const AuthRoutes = () => (
     <Route path={AUTH_PATHS.signIn} element={<SignInPage />} />
     <Route path={AUTH_PATHS.signUp} element={<SignUpPage />} />
     <Route path={AUTH_PATHS.forgotPassword} element={<ForgotPasswordPage />} />
+    <Route path={`${INVITATION_PATH}/:token`} element={<RememberInvitation />} />
     <Route path="*" element={<Navigate to={AUTH_PATHS.signIn} replace />} />
   </Routes>
 );
@@ -57,6 +61,8 @@ const AuthRoutes = () => (
 const Gate = () => {
   const state = useFinanceState();
   const store = useFinanceStore();
+  const navigate = useNavigate();
+  usePendingInvitation(navigate);
   if (state.status === 'error') {
     return (
       <FullScreenError
@@ -83,6 +89,7 @@ const Gate = () => {
         <Route path="/bilan" element={<BilanPage />} />
         <Route path="/objectifs" element={<ObjectifsPage />} />
         <Route path="/parametres" element={<ParametresPage />} />
+        <Route path={`${INVITATION_PATH}/:token`} element={<InvitationPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

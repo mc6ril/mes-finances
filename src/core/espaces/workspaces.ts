@@ -10,6 +10,8 @@ export type Workspace = {
   name: string;
   kind: WorkspaceKind;
   role: WorkspaceRole;
+  /** Espace commun ouvert à une personne invitée (deux membres). */
+  shared?: boolean;
 };
 
 export type WorkspaceRegistryState = { workspaces: Workspace[]; activeId: string };
