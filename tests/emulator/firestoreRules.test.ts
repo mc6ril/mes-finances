@@ -88,7 +88,13 @@ const seedBase = (common = workspaceDoc(OWNER, 'commun')) =>
 const seedShared = () => seedBase(workspaceDoc(OWNER, 'commun', [OWNER, PARTNER]));
 
 /** Acceptation : invitation consommée et ajout à l'espace, dans un même lot atomique. */
-const accept = (db: Firestore, uid: string, token = TOKEN, workspaceId = COMMON, memberIds = [OWNER, uid]) => {
+const accept = (
+  db: Firestore,
+  uid: string,
+  token = TOKEN,
+  workspaceId = COMMON,
+  memberIds = [OWNER, uid],
+) => {
   const batch = writeBatch(db);
   batch.update(doc(db, `invitations/${token}`), { usedBy: uid, usedAt: serverTimestamp() });
   batch.update(doc(db, `workspaces/${workspaceId}`), { memberIds, lastInvitation: token });
@@ -184,7 +190,9 @@ describe('création et modification d’un espace', () => {
     await assertFails(setDoc(doc(db, 'workspaces/x2'), created(STRANGER, { memberIds: [STRANGER, OWNER] })));
     await assertFails(setDoc(doc(db, 'workspaces/x3'), created(STRANGER, { kind: 'autre' })));
     await assertFails(setDoc(doc(db, 'workspaces/x4'), created(STRANGER, { lastInvitation: TOKEN })));
-    await assertFails(setDoc(doc(db, 'workspaces/x5'), created(STRANGER, { createdAt: Timestamp.fromMillis(0) })));
+    await assertFails(
+      setDoc(doc(db, 'workspaces/x5'), created(STRANGER, { createdAt: Timestamp.fromMillis(0) })),
+    );
   });
 
   it('refuse d’écraser un espace existant d’un autre compte', async () => {
@@ -288,7 +296,9 @@ describe('invitation', () => {
     await assertFails(
       updateDoc(doc(db, `workspaces/${COMMON}`), { memberIds: [OWNER, STRANGER], lastInvitation: TOKEN }),
     );
-    await assertFails(updateDoc(doc(db, `invitations/${TOKEN}`), { usedBy: STRANGER, usedAt: serverTimestamp() }));
+    await assertFails(
+      updateDoc(doc(db, `invitations/${TOKEN}`), { usedBy: STRANGER, usedAt: serverTimestamp() }),
+    );
   });
 
   it('le propriétaire ne s’invite pas lui-même', async () => {

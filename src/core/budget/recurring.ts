@@ -11,11 +11,17 @@ const alreadyGenerated = (recurring: Recurring, month: MonthKey, existing: Trans
     (transaction) => transaction.recurringId === recurring.id && monthKeyOf(transaction.date) === month,
   );
 
+/**
+ * Identifiant déterministe : deux appareils qui génèrent le même mois écrivent la même opération,
+ * au lieu de la doubler.
+ */
+export const recurringTransactionId = (recurringId: string, month: MonthKey): string =>
+  `rec-${recurringId}-${month}`;
+
 export const materializeRecurring = (
   recurrings: Recurring[],
   month: MonthKey,
   existing: Transaction[],
-  newId: () => string,
   now: string,
 ): Transaction[] => {
   const { year, month: monthNumber } = parseMonthKey(month);
@@ -23,7 +29,7 @@ export const materializeRecurring = (
     .filter((recurring) => isActiveIn(recurring, month))
     .filter((recurring) => !alreadyGenerated(recurring, month, existing))
     .map((recurring) => ({
-      id: newId(),
+      id: recurringTransactionId(recurring.id, month),
       date: toIsoDate(year, monthNumber, Math.min(recurring.dayOfMonth, daysInMonth(month))),
       label: recurring.label,
       amount: recurring.amount,
@@ -79,7 +85,6 @@ export const syncRecurring = (
   recurrings: Recurring[],
   transactions: Transaction[],
   currentMonth: MonthKey,
-  newId: () => string,
   now: string,
 ): RecurringSync => {
   const created: Transaction[] = [];
@@ -104,7 +109,7 @@ export const syncRecurring = (
           linked.push({ ...match, recurringId: recurring.id, updatedAt: now });
           return;
         }
-        created.push(...materializeRecurring([recurring], month, known, newId, now));
+        created.push(...materializeRecurring([recurring], month, known, now));
       });
       updated.push({ ...recurring, generatedUntil: months[months.length - 1] ?? null });
     });

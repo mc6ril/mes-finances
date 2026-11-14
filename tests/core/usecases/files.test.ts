@@ -15,7 +15,7 @@ import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';
 import { aTransaction } from '../fixtures';
 
 const dataset = createInitialDataset('2026-11-08', () => 'audit');
-const commun: Workspace = { id: 'w1', name: 'Épargne commune', source: 'local', importedAt: null };
+const commun: Workspace = { id: 'w1', name: 'Épargne commune', kind: 'perso', role: 'owner' };
 const file: UserFile = { name: 'fichier.json' };
 
 type Fakes = {
@@ -27,7 +27,6 @@ type Fakes = {
 
 const setup = (fakes: Fakes = {}) => {
   const saved: SavedFile[] = [];
-  const shared: string[] = [];
   const reader: TextFileReaderInterface = { read: async () => fakes.text ?? ok('contenu') };
   const csv: CsvParserInterface = { parse: () => fakes.rows ?? ok([['a']]) };
   const saver: FileSaverInterface = {
@@ -44,13 +43,9 @@ const setup = (fakes: Fakes = {}) => {
         { workspace: commun, dataset },
       ]),
     workspaceData: async (workspaceId) => ok(workspaceId === 'w1' ? { workspace: commun, dataset } : null),
-    markShared: (workspaceId) => {
-      shared.push(workspaceId);
-      return ok(undefined);
-    },
   };
   const useCases = createFileUseCases({ reader, csv, saver, workspaces });
-  return { useCases, saved, shared };
+  return { useCases, saved };
 };
 
 const now = new Date('2026-11-08T10:00:00.000Z');
@@ -118,33 +113,6 @@ describe('sauvegarde complète', () => {
       error: { code: 'storage-unavailable' },
     });
     expect(saved).toEqual([]);
-  });
-});
-
-describe('partage d’un espace', () => {
-  it('exporte l’espace seul et le marque comme envoyé', async () => {
-    const { useCases, saved, shared } = setup();
-    expect(await useCases.shareWorkspace('w1', now)).toEqual({ ok: true, value: commun });
-    expect(saved[0]?.name).toBe('mes-finances-epargne-commune-2026-11-08.json');
-    expect(JSON.parse(saved[0]?.content ?? '')).toMatchObject({ workspaceName: 'Épargne commune' });
-    expect(shared).toEqual(['w1']);
-  });
-
-  it('ne marque pas l’espace comme envoyé si l’enregistrement échoue', async () => {
-    const { useCases, shared } = setup({ saveResult: fail('file-save-failed') });
-    expect(await useCases.shareWorkspace('w1', now)).toEqual({
-      ok: false,
-      error: { code: 'file-save-failed' },
-    });
-    expect(shared).toEqual([]);
-  });
-
-  it('signale un espace introuvable', async () => {
-    const { useCases } = setup();
-    expect(await useCases.shareWorkspace('inconnu', now)).toEqual({
-      ok: false,
-      error: { code: 'workspace-not-found' },
-    });
   });
 });
 

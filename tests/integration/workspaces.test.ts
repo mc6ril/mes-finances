@@ -1,22 +1,16 @@
-import 'fake-indexeddb/auto';
-import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
-import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import type { Category, Dataset } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
-import { hasUnsentChanges } from '@/core/espaces/workspaces';
 import { aTransaction } from '../core/fixtures';
-
-let suite = 0;
+import { MemoryDatabase, MemoryWorkspaceRegistry } from '../support/memoryAdapters';
 
 const setup = () => {
-  suite += 1;
-  const prefix = `espaces-${suite}`;
+  const db = new MemoryDatabase();
   const registry = new MemoryWorkspaceRegistry();
   let counter = 0;
   let ticks = -1;
   const store = new FinanceStore(
-    (workspaceId) => new IndexedDbRepository(`${prefix}-${workspaceId}`),
+    db.repository,
     registry,
     () => {
       counter += 1;
@@ -27,7 +21,7 @@ const setup = () => {
       return new Date(Date.UTC(2026, 10, 8, 10, 0, ticks));
     },
   );
-  return { store, registry };
+  return { store, registry, db };
 };
 
 const communFile = (): Dataset => ({
@@ -73,65 +67,10 @@ describe('espaces de suivi', () => {
     expect(store.getSnapshot().dataset?.settings.kind).toBe('perso');
   });
 
-  it('importe un espace partagé modifiable, sans toucher à l’espace principal', async () => {
-    const { store, registry } = setup();
-    await store.start();
-    const result = await store.importWorkspace(communFile(), { kind: 'new', name: 'Commun' });
-    expect(result.ok).toBe(true);
-    const { workspace, dataset } = store.getSnapshot();
-    expect(workspace).toMatchObject({
-      name: 'Commun',
-      source: 'import',
-      importedAt: expect.stringMatching(/^2026-11-08T10:00/),
-    });
-    expect(dataset?.transactions.map((transaction) => transaction.id)).toEqual(['courses']);
-    expect(registry.state.activeId).toBe(workspace.id);
-    expect(hasUnsentChanges(workspace)).toBe(false);
-    const write = await store.upsert('transactions', [aTransaction({ id: 'ajout' })], {
-      action: 'creation',
-      entity: 'Opération',
-      summary: 'Ajout',
-    });
-    expect(write.ok).toBe(true);
-    expect(hasUnsentChanges(store.getSnapshot().workspace)).toBe(true);
-    store.markShared(workspace.id);
-    expect(hasUnsentChanges(store.getSnapshot().workspace)).toBe(false);
-    await store.switchWorkspace('perso');
-    expect(store.getSnapshot().dataset?.transactions).toEqual([]);
-  });
-
-  it('remplace un espace importé lors d’un nouvel import', async () => {
-    const { store } = setup();
-    await store.start();
-    await store.importWorkspace(communFile(), { kind: 'new', name: 'Commun' });
-    const communId = store.getSnapshot().workspace.id;
-    await store.switchWorkspace('perso');
-    const update = {
-      ...communFile(),
-      transactions: [
-        aTransaction({ id: 'loyer', date: '2026-12-01', amount: -90000, accountId: 'acc-courant' }),
-      ],
-    };
-    await store.importWorkspace(update, { kind: 'existing', workspaceId: communId });
-    expect(store.getSnapshot().workspace.id).toBe(communId);
-    expect(store.getSnapshot().workspaces).toHaveLength(2);
-    expect(store.getSnapshot().dataset?.transactions.map((transaction) => transaction.id)).toEqual(['loyer']);
-  });
-
-  it('refuse de remplacer l’espace principal par un import', async () => {
-    const { store } = setup();
-    await store.start();
-    expect(
-      await store.importWorkspace(communFile(), { kind: 'existing', workspaceId: 'perso' }),
-    ).toMatchObject({
-      ok: false,
-    });
-  });
-
   it('supprime un espace et revient sur l’espace principal', async () => {
     const { store } = setup();
     await store.start();
-    await store.importWorkspace(communFile(), { kind: 'new', name: 'Commun' });
+    await store.createWorkspace('Commun', 'commun');
     const communId = store.getSnapshot().workspace.id;
     expect((await store.deleteWorkspace(communId)).ok).toBe(true);
     expect(store.getSnapshot().workspace.id).toBe('perso');
@@ -140,19 +79,21 @@ describe('espaces de suivi', () => {
   });
 
   it('renomme un espace en refusant les doublons', async () => {
-    const { store } = setup();
+    const { store, registry } = setup();
     await store.start();
     await store.createWorkspace('Commun');
-    expect(store.renameWorkspace('perso', 'commun').ok).toBe(false);
-    expect(store.renameWorkspace('perso', 'Cyril').ok).toBe(true);
-    expect(store.getSnapshot().workspaces[0]?.name).toBe('Cyril');
+    expect((await store.renameWorkspace('perso', 'commun')).ok).toBe(false);
+    expect((await store.renameWorkspace('perso', 'Jean D.')).ok).toBe(true);
+    expect(store.getSnapshot().workspaces[0]?.name).toBe('Jean D.');
+    expect(registry.state.workspaces[0]?.name).toBe('Jean D.');
   });
 
   it('sauvegarde tous les espaces puis les restaure, en supprimant ceux absents du fichier', async () => {
     const { store } = setup();
     await store.start();
-    await store.importWorkspace(communFile(), { kind: 'new', name: 'Commun' });
+    await store.createWorkspace('Commun', 'commun');
     const communId = store.getSnapshot().workspace.id;
+    await store.restore(communFile(), { action: 'restauration', entity: 'Test', summary: 'Commun' });
     const saved = await store.allWorkspaceData();
     expect(saved.ok && saved.value.map((entry) => entry.workspace.name)).toEqual(['Perso', 'Commun']);
     await store.createWorkspace('Brouillon');
@@ -162,7 +103,7 @@ describe('espaces de suivi', () => {
     expect((await store.restoreAll(saved.value, communId)).ok).toBe(true);
     const { workspaces, workspace, dataset } = store.getSnapshot();
     expect(workspaces.map((item) => item.name)).toEqual(['Perso', 'Commun']);
-    expect(workspace).toMatchObject({ id: communId, source: 'import' });
+    expect(workspace).toMatchObject({ id: communId, kind: 'commun', role: 'owner' });
     expect(dataset?.transactions.map((transaction) => transaction.id)).toEqual(['courses']);
   });
 
@@ -208,48 +149,5 @@ describe('espaces de suivi', () => {
     });
     await store.refresh();
     expect(mobiles()).toEqual([]);
-  });
-
-  it('met à jour un espace créé localement avec le fichier reçu, qui devient partagé', async () => {
-    const { store } = setup();
-    await store.start();
-    await store.createWorkspace('Commun');
-    const communId = store.getSnapshot().workspace.id;
-    await store.switchWorkspace('perso');
-    expect((await store.importWorkspace(communFile(), { kind: 'existing', workspaceId: communId })).ok).toBe(
-      true,
-    );
-    expect(store.getSnapshot().workspace).toMatchObject({ id: communId, source: 'import', modifiedAt: null });
-    expect(store.getSnapshot().dataset?.transactions.map((transaction) => transaction.id)).toEqual([
-      'courses',
-    ]);
-  });
-
-  it('ne compte pas la génération automatique comme une modification à envoyer', async () => {
-    const { store } = setup();
-    await store.start();
-    const file = {
-      ...communFile(),
-      recurrings: [
-        {
-          id: 'r-loyer',
-          label: 'Loyer',
-          amount: -90000,
-          type: 'depense' as const,
-          categoryId: null,
-          accountId: 'acc-courant',
-          counterpartAccountId: null,
-          dayOfMonth: 1,
-          startMonth: '2026-11',
-          endMonth: null,
-          active: true,
-        },
-      ],
-    };
-    await store.importWorkspace(file, { kind: 'new', name: 'Commun' });
-    expect(
-      store.getSnapshot().dataset?.transactions.some((transaction) => transaction.recurringId === 'r-loyer'),
-    ).toBe(true);
-    expect(hasUnsentChanges(store.getSnapshot().workspace)).toBe(false);
   });
 });

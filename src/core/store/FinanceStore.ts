@@ -17,15 +17,11 @@ import {
 import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import {
   activeIn,
+  canDelete,
   DEFAULT_WORKSPACE,
-  importedWorkspace,
-  newLocalWorkspace,
+  newWorkspace,
   renamedWorkspaces,
-  replaceWorkspace,
-  sharedWorkspace,
-  touchedWorkspace,
-  upsertWorkspace,
-  type ImportTarget,
+  sortWorkspaces,
   type Workspace,
 } from '@/core/espaces/workspaces';
 
@@ -43,8 +39,6 @@ export type StoreState = {
 type Listener = () => void;
 
 type RepositoryFactory = (workspaceId: string) => FinanceRepositoryInterface;
-
-export type { ImportTarget } from '../espaces/workspaces';
 
 const MAX_AUDIT_ENTRIES = 500;
 
@@ -71,6 +65,7 @@ export interface FinanceStoreInterface {
   subscribe(listener: Listener): () => void;
   getSnapshot(): StoreState;
   start(): Promise<void>;
+  stop(): void;
   settleDue(): Promise<Result<void>>;
   refresh(): Promise<Result<void>>;
   syncRecurring(): Promise<Result<void>>;
@@ -84,19 +79,29 @@ export interface FinanceStoreInterface {
   restore(dataset: Dataset, log: AuditLog): Promise<Result<void>>;
   switchWorkspace(workspaceId: string): Promise<Result<void>>;
   createWorkspace(name: string, kind?: WorkspaceKind): Promise<Result<void>>;
-  importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>>;
-  renameWorkspace(workspaceId: string, name: string): Result<void>;
+  renameWorkspace(workspaceId: string, name: string): Promise<Result<void>>;
   deleteWorkspace(workspaceId: string): Promise<Result<void>>;
-  markShared(workspaceId: string): Result<void>;
   workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
   allWorkspaceData(): Promise<Result<WorkspaceData[]>>;
   restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>>;
 }
 
-const AUTOMATIC_SETTINGS: (keyof Settings)[] = ['theme'];
+/** Liste reçue : l'espace principal reste toujours présent et en tête. */
+const withMain = (workspaces: Workspace[]): Workspace[] =>
+  sortWorkspaces(
+    workspaces.some((item) => item.id === DEFAULT_WORKSPACE.id)
+      ? workspaces
+      : [DEFAULT_WORKSPACE, ...workspaces],
+  );
 
-const isAutomaticSettings = (patch: Partial<Settings>): boolean =>
-  (Object.keys(patch) as (keyof Settings)[]).every((key) => AUTOMATIC_SETTINGS.includes(key));
+const INITIAL_STATE: StoreState = {
+  status: 'loading',
+  dataset: null,
+  error: null,
+  syncError: null,
+  workspaces: [DEFAULT_WORKSPACE],
+  workspace: DEFAULT_WORKSPACE,
+};
 
 const keyOf = (collection: CollectionName, item: object): string => {
   if (collection === 'budgets' || collection === 'monthNotes' || collection === 'commonMonths') {
@@ -124,14 +129,15 @@ const withOrderedCategories = (patch: Partial<StoreState>): Partial<StoreState> 
 export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterface {
   #createRepository: RepositoryFactory;
   #repository: FinanceRepositoryInterface;
-  #state: StoreState;
+  #state: StoreState = INITIAL_STATE;
   #listeners = new Set<Listener>();
   #newId: () => string;
   #now: () => Date;
   #registry: WorkspaceRegistryInterface;
   #registryLoaded = false;
   #syncing = false;
-  #automatic = false;
+  #unwatchRegistry: (() => void) | null = null;
+  #unwatchDataset: (() => void) | null = null;
 
   constructor(
     createRepository: RepositoryFactory,
@@ -142,14 +148,6 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     this.#createRepository = createRepository;
     this.#registry = registry;
     this.#repository = createRepository(DEFAULT_WORKSPACE.id);
-    this.#state = {
-      status: 'loading',
-      dataset: null,
-      error: null,
-      syncError: null,
-      workspaces: [DEFAULT_WORKSPACE],
-      workspace: DEFAULT_WORKSPACE,
-    };
     this.#newId = newId;
     this.#now = now;
   }
@@ -198,83 +196,117 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     return ok({ ...dataset, audit: audit.slice(0, MAX_AUDIT_ENTRIES) });
   }
 
-  async #commit(updated: Dataset, log: AuditLog, touches: boolean): Promise<Result<void>> {
+  async #commit(updated: Dataset, log: AuditLog): Promise<Result<void>> {
     const audited = await this.#appendAudit(updated, log);
     if (!audited.ok) {
       return audited;
     }
     this.#set({ dataset: audited.value });
-    return touches ? this.#touch() : ok(undefined);
+    return ok(undefined);
   }
 
-  async #loadRegistry(): Promise<void> {
+  async #loadRegistry(): Promise<Result<void>> {
     if (this.#registryLoaded) {
-      return;
+      return ok(undefined);
     }
-    const { workspaces, activeId } = await this.#registry.load();
-    const workspace = workspaces.find((item) => item.id === activeId) ?? DEFAULT_WORKSPACE;
+    const loaded = await this.#registry.load();
+    if (!loaded.ok) {
+      return loaded;
+    }
+    const workspaces = withMain(loaded.value.workspaces);
+    const workspace = activeIn(workspaces, loaded.value.activeId);
     this.#registryLoaded = true;
     await this.#repository.close();
     this.#repository = this.#createRepository(workspace.id);
     this.#set({ workspaces, workspace });
+    this.#unwatchRegistry = this.#registry.watch((received) => void this.#onWorkspaces(received));
+    return ok(undefined);
   }
 
-  #saveRegistry(workspaces: Workspace[], active: Workspace): Result<void> {
-    const saved = this.#registry.save(workspaces, active.id);
-    if (saved.ok) {
-      this.#set({ workspaces, workspace: active });
+  /** Liste modifiée ailleurs : si l'espace affiché a disparu (accès retiré), retour à l'espace principal. */
+  async #onWorkspaces(received: Workspace[]): Promise<void> {
+    const workspaces = withMain(received);
+    const current = workspaces.find((item) => item.id === this.#state.workspace.id);
+    if (current) {
+      this.#set({ workspaces, workspace: current });
+      return;
     }
-    return saved;
+    this.#set({ workspaces });
+    await this.#open(DEFAULT_WORKSPACE);
   }
 
-  #touch(): Result<void> {
-    if (this.#automatic) {
-      return ok(undefined);
-    }
-    const active = touchedWorkspace(this.#state.workspace, this.#now());
-    return this.#saveRegistry(replaceWorkspace(this.#state.workspaces, active), active);
+  #watchDataset(): void {
+    this.#unwatchDataset?.();
+    this.#unwatchDataset = this.#repository.watch((dataset) => this.#onRemoteDataset(dataset));
   }
 
-  async #automatically<T>(task: () => Promise<T>): Promise<T> {
-    const previous = this.#automatic;
-    this.#automatic = true;
-    try {
-      return await task();
-    } finally {
-      this.#automatic = previous;
-    }
+  #stopWatchingDataset(): void {
+    this.#unwatchDataset?.();
+    this.#unwatchDataset = null;
   }
 
-  markShared(workspaceId: string): Result<void> {
-    const target = this.#state.workspaces.find((item) => item.id === workspaceId);
-    if (!target) {
-      return fail('workspace-not-found');
+  /** Données modifiées ailleurs : affichées telles quelles, migrées en mémoire si plus anciennes. */
+  #onRemoteDataset(dataset: Dataset): void {
+    if (this.#state.status !== 'ready') {
+      return;
     }
-    const workspaces = replaceWorkspace(this.#state.workspaces, sharedWorkspace(target, this.#now()));
-    return this.#saveRegistry(workspaces, activeIn(workspaces, this.#state.workspace.id));
+    if (dataset.schemaVersion > SCHEMA_VERSION) {
+      this.#set({ status: 'error', error: { code: 'workspace-schema-too-recent' } });
+      return;
+    }
+    this.#set({ dataset: dataset.schemaVersion < SCHEMA_VERSION ? migrateDataset(dataset) : dataset });
+  }
+
+  /** Ferme l'espace affiché et en ouvre un autre (déjà présent dans la liste). */
+  async #open(workspace: Workspace): Promise<void> {
+    this.#stopWatchingDataset();
+    this.#registry.setActive(workspace.id);
+    await this.#repository.close();
+    this.#repository = this.#createRepository(workspace.id);
+    this.#set({ workspace, dataset: null });
+    await this.start();
   }
 
   async start(): Promise<void> {
     this.#set({ status: 'loading', error: null });
-    await this.#loadRegistry();
+    const registry = await this.#loadRegistry();
+    if (!registry.ok) {
+      this.#set({ status: 'error', error: registry.error });
+      return;
+    }
     const loaded = await this.#repository.load();
     if (!loaded.ok) {
       this.#set({ status: 'error', error: loaded.error });
       return;
     }
     if (loaded.value) {
-      await this.#openExisting(loaded.value);
-      await this.refresh();
+      const opened = await this.#openExisting(loaded.value);
+      if (opened) {
+        this.#watchDataset();
+        await this.refresh();
+      }
       return;
     }
     const today = todayIso(this.#now());
-    const seed = createInitialDataset(today, this.#newId);
+    const seed = createInitialDataset(today, this.#newId, this.#state.workspace.kind);
     const saved = await this.#repository.replaceAll(seed);
     if (!saved.ok) {
       this.#set({ status: 'error', error: saved.error });
       return;
     }
     this.#set({ status: 'ready', dataset: seed });
+    this.#watchDataset();
+  }
+
+  /** Arrête toute écoute et oublie les données (déconnexion, changement de compte). */
+  stop(): void {
+    this.#stopWatchingDataset();
+    this.#unwatchRegistry?.();
+    this.#unwatchRegistry = null;
+    this.#registryLoaded = false;
+    void this.#repository.close();
+    this.#repository = this.#createRepository(DEFAULT_WORKSPACE.id);
+    this.#set(INITIAL_STATE);
   }
 
   async refresh(): Promise<Result<void>> {
@@ -294,7 +326,6 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       dataset.recurrings,
       dataset.transactions,
       monthKeyOf(todayIso(now)),
-      this.#newId,
       now.toISOString(),
     );
     if (sync.recurrings.length === 0) {
@@ -302,20 +333,18 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     }
     this.#syncing = true;
     try {
-      return await this.#automatically(async () => {
-        const transactions = [...sync.created, ...sync.linked];
-        if (transactions.length > 0) {
-          const saved = await this.upsert('transactions', transactions, {
-            action: 'creation',
-            entity: 'Récurrences',
-            summary: recurringSummary(sync.created.length, sync.linked.length),
-          });
-          if (!saved.ok) {
-            return saved;
-          }
+      const transactions = [...sync.created, ...sync.linked];
+      if (transactions.length > 0) {
+        const saved = await this.upsert('transactions', transactions, {
+          action: 'creation',
+          entity: 'Récurrences',
+          summary: recurringSummary(sync.created.length, sync.linked.length),
+        });
+        if (!saved.ok) {
+          return saved;
         }
-        return this.#saveWithoutAudit('recurrings', sync.recurrings);
-      });
+      }
+      return await this.#saveWithoutAudit('recurrings', sync.recurrings);
     } finally {
       this.#syncing = false;
     }
@@ -346,27 +375,31 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     if (settled.length === 0) {
       return ok(undefined);
     }
-    return this.#automatically(() =>
-      this.upsert('transactions', settled, {
-        action: 'modification',
-        entity: 'Opérations',
-        summary: `Bascule automatique : ${settledSummary(settled.length)}`,
-      }),
-    );
+    return this.upsert('transactions', settled, {
+      action: 'modification',
+      entity: 'Opérations',
+      summary: `Bascule automatique : ${settledSummary(settled.length)}`,
+    });
   }
 
-  async #openExisting(dataset: Dataset): Promise<void> {
-    if (dataset.schemaVersion >= SCHEMA_VERSION) {
+  /** Renvoie false si l'espace ne peut pas être ouvert (version plus récente, échec de migration). */
+  async #openExisting(dataset: Dataset): Promise<boolean> {
+    if (dataset.schemaVersion > SCHEMA_VERSION) {
+      this.#set({ status: 'error', error: { code: 'workspace-schema-too-recent' } });
+      return false;
+    }
+    if (dataset.schemaVersion === SCHEMA_VERSION) {
       this.#set({ status: 'ready', dataset });
-      return;
+      return true;
     }
     const migrated = migrateDataset(dataset);
     const saved = await this.#repository.replaceAll(migrated);
     if (!saved.ok) {
       this.#set({ status: 'error', error: saved.error });
-      return;
+      return false;
     }
     this.#set({ status: 'ready', dataset: migrated });
+    return true;
   }
 
   async upsert<C extends CollectionName>(
@@ -383,7 +416,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     const current = dataset[collection] as CollectionItem<C>[];
     const kept = current.filter((item) => !keys.has(keyOf(collection, item)));
     const updated = { ...dataset, [collection]: [...kept, ...items] } as Dataset;
-    const committed = await this.#commit(updated, log, true);
+    const committed = await this.#commit(updated, log);
     if (!committed.ok) {
       return committed;
     }
@@ -408,7 +441,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       ...dataset,
       [collection]: current.filter((item) => !removed.has(keyOf(collection, item))),
     } as Dataset;
-    return this.#commit(updated, log, true);
+    return this.#commit(updated, log);
   }
 
   async updateSettings(patch: Partial<Settings>, log: AuditLog | null): Promise<Result<void>> {
@@ -419,12 +452,11 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return result;
     }
     const updated = { ...dataset, settings };
-    const touches = !isAutomaticSettings(patch);
     if (!log) {
       this.#set({ dataset: updated });
-      return touches ? this.#touch() : result;
+      return result;
     }
-    return this.#commit(updated, log, touches);
+    return this.#commit(updated, log);
   }
 
   async restore(dataset: Dataset, log: AuditLog): Promise<Result<void>> {
@@ -437,10 +469,6 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return result;
     }
     this.#set({ dataset: withAudit });
-    const touched = this.#touch();
-    if (!touched.ok) {
-      return touched;
-    }
     return this.refresh();
   }
 
@@ -452,101 +480,72 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     if (workspace.id === this.#state.workspace.id) {
       return ok(undefined);
     }
-    const saved = this.#saveRegistry(this.#state.workspaces, workspace);
-    if (!saved.ok) {
-      return saved;
-    }
-    await this.#repository.close();
-    this.#repository = this.#createRepository(workspace.id);
-    this.#set({ dataset: null });
-    await this.start();
+    await this.#open(workspace);
     return ok(undefined);
   }
 
   async createWorkspace(name: string, kind: WorkspaceKind = 'perso'): Promise<Result<void>> {
-    const workspace = newLocalWorkspace(name, this.#state.workspaces, this.#newId);
+    const workspace = newWorkspace(name, kind, this.#state.workspaces, this.#newId);
     if (!workspace.ok) {
       return workspace;
     }
-    const saved = this.#saveRegistry([...this.#state.workspaces, workspace.value], this.#state.workspace);
-    if (!saved.ok) {
-      return saved;
+    const created = await this.#registry.create(workspace.value);
+    if (!created.ok) {
+      return created;
     }
-    const switched = await this.switchWorkspace(workspace.value.id);
-    if (!switched.ok || kind === 'perso') {
-      return switched;
-    }
-    return this.restore(createInitialDataset(todayIso(this.#now()), this.#newId, kind), {
-      action: 'creation',
-      entity: 'Espace',
-      summary: 'Espace commun',
-    });
-  }
-
-  async importWorkspace(dataset: Dataset, target: ImportTarget): Promise<Result<void>> {
-    const workspace = importedWorkspace(target, this.#state.workspaces, this.#now(), this.#newId);
-    if (!workspace.ok) {
-      return workspace;
-    }
-    const withAudit = {
-      ...dataset,
-      audit: [
-        this.#auditEntry({
-          action: 'restauration',
-          entity: 'Espace',
-          summary: `Import de l’espace « ${workspace.value.name} »`,
-        }),
-        ...dataset.audit,
-      ].slice(0, MAX_AUDIT_ENTRIES),
-    };
-    const isActive = this.#state.workspace.id === workspace.value.id;
-    const repository = isActive ? this.#repository : this.#createRepository(workspace.value.id);
-    const written = await repository.replaceAll(withAudit);
-    if (!isActive) {
-      await repository.close();
-    }
-    if (!written.ok) {
-      return written;
-    }
-    const workspaces = upsertWorkspace(this.#state.workspaces, workspace.value);
-    if (isActive) {
-      const saved = this.#saveRegistry(workspaces, workspace.value);
-      if (saved.ok) {
-        this.#set({ dataset: withAudit });
-      }
-      return saved;
-    }
-    const saved = this.#saveRegistry(workspaces, this.#state.workspace);
-    if (!saved.ok) {
-      return saved;
-    }
+    this.#set({ workspaces: withMain([...this.#state.workspaces, workspace.value]) });
     return this.switchWorkspace(workspace.value.id);
   }
 
-  renameWorkspace(workspaceId: string, name: string): Result<void> {
+  async renameWorkspace(workspaceId: string, name: string): Promise<Result<void>> {
     const workspaces = renamedWorkspaces(this.#state.workspaces, workspaceId, name);
     if (!workspaces.ok) {
       return workspaces;
     }
-    return this.#saveRegistry(workspaces.value, activeIn(workspaces.value, this.#state.workspace.id));
+    const renamed = workspaces.value.find((item) => item.id === workspaceId);
+    if (!renamed) {
+      return fail('workspace-not-found');
+    }
+    const saved = await this.#registry.rename(workspaceId, renamed.name);
+    if (!saved.ok) {
+      return saved;
+    }
+    this.#set({
+      workspaces: workspaces.value,
+      workspace: activeIn(workspaces.value, this.#state.workspace.id),
+    });
+    return ok(undefined);
   }
 
   async deleteWorkspace(workspaceId: string): Promise<Result<void>> {
     if (workspaceId === DEFAULT_WORKSPACE.id) {
       return fail('workspace-main-protected');
     }
-    if (this.#state.workspace.id === workspaceId) {
-      const switched = await this.switchWorkspace(DEFAULT_WORKSPACE.id);
-      if (!switched.ok) {
-        return switched;
-      }
+    const workspace = this.#state.workspaces.find((item) => item.id === workspaceId);
+    if (!workspace) {
+      return fail('workspace-not-found');
     }
-    const destroyed = await this.#createRepository(workspaceId).destroy();
+    if (!canDelete(workspace)) {
+      return fail('workspace-not-owner');
+    }
+    if (this.#state.workspace.id === workspaceId) {
+      await this.#open(DEFAULT_WORKSPACE);
+    }
+    const removed = await this.#destroy(workspaceId);
+    if (!removed.ok) {
+      return removed;
+    }
+    this.#set({ workspaces: this.#state.workspaces.filter((item) => item.id !== workspaceId) });
+    return ok(undefined);
+  }
+
+  async #destroy(workspaceId: string): Promise<Result<void>> {
+    const repository = this.#createRepository(workspaceId);
+    const destroyed = await repository.destroy();
     if (!destroyed.ok) {
       return destroyed;
     }
-    const workspaces = this.#state.workspaces.filter((item) => item.id !== workspaceId);
-    return this.#saveRegistry(workspaces, this.#state.workspace);
+    return this.#registry.remove(workspaceId);
   }
 
   async workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>> {
@@ -580,14 +579,28 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     return ok(entries);
   }
 
+  /**
+   * Restaure une sauvegarde complète : chaque espace du fichier est recréé (à son nom s'il manque)
+   * puis remplacé ; les espaces dont on est propriétaire et absents du fichier sont supprimés.
+   * Les espaces communs rejoints comme invité ne sont jamais supprimés.
+   */
   async restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>> {
     const log: AuditLog = {
       action: 'restauration',
       entity: 'Sauvegarde',
       summary: 'Restauration d’une sauvegarde complète',
     };
+    this.#stopWatchingDataset();
     await this.#repository.close();
+    let workspaces = this.#state.workspaces;
     for (const entry of entries) {
+      if (!workspaces.some((item) => item.id === entry.workspace.id)) {
+        const created = await this.#registry.create(entry.workspace);
+        if (!created.ok) {
+          return created;
+        }
+        workspaces = [...workspaces, entry.workspace];
+      }
       const repository = this.#createRepository(entry.workspace.id);
       const written = await repository.replaceAll({
         ...entry.dataset,
@@ -598,23 +611,18 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
         return written;
       }
     }
-    const workspaces = entries.map((entry) => entry.workspace);
-    const kept = new Set(workspaces.map((workspace) => workspace.id));
-    const removed = this.#state.workspaces.filter((item) => !kept.has(item.id));
-    const active = activeIn(workspaces, activeId);
-    const saved = this.#saveRegistry(workspaces, active);
-    if (!saved.ok) {
-      return saved;
-    }
-    this.#repository = this.#createRepository(active.id);
-    this.#set({ dataset: null });
-    await this.start();
-    for (const workspace of removed) {
-      const destroyed = await this.#createRepository(workspace.id).destroy();
-      if (!destroyed.ok) {
-        return destroyed;
+    const kept = new Set(entries.map((entry) => entry.workspace.id));
+    const obsolete = workspaces.filter((item) => !kept.has(item.id) && canDelete(item));
+    for (const workspace of obsolete) {
+      const removed = await this.#destroy(workspace.id);
+      if (!removed.ok) {
+        return removed;
       }
     }
+    const remaining = withMain(workspaces.filter((item) => !obsolete.includes(item)));
+    const active = activeIn(remaining, activeId);
+    this.#set({ workspaces: remaining });
+    await this.#open(active);
     return ok(undefined);
   }
 }
