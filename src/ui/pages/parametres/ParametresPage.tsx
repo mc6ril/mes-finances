@@ -307,11 +307,11 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
   return (
     <li
       className={cx(
-        'group flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5',
+        'group flex items-center gap-x-3 py-2.5',
         category.archived && '-mx-2 rounded-lg bg-stone-50 px-2 dark:bg-stone-800/40',
       )}
     >
-      <div className="flex min-w-48 flex-1 items-center gap-1">
+      <div className="flex min-w-0 flex-1 items-center gap-1">
         <span
           className={cx(
             'h-2 w-2 shrink-0 rounded-full',
@@ -335,13 +335,13 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
             }
           }}
           className={cx(
-            'h-9 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-stone-900 transition-colors hover:border-stone-200 focus:border-brand-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 disabled:cursor-default disabled:hover:border-transparent dark:text-stone-100 dark:disabled:hover:border-transparent dark:hover:border-stone-700 dark:focus:bg-stone-900',
+            'h-9 min-w-0 flex-1 truncate rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-stone-900 transition-colors hover:border-stone-200 focus:border-brand-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 disabled:cursor-default disabled:hover:border-transparent dark:text-stone-100 dark:disabled:hover:border-transparent dark:hover:border-stone-700 dark:focus:bg-stone-900',
             category.archived && 'italic text-stone-500 dark:text-stone-400',
           )}
         />
         {category.archived && <Badge tone="neutral">Archivée</Badge>}
       </div>
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {hasPeriod && !category.archived && (
           <Segmented<BudgetPeriod>
             value={category.period}

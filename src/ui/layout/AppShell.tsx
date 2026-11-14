@@ -168,7 +168,8 @@ const AppShell = ({ children }: AppShellProps) => {
             </aside>
           </div>
         )}
-        <div className="min-w-0 flex-1">
+        {/* overflow-x-clip : filet de sécurité contre le défilement latéral, sans casser l’en-tête collant. */}
+        <div className="min-w-0 flex-1 overflow-x-clip">
           <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#f6f6f3]/85 backdrop-blur-sm dark:border-stone-800 dark:bg-[#121211]/85">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
               <div className="flex items-center gap-2">

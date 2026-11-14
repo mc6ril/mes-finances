@@ -213,32 +213,36 @@ const ImportRulesCard = () => {
       ) : (
         <ul className="flex flex-col divide-y divide-stone-100 dark:divide-stone-800">
           {rules.map((rule) => (
-            <li key={rule.id} className="flex flex-wrap items-center gap-2 py-2">
-              <Text variant="strong" className="mr-auto">
-                « {rule.match} »
-              </Text>
-              <Badge tone="brand">{rule.refund ? 'Remboursement' : TYPE_LABELS[rule.type]}</Badge>
-              {categoryName(rule.categoryId) && <Badge>{categoryName(rule.categoryId)}</Badge>}
-              {accountName(rule.counterpartAccountId) && (
-                <Badge>{`Vers ${accountName(rule.counterpartAccountId)}`}</Badge>
-              )}
-              {memberName(rule.memberId) && (
-                <Badge>{`${rule.receivedFor ? 'Reçu pour' : rule.type === 'revenu' ? 'De' : 'Pour'} ${memberName(rule.memberId)}`}</Badge>
-              )}
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={Pencil}
-                label="Modifier la règle"
-                onClick={() => setEditing(rule)}
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={Trash2}
-                label="Supprimer la règle"
-                onClick={() => void report(finance.deleteImportRule(rule.id), 'Règle supprimée')}
-              />
+            <li key={rule.id} className="flex items-start gap-2 py-2">
+              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pt-1.5">
+                <Text variant="strong" className="mr-auto break-words">
+                  « {rule.match} »
+                </Text>
+                <Badge tone="brand">{rule.refund ? 'Remboursement' : TYPE_LABELS[rule.type]}</Badge>
+                {categoryName(rule.categoryId) && <Badge>{categoryName(rule.categoryId)}</Badge>}
+                {accountName(rule.counterpartAccountId) && (
+                  <Badge>{`Vers ${accountName(rule.counterpartAccountId)}`}</Badge>
+                )}
+                {memberName(rule.memberId) && (
+                  <Badge>{`${rule.receivedFor ? 'Reçu pour' : rule.type === 'revenu' ? 'De' : 'Pour'} ${memberName(rule.memberId)}`}</Badge>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Pencil}
+                  label="Modifier la règle"
+                  onClick={() => setEditing(rule)}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={Trash2}
+                  label="Supprimer la règle"
+                  onClick={() => void report(finance.deleteImportRule(rule.id), 'Règle supprimée')}
+                />
+              </div>
             </li>
           ))}
         </ul>
