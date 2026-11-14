@@ -13,8 +13,8 @@ import {
   type CollectionItem,
   type FinanceGatewayInterface,
   type FinanceRepositoryInterface,
-  type WorkspaceRegistryInterface,
-} from '@/core/shared/ports';
+} from '@/core/store/interface';
+import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import {
   activeIn,
   DEFAULT_WORKSPACE,

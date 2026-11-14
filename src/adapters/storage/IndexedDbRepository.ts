@@ -2,7 +2,7 @@ import { deleteDB, openDB, type IDBPDatabase } from 'idb';
 import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
 import { SCHEMA_VERSION } from '@/core/shared/model';
 import { fail, ok, type Failure, type Result } from '@/core/shared/errors';
-import type { CollectionItem, FinanceRepositoryInterface } from '@/core/shared/ports';
+import type { CollectionItem, FinanceRepositoryInterface } from '@/core/store/interface';
 
 const DB_VERSION = 4;
 const META_STORE = 'meta';

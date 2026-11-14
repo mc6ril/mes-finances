@@ -10,8 +10,8 @@ import type {
   FileSaverInterface,
   TextFileReaderInterface,
   UserFile,
-  WorkspaceDataSourceInterface,
 } from '../shared/ports';
+import type { WorkspaceDataSourceInterface } from '../sauvegarde/interface';
 import { workspaceFileSlug, type Workspace } from '../espaces/workspaces';
 
 export type FilePorts = {
