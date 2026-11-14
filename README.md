@@ -1,6 +1,6 @@
 # Mes finances
 
-Application web de finances personnelles, **100 % locale** : aucune donnée envoyée à un serveur, aucune connexion bancaire, aucune API externe. Les données sont stockées dans le navigateur (IndexedDB) et se sauvegardent en JSON.
+Application web de finances personnelles, sans connexion bancaire. Les données sont stockées dans le navigateur (IndexedDB) et se sauvegardent en JSON. L'accès est protégé par un compte (Firebase Authentication : e-mail + mot de passe ou Google) ; la synchronisation des données via Firestore est en cours.
 
 ## Installation
 
@@ -17,7 +17,7 @@ npm install
 npm run dev
 ```
 
-Puis ouvrir http://127.0.0.1:5173 dans le navigateur. Après `npm install`, aucune connexion Internet n'est nécessaire.
+Puis ouvrir http://127.0.0.1:5173 dans le navigateur. La connexion nécessite Internet et la configuration Firebase ci-dessous.
 
 Version optimisée (plus rapide au quotidien) :
 
@@ -38,6 +38,15 @@ npm run preview        # http://127.0.0.1:4173
 | `npm run build`     | Build de production dans `dist/`           |
 | `npm run format -- <fichiers>` | Prettier sur les fichiers modifiés |
 
+## Connexion (Firebase Authentication)
+
+1. Créer un projet sur https://console.firebase.google.com, puis une application **Web** (Paramètres du projet → Vos applications).
+2. Authentication → Sign-in method : activer **E-mail/Mot de passe** et **Google**.
+3. Authentication → Settings → Domaines autorisés : ajouter `127.0.0.1` (le serveur local écoute sur cette adresse ; seul `localhost` est présent par défaut) et le domaine Netlify.
+4. Copier `.env.example` en `.env.local` et y reporter la configuration web (apiKey, authDomain, projectId, appId). Sur Netlify, déclarer les mêmes variables dans Site configuration → Environment variables.
+
+Sans ces variables, l'application affiche « Connexion indisponible ».
+
 ## Architecture (hexagonale)
 
 ```
@@ -55,8 +64,13 @@ src/
     backup.ts           Sauvegarde / restauration validée et versionnée
     seed.ts             Configuration initiale (vierge)
     workspaces.ts       Espaces de suivi indépendants (Perso, Commun…)
-    ports.ts            Port de persistance + PortResult / PortFailure
+    <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth)
+    ports.ts            Ports transverses (lecture / enregistrement de fichiers, CSV, ids, horloge)
+    auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur)
+    store/AuthSession   Session observable (vérification, connecté, déconnecté)
+    usecases/auth       Inscription, connexion, Google, déconnexion, mot de passe oublié
   adapters/             Secondary adapters
+    auth/               Firebase Authentication (erreurs traduites en codes auth-*)
     storage/            IndexedDB (une base par espace) et liste des espaces
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
   app/                  Primary adapters : store, actions, sélecteurs, thème
@@ -96,6 +110,7 @@ Le schéma est versionné (`SCHEMA_VERSION` dans `core/model.ts`, version de bas
 
 ## Sécurité et déploiement
 
-- `netlify.toml` : build (`npm run build` → `dist/`) et en-têtes de sécurité. La CSP interdit au navigateur tout chargement ou envoi vers un autre serveur : les données ne peuvent pas quitter l'appareil, même en cas de dépendance compromise.
+- `netlify.toml` : build (`npm run build` → `dist/`) et en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google »).
+- `overrides` dans `package.json` : force une version corrigée de `@grpc/grpc-js` (dépendance Node de Firestore, absente du bundle navigateur) pour que `npm audit` reste propre.
 - `.github/dependabot.yml` : mises à jour hebdomadaires des dépendances npm (et mensuelles des GitHub Actions), proposées en pull requests.
 - `.github/workflows/ci.yml` : typecheck, tests, build et `npm audit` à chaque push sur `main` et sur chaque pull request.

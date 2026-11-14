@@ -7,8 +7,8 @@ import type {
   SavedFile,
   TextFileReaderInterface,
   UserFile,
-  WorkspaceDataSourceInterface,
 } from '@/core/shared/ports';
+import type { WorkspaceDataSourceInterface } from '@/core/sauvegarde/interface';
 import { createInitialDataset } from '@/core/shared/seed';
 import { createFileUseCases } from '@/core/usecases/files';
 import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';

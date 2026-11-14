@@ -11,26 +11,10 @@ import Button from '@/ui/design-system/Button';
 import { Select } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';
 import { cx } from '@/ui/design-system/cx';
+import AccountMenu from './AccountMenu';
+import Brand from './Brand';
 import { NAV_ITEMS } from './navigation';
 import PeriodPicker from './PeriodPicker';
-
-const Brand = () => (
-  <div className="flex items-center gap-2.5 px-2">
-    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white shadow-xs">
-      <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden>
-        <path
-          d="M7 21l5-6 4 4 8-10"
-          stroke="currentColor"
-          strokeWidth="2.8"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-    <Text variant="strong">Mes finances</Text>
-  </div>
-);
 
 type NavListProps = { onNavigate?: () => void };
 
@@ -61,6 +45,7 @@ const NavList = ({ onNavigate }: NavListProps) => (
 const SidebarFooter = () => (
   <div className="mt-auto flex flex-col gap-3">
     <WorkspaceSwitcher />
+    <AccountMenu />
     <Text variant="caption" className="px-3">
       Version {APP_VERSION}
     </Text>

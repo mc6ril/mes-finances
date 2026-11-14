@@ -1,5 +1,5 @@
 import { fail, ok, type Result } from '@/core/shared/errors';
-import type { WorkspaceRegistryInterface } from '@/core/shared/ports';
+import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import {
   DEFAULT_WORKSPACE,
   parseWorkspaces,

@@ -3,7 +3,8 @@ import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import { fail, ok, type Result } from '@/core/shared/errors';
-import type { FinanceRepositoryInterface, WorkspaceRegistryInterface } from '@/core/shared/ports';
+import type { FinanceRepositoryInterface } from '@/core/store/interface';
+import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import type { Workspace } from '@/core/espaces/workspaces';
 import { aTransaction } from '../core/fixtures';
 

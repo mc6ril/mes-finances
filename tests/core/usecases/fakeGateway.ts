@@ -1,6 +1,6 @@
 import { ok, type Result } from '@/core/shared/errors';
 import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
-import type { AuditLog, CollectionItem, FinanceGatewayInterface } from '@/core/shared/ports';
+import type { AuditLog, CollectionItem, FinanceGatewayInterface } from '@/core/store/interface';
 
 export type GatewayCall =
   | { kind: 'upsert'; collection: CollectionName; items: unknown[]; log: AuditLog }

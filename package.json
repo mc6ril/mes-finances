@@ -1,7 +1,7 @@
 {
   "name": "finances-perso",
   "private": true,
-  "version": "0.6.1",
+  "version": "0.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "format": "prettier --write"
   },
   "dependencies": {
+    "firebase": "13.3.0",
     "idb": "8.0.4",
     "lucide-react": "1.70.0",
     "papaparse": "5.7.0",
@@ -36,5 +37,8 @@
     "typescript": "7.0.2",
     "vite": "7.3.7",
     "vitest": "4.1.12"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.14.7"
   }
 }

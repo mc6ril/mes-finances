@@ -6,6 +6,7 @@ import './index.css';
 
 const root = document.getElementById('root');
 const container = createContainer();
+container.session.start();
 void container.store.start();
 
 document.addEventListener('visibilitychange', () => {

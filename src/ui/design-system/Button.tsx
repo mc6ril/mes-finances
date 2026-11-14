@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import { Loader2, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cx } from './cx';
 
@@ -29,6 +29,7 @@ type ButtonProps = {
   disabled?: boolean;
   className?: string;
   label?: string;
+  loading?: boolean;
 };
 
 const Button = ({
@@ -41,23 +42,32 @@ const Button = ({
   disabled,
   className,
   label,
-}: ButtonProps) => (
-  <button
-    type={type}
-    onClick={onClick}
-    disabled={disabled}
-    aria-label={label}
-    title={label}
-    className={cx(
-      'inline-flex shrink-0 items-center justify-center rounded-lg font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60',
-      VARIANTS[variant],
-      SIZES[size],
-      className,
-    )}
-  >
-    {Icon && <Icon className={size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'} aria-hidden />}
-    {children}
-  </button>
-);
+  loading = false,
+}: ButtonProps) => {
+  const iconClass = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4';
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      aria-label={label}
+      title={label}
+      className={cx(
+        'inline-flex shrink-0 items-center justify-center rounded-lg font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-60',
+        VARIANTS[variant],
+        SIZES[size],
+        className,
+      )}
+    >
+      {loading ? (
+        <Loader2 className={cx(iconClass, 'animate-spin')} aria-hidden />
+      ) : (
+        Icon && <Icon className={iconClass} aria-hidden />
+      )}
+      {children}
+    </button>
+  );
+};
 
 export default Button;
