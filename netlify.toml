@@ -5,7 +5,7 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "24"
 
 # En-têtes de sécurité appliqués à toutes les pages.
 # La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google
