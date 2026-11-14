@@ -22,8 +22,10 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'workspace-name-empty': () => 'Donne un nom à l’espace.',
   'workspace-name-taken': () => 'Un espace porte déjà ce nom.',
   'workspace-not-found': () => 'Espace introuvable.',
-  'workspace-main-protected': () =>
-    'L’espace principal ne peut être ni supprimé ni remplacé par un import : utilise « Restaurer ».',
+  'workspace-main-protected': () => 'L’espace principal ne peut pas être supprimé.',
+  'workspace-not-owner': () => 'Seul le propriétaire de l’espace peut faire cette action.',
+  'workspace-schema-too-recent': () =>
+    'Cet espace a été modifié avec une version plus récente de l’application. Recharge la page pour la mettre à jour.',
   'invalid-date': () => 'Date illisible',
   'invalid-amount': () => 'Montant illisible',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',

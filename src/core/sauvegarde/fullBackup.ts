@@ -1,19 +1,22 @@
 import { BACKUP_APP_ID, readBackup } from './backup';
 import { fail, ok, type Result } from '../shared/errors';
 import type { Dataset } from '../shared/model';
-import { DEFAULT_WORKSPACE, isWorkspace, resolveActiveId, type Workspace } from '../espaces/workspaces';
+import { DEFAULT_WORKSPACE, readWorkspace, resolveActiveId, type Workspace } from '../espaces/workspaces';
 import { isArray, isObject, isString } from '@/core/shared/typeCheck';
 
 export const FULL_BACKUP_KIND = 'complete';
 
 export type WorkspaceData = { workspace: Workspace; dataset: Dataset };
 
+/** Espace tel qu'écrit dans le fichier : le rôle (propriétaire, invité) n'y figure pas. */
+export type BackupWorkspace = Pick<Workspace, 'id' | 'name' | 'kind'>;
+
 export type FullBackup = {
   app: typeof BACKUP_APP_ID;
   kind: typeof FULL_BACKUP_KIND;
   exportedAt: string;
   activeId: string;
-  workspaces: { workspace: Workspace; schemaVersion: number; data: Dataset }[];
+  workspaces: { workspace: BackupWorkspace; schemaVersion: number; data: Dataset }[];
 };
 
 export type AnyBackupContent =
@@ -30,21 +33,26 @@ export const createFullBackup = (
   exportedAt,
   activeId,
   workspaces: entries.map(({ workspace, dataset }) => ({
-    workspace,
+    workspace: { id: workspace.id, name: workspace.name, kind: workspace.kind },
     schemaVersion: dataset.schemaVersion,
     data: dataset,
   })),
 });
 
 const readEntry = (raw: unknown): Result<WorkspaceData> => {
-  if (!isObject(raw) || !isWorkspace(raw.workspace)) {
+  const named = isObject(raw) && isObject(raw.workspace) ? raw.workspace : null;
+  if (!isObject(raw) || !named || !isString(named.id) || !isString(named.name)) {
     return fail('backup-corrupted', { detail: 'workspaces' });
   }
   const read = readBackup({ app: BACKUP_APP_ID, schemaVersion: raw.schemaVersion, data: raw.data });
   if (!read.ok) {
-    return fail(read.error.code, { ...read.error, workspaceName: raw.workspace.name });
+    return fail(read.error.code, { ...read.error, workspaceName: named.name });
   }
-  return ok({ workspace: raw.workspace, dataset: read.value.dataset });
+  const workspace = readWorkspace(named, read.value.dataset.settings.kind);
+  if (!workspace) {
+    return fail('backup-corrupted', { detail: 'workspaces' });
+  }
+  return ok({ workspace, dataset: read.value.dataset });
 };
 
 const readFullBackup = (raw: Record<string, unknown>): Result<AnyBackupContent> => {

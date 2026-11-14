@@ -1,28 +1,42 @@
-import 'fake-indexeddb/auto';
-import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
-import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import type { FinanceRepositoryInterface } from '@/core/store/interface';
-import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
+import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import type { Workspace } from '@/core/espaces/workspaces';
 import { aTransaction } from '../core/fixtures';
-
-let suite = 0;
+import { MemoryDatabase, MemoryWorkspaceRegistry } from '../support/memoryAdapters';
 
 class FailingRegistry implements WorkspaceRegistryInterface {
   #inner = new MemoryWorkspaceRegistry();
   failing = false;
+  failingLoad = false;
 
-  load() {
-    return this.#inner.load();
+  async load() {
+    return this.failingLoad ? fail('storage-unavailable') : this.#inner.load();
   }
 
-  save(workspaces: Workspace[], activeId: string): Result<void> {
-    if (this.failing) {
-      return fail('storage-full');
-    }
-    return this.#inner.save(workspaces, activeId);
+  watch(listener: WorkspacesListener) {
+    return this.#inner.watch(listener);
+  }
+
+  async #attempt(task: () => Promise<Result<void>>): Promise<Result<void>> {
+    return this.failing ? fail('storage-full') : task();
+  }
+
+  create(workspace: Workspace) {
+    return this.#attempt(() => this.#inner.create(workspace));
+  }
+
+  rename(workspaceId: string, name: string) {
+    return this.#attempt(() => this.#inner.rename(workspaceId, name));
+  }
+
+  remove(workspaceId: string) {
+    return this.#attempt(() => this.#inner.remove(workspaceId));
+  }
+
+  setActive(workspaceId: string) {
+    return this.#inner.setActive(workspaceId);
   }
 }
 
@@ -31,6 +45,7 @@ const failingPuts = (
   collections: string[],
 ): FinanceRepositoryInterface => ({
   load: () => repository.load(),
+  watch: (listener) => repository.watch(listener),
   saveSettings: (settings) => repository.saveSettings(settings),
   put: async (collection, items) =>
     collections.includes(collection) ? fail('storage-full') : repository.put(collection, items),
@@ -41,12 +56,12 @@ const failingPuts = (
 });
 
 const setup = (options: { failingCollections?: string[]; failingDestroy?: boolean } = {}) => {
-  suite += 1;
+  const db = new MemoryDatabase();
   const registry = new FailingRegistry();
   let counter = 0;
   const store = new FinanceStore(
     (workspaceId) => {
-      const real = new IndexedDbRepository(`erreurs-${suite}-${workspaceId}`);
+      const real = db.repository(workspaceId);
       const repository = failingPuts(real, options.failingCollections ?? []);
       return options.failingDestroy && workspaceId !== 'perso'
         ? { ...repository, destroy: async () => fail('storage-failed') }
@@ -83,8 +98,18 @@ describe('erreurs du store', () => {
     registry.failing = true;
     expect(await store.createWorkspace('Commun')).toEqual({ ok: false, error: { code: 'storage-full' } });
     expect(store.getSnapshot().workspaces.map((workspace) => workspace.name)).toEqual(['Perso']);
-    expect(store.renameWorkspace('perso', 'Cyril')).toEqual({ ok: false, error: { code: 'storage-full' } });
-    expect(store.markShared('perso')).toEqual({ ok: false, error: { code: 'storage-full' } });
+    expect(await store.renameWorkspace('perso', 'Jean D.')).toEqual({
+      ok: false,
+      error: { code: 'storage-full' },
+    });
+    expect(store.getSnapshot().workspaces[0]?.name).toBe('Perso');
+  });
+
+  it('affiche l’échec du chargement de la liste des espaces', async () => {
+    const { store, registry } = setup();
+    registry.failingLoad = true;
+    await store.start();
+    expect(store.getSnapshot()).toMatchObject({ status: 'error', error: { code: 'storage-unavailable' } });
   });
 
   it('signale l’échec de la génération automatique au lieu de l’ignorer', async () => {

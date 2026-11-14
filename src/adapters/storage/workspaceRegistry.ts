@@ -2,11 +2,12 @@ import { fail, ok, type Result } from '@/core/shared/errors';
 import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import {
   DEFAULT_WORKSPACE,
-  parseWorkspaces,
+  readWorkspace,
   resolveActiveId,
   type Workspace,
   type WorkspaceRegistryState,
 } from '@/core/espaces/workspaces';
+import { isObject } from '@/core/shared/typeCheck';
 
 const MAIN_DATABASE = 'mes-finances';
 const REGISTRY_KEY = 'mes-finances:espaces';
@@ -77,51 +78,70 @@ const withRecovered = (workspaces: Workspace[], ids: string[]): Workspace[] => {
   const missing = ids.filter((id) => !known.has(id));
   return [
     ...workspaces,
-    ...missing.map((id, index) => ({
+    ...missing.map((id, index): Workspace => ({
       id,
       name: recoveredName(index),
-      source: 'local' as const,
-      importedAt: null,
+      kind: 'perso',
+      role: 'owner',
     })),
   ];
 };
 
+/** Liste enregistrée par les versions précédentes (source, dates d'import) comprise. */
+const parseWorkspaces = (raw: unknown): Workspace[] => {
+  const entries = Array.isArray(raw) ? raw : [];
+  const seen = new Set<string>();
+  const parsed = entries
+    .map((item) => readWorkspace(item, isObject(item) && item.kind === 'commun' ? 'commun' : 'perso'))
+    .filter((item): item is Workspace => {
+      if (!item || seen.has(item.id)) {
+        return false;
+      }
+      seen.add(item.id);
+      return true;
+    });
+  const main = parsed.find((item) => item.id === DEFAULT_WORKSPACE.id);
+  return [
+    { ...DEFAULT_WORKSPACE, name: main?.name ?? DEFAULT_WORKSPACE.name },
+    ...parsed.filter((item) => item.id !== DEFAULT_WORKSPACE.id),
+  ];
+};
+
+const NOT_WATCHED = (): void => undefined;
+
 export class LocalWorkspaceRegistry implements WorkspaceRegistryInterface {
-  async load(): Promise<WorkspaceRegistryState> {
-    const stored = parseWorkspaces(parseJson(readStorage(REGISTRY_KEY)));
-    const workspaces = withRecovered(stored, await existingWorkspaceIds());
-    return { workspaces, activeId: resolveActiveId(workspaces, readStorage(ACTIVE_KEY)) };
+  async load(): Promise<Result<WorkspaceRegistryState>> {
+    const workspaces = withRecovered(this.#read(), await existingWorkspaceIds());
+    return ok({ workspaces, activeId: resolveActiveId(workspaces, readStorage(ACTIVE_KEY)) });
   }
 
-  save(workspaces: Workspace[], activeId: string): Result<void> {
-    const saved = writeStorage(REGISTRY_KEY, JSON.stringify(workspaces));
-    if (!saved.ok) {
-      return saved;
-    }
-    return writeStorage(ACTIVE_KEY, activeId);
-  }
-}
-
-export class MemoryWorkspaceRegistry implements WorkspaceRegistryInterface {
-  #state: WorkspaceRegistryState;
-
-  constructor(
-    state: WorkspaceRegistryState = { workspaces: [DEFAULT_WORKSPACE], activeId: DEFAULT_WORKSPACE.id },
-  ) {
-    this.#state = state;
+  /** Liste propre à ce navigateur : rien ne change ailleurs. */
+  watch(): () => void {
+    return NOT_WATCHED;
   }
 
-  async load(): Promise<WorkspaceRegistryState> {
-    return this.#state;
+  #read(): Workspace[] {
+    return parseWorkspaces(parseJson(readStorage(REGISTRY_KEY)));
   }
 
-  save(workspaces: Workspace[], activeId: string): Result<void> {
-    this.#state = { workspaces, activeId };
-    return ok(undefined);
+  #write(workspaces: Workspace[]): Result<void> {
+    return writeStorage(REGISTRY_KEY, JSON.stringify(workspaces));
   }
 
-  get state(): WorkspaceRegistryState {
-    return this.#state;
+  async create(workspace: Workspace): Promise<Result<void>> {
+    return this.#write([...this.#read().filter((item) => item.id !== workspace.id), workspace]);
+  }
+
+  async rename(workspaceId: string, name: string): Promise<Result<void>> {
+    return this.#write(this.#read().map((item) => (item.id === workspaceId ? { ...item, name } : item)));
+  }
+
+  async remove(workspaceId: string): Promise<Result<void>> {
+    return this.#write(this.#read().filter((item) => item.id !== workspaceId));
+  }
+
+  setActive(workspaceId: string): Result<void> {
+    return writeStorage(ACTIVE_KEY, workspaceId);
   }
 }
 

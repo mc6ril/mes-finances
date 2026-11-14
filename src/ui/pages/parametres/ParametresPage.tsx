@@ -10,7 +10,6 @@ import {
   Plus,
   Receipt,
   RotateCcw,
-  Share2,
   SlidersHorizontal,
   ShieldCheck,
   ShoppingBag,
@@ -601,8 +600,6 @@ const BackupCard = () => {
     }
     setPendingSettings(incoming);
   };
-  const [selectedSharedId, setSharedId] = useState(workspace.id);
-  const sharedId = workspaces.some((item) => item.id === selectedSharedId) ? selectedSharedId : workspace.id;
 
   const exportAll = async () => {
     const saved = await files.saveFullBackup(workspace.id, new Date());
@@ -611,15 +608,6 @@ const BackupCard = () => {
       return;
     }
     notify(`Sauvegarde complète exportée (${saved.value} espace${saved.value > 1 ? 's' : ''})`);
-  };
-
-  const exportOne = async () => {
-    const shared = await files.shareWorkspace(sharedId, new Date());
-    if (!shared.ok) {
-      notify(errorMessage(shared.error), 'error');
-      return;
-    }
-    notify(`Espace « ${shared.value.name} » exporté`);
   };
 
   const exportOperations = () => {
@@ -665,7 +653,7 @@ const BackupCard = () => {
         <SettingRow
           icon={Archive}
           title="Sauvegarde complète"
-          description={`Tous les espaces, importés compris : ${workspaces.map((item) => item.name).join(', ')}`}
+          description={`Tous tes espaces : ${workspaces.map((item) => item.name).join(', ')}`}
         >
           <Button
             size="sm"
@@ -674,26 +662,6 @@ const BackupCard = () => {
             label="Tout sauvegarder"
             className="w-8 px-0"
             onClick={() => void exportAll()}
-          />
-        </SettingRow>
-        <SettingRow
-          icon={Share2}
-          title="Partager un espace"
-          description="Un seul espace dans le fichier, par exemple le compte commun"
-        >
-          <Select
-            value={sharedId}
-            onChange={setSharedId}
-            label="Espace à exporter"
-            className="h-8 w-40 text-xs"
-            options={workspaces.map((item) => ({ value: item.id, label: item.name }))}
-          />
-          <Button
-            size="sm"
-            icon={Download}
-            label="Exporter cet espace"
-            className="w-8 px-0"
-            onClick={() => void exportOne()}
           />
         </SettingRow>
         <SettingRow

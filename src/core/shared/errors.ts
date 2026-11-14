@@ -15,6 +15,8 @@ export const APP_ERROR_CODES = [
   'workspace-name-taken',
   'workspace-not-found',
   'workspace-main-protected',
+  'workspace-not-owner',
+  'workspace-schema-too-recent',
   'invalid-date',
   'invalid-amount',
   'data-not-loaded',

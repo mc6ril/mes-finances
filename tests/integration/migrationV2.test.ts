@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto';
 import { openDB } from 'idb';
 import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
-import { MemoryWorkspaceRegistry } from '@/adapters/storage/workspaceRegistry';
 import { FinanceStore } from '@/core/store/FinanceStore';
+import { MemoryWorkspaceRegistry } from '../support/memoryAdapters';
 import { createInitialDataset } from '@/core/shared/seed';
 import { SCHEMA_VERSION } from '@/core/shared/model';
 

@@ -4,6 +4,8 @@ import { SCHEMA_VERSION } from '@/core/shared/model';
 import { fail, ok, type Failure, type Result } from '@/core/shared/errors';
 import type { CollectionItem, FinanceRepositoryInterface } from '@/core/store/interface';
 
+const NOT_WATCHED = (): void => undefined;
+
 const DB_VERSION = 4;
 const META_STORE = 'meta';
 
@@ -89,6 +91,11 @@ export class IndexedDbRepository implements FinanceRepositoryInterface {
       );
       return { schemaVersion, settings, ...Object.fromEntries(entries) } as Dataset;
     });
+  }
+
+  /** Base locale à un seul appareil : aucune modification ne vient d'ailleurs. */
+  watch(): () => void {
+    return NOT_WATCHED;
   }
 
   async saveSettings(settings: Settings): Promise<Result<void>> {

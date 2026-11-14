@@ -1,12 +1,11 @@
-import { Menu, Send, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink, useLocation } from 'react-router';
+import { NavLink, useLocation } from 'react-router';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
 import { APP_VERSION } from '@/ui/constants';
-import { hasUnsentChanges } from '@/core/espaces/workspaces';
 import Button from '@/ui/design-system/Button';
 import { Select } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';
@@ -74,22 +73,6 @@ const WorkspaceSwitcher = () => {
           label: item.name,
         }))}
       />
-    </div>
-  );
-};
-
-const UnsentChangesBanner = () => {
-  const { workspace } = useFinanceState();
-  if (!hasUnsentChanges(workspace)) {
-    return null;
-  }
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200">
-      <Send className="h-3.5 w-3.5" aria-hidden />
-      Tu as modifié l’espace partagé « {workspace.name} » : pense à l’exporter pour l’envoyer.
-      <Link to="/parametres" className="underline underline-offset-2">
-        Exporter
-      </Link>
     </div>
   );
 };
@@ -165,7 +148,6 @@ const AppShell = ({ children }: AppShellProps) => {
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <UnsentChangesBanner />
           <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#f6f6f3]/85 backdrop-blur-sm dark:border-stone-800 dark:bg-[#121211]/85">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
               <div className="flex items-center gap-2">

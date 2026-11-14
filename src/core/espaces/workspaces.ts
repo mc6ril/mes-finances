@@ -1,15 +1,15 @@
 import { fail, ok, type AppErrorCode, type Result } from '../shared/errors';
+import type { WorkspaceKind } from '../shared/model';
 import { isObject, isString } from '@/core/shared/typeCheck';
 
-export type WorkspaceSource = 'local' | 'import';
+/** Propriétaire : a créé l'espace (ou l'a reçu par transfert) ; invité : a rejoint un espace commun. */
+export type WorkspaceRole = 'owner' | 'guest';
 
 export type Workspace = {
   id: string;
   name: string;
-  source: WorkspaceSource;
-  importedAt: string | null;
-  modifiedAt?: string | null;
-  sharedAt?: string | null;
+  kind: WorkspaceKind;
+  role: WorkspaceRole;
 };
 
 export type WorkspaceRegistryState = { workspaces: Workspace[]; activeId: string };
@@ -17,21 +17,8 @@ export type WorkspaceRegistryState = { workspaces: Workspace[]; activeId: string
 export const DEFAULT_WORKSPACE: Workspace = {
   id: 'perso',
   name: 'Perso',
-  source: 'local',
-  importedAt: null,
-};
-
-export const isShared = (workspace: Workspace): boolean =>
-  workspace.source === 'import' || Boolean(workspace.sharedAt);
-
-const latestOf = (dates: (string | null | undefined)[]): string =>
-  dates.reduce<string>((latest, date) => (date && date > latest ? date : latest), '');
-
-export const hasUnsentChanges = (workspace: Workspace): boolean => {
-  if (!isShared(workspace) || !workspace.modifiedAt) {
-    return false;
-  }
-  return workspace.modifiedAt > latestOf([workspace.importedAt, workspace.sharedAt]);
+  kind: 'perso',
+  role: 'owner',
 };
 
 export type WorkspaceNameError = Extract<AppErrorCode, 'workspace-name-empty' | 'workspace-name-taken'>;
@@ -58,43 +45,27 @@ export const workspaceNameError = (
   return null;
 };
 
-export const isWorkspace = (value: unknown): value is Workspace =>
-  isObject(value) &&
-  isString(value.id) &&
-  value.id.length > 0 &&
-  isString(value.name) &&
-  (value.source === 'local' || value.source === 'import') &&
-  (value.importedAt === null || isString(value.importedAt)) &&
-  (value.modifiedAt === undefined || value.modifiedAt === null || isString(value.modifiedAt)) &&
-  (value.sharedAt === undefined || value.sharedAt === null || isString(value.sharedAt));
-
-export const withDefaultWorkspace = (workspaces: Workspace[]): Workspace[] => {
-  const others = workspaces.filter((workspace) => workspace.id !== DEFAULT_WORKSPACE.id);
-  const stored = workspaces.find((workspace) => workspace.id === DEFAULT_WORKSPACE.id);
-  return [{ ...DEFAULT_WORKSPACE, name: stored?.name ?? DEFAULT_WORKSPACE.name }, ...others];
-};
-
-export const parseWorkspaces = (raw: unknown): Workspace[] => {
-  if (!Array.isArray(raw)) {
-    return [DEFAULT_WORKSPACE];
-  }
-  const seen = new Set<string>();
-  const valid = raw.filter(isWorkspace).filter((workspace) => {
-    if (seen.has(workspace.id)) {
-      return false;
-    }
-    seen.add(workspace.id);
-    return true;
-  });
-  return withDefaultWorkspace(valid);
-};
-
 export const resolveActiveId = (workspaces: Workspace[], activeId: string | null): string => {
   if (activeId && workspaces.some((workspace) => workspace.id === activeId)) {
     return activeId;
   }
   return DEFAULT_WORKSPACE.id;
 };
+
+/** Espace principal d'abord, puis les autres par nom. */
+export const sortWorkspaces = (workspaces: Workspace[]): Workspace[] =>
+  [...workspaces].sort((a, b) => {
+    if (a.id === DEFAULT_WORKSPACE.id || b.id === DEFAULT_WORKSPACE.id) {
+      return a.id === DEFAULT_WORKSPACE.id ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name, 'fr');
+  });
+
+export const canDelete = (workspace: Workspace): boolean =>
+  workspace.role === 'owner' && workspace.id !== DEFAULT_WORKSPACE.id;
+
+export const canInvite = (workspace: Workspace): boolean =>
+  workspace.role === 'owner' && workspace.kind === 'commun';
 
 export const workspaceFileSlug = (name: string): string =>
   normalizeWorkspaceName(name)
@@ -104,31 +75,12 @@ export const workspaceFileSlug = (name: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || 'espace';
 
-export type ImportTarget = { kind: 'new'; name: string } | { kind: 'existing'; workspaceId: string };
-
 export const activeIn = (workspaces: Workspace[], activeId: string): Workspace =>
   workspaces.find((item) => item.id === activeId) ?? workspaces[0] ?? DEFAULT_WORKSPACE;
 
-export const replaceWorkspace = (workspaces: Workspace[], updated: Workspace): Workspace[] =>
-  workspaces.map((item) => (item.id === updated.id ? updated : item));
-
-export const upsertWorkspace = (workspaces: Workspace[], updated: Workspace): Workspace[] =>
-  workspaces.some((item) => item.id === updated.id)
-    ? replaceWorkspace(workspaces, updated)
-    : [...workspaces, updated];
-
-export const touchedWorkspace = (workspace: Workspace, now: Date): Workspace => ({
-  ...workspace,
-  modifiedAt: now.toISOString(),
-});
-
-export const sharedWorkspace = (workspace: Workspace, now: Date): Workspace => ({
-  ...workspace,
-  sharedAt: now.toISOString(),
-});
-
-export const newLocalWorkspace = (
+export const newWorkspace = (
   name: string,
+  kind: WorkspaceKind,
   workspaces: Workspace[],
   newId: () => string,
 ): Result<Workspace> => {
@@ -136,7 +88,7 @@ export const newLocalWorkspace = (
   if (error) {
     return fail(error);
   }
-  return ok({ id: newId(), name: normalizeWorkspaceName(name), source: 'local', importedAt: null });
+  return ok({ id: newId(), name: normalizeWorkspaceName(name), kind, role: 'owner' });
 };
 
 export const renamedWorkspaces = (
@@ -155,33 +107,13 @@ export const renamedWorkspaces = (
   );
 };
 
-export const importedWorkspace = (
-  target: ImportTarget,
-  workspaces: Workspace[],
-  now: Date,
-  newId: () => string,
-): Result<Workspace> => {
-  const importedAt = now.toISOString();
-  if (target.kind === 'existing') {
-    const existing = workspaces.find((item) => item.id === target.workspaceId);
-    if (!existing) {
-      return fail('workspace-not-found');
-    }
-    if (existing.id === DEFAULT_WORKSPACE.id) {
-      return fail('workspace-main-protected');
-    }
-    return ok({ ...existing, source: 'import', importedAt, modifiedAt: null });
+/**
+ * Espace décrit dans une sauvegarde (ancien format avec source et dates d'import compris).
+ * La nature vient des réglages de l'espace ; on redevient propriétaire de ce qu'on restaure.
+ */
+export const readWorkspace = (raw: unknown, kind: WorkspaceKind): Workspace | null => {
+  if (!isObject(raw) || !isString(raw.id) || raw.id.length === 0 || !isString(raw.name)) {
+    return null;
   }
-  const error = workspaceNameError(target.name, workspaces);
-  if (error) {
-    return fail(error);
-  }
-  return ok({
-    id: newId(),
-    name: normalizeWorkspaceName(target.name),
-    source: 'import',
-    importedAt,
-    modifiedAt: null,
-    sharedAt: null,
-  });
+  return { id: raw.id, name: raw.name, kind, role: 'owner' };
 };
