@@ -125,7 +125,7 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 - Une dépense **remboursée** se saisit comme dépense positive dans la même catégorie : elle réduit la catégorie.
 - Patrimoine : on distingue **sommes versées**, **intérêts**, **frais**, **plus/moins-values** et **valeur totale**. Les valorisations boursières n'entrent jamais dans les revenus.
 - Le compte commun immobilier est affiché à part ; il n'entre dans le patrimoine personnel qu'une fois la quote-part renseignée.
-- Catégories à **budget annuel** (par défaut Voyages et Cadeaux ; réglable dans Paramètres → Catégories) : suivies sur l'année, hors du budget mensuel des dépenses personnelles. Leur budget annuel ÷ 12 est compté comme provision dans les dépenses prévues.
+- Catégories à **budget annuel** (par défaut Voyages et Cadeaux ; réglable dans Paramètres → Catégories et règles) : suivies sur l'année, hors du budget mensuel des dépenses personnelles. Leur budget annuel ÷ 12 est compté comme provision dans les dépenses prévues.
 - **Épargne** : chaque compte d'épargne (livret, assurance-vie, placement…) a sa catégorie du même nom, créée, renommée et archivée avec lui. Un espace neuf n'en a donc aucune : le budget n'affiche que les comptes réellement suivis.
 - Un espace neuf démarre avec un compte courant et quelques catégories courantes, à compléter. Le tableau de bord n'affiche que ce qui a été saisi (revenus, charges, épargne…) ; tant qu'aucune opération n'existe, il présente les premiers pas.
 

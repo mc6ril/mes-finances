@@ -293,7 +293,8 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
           )}
           <Text variant="small">
             Les montants positifs sont importés comme revenus, les négatifs comme dépenses, sauf si une règle
-            d’import (Paramètres) s’applique : elle fixe alors le type, la catégorie et la personne.
+            d’import (Paramètres → Catégories et règles) s’applique : elle fixe alors le type, la catégorie et
+            la personne.
           </Text>
           <div className="max-h-[50vh] overflow-auto rounded-xl border border-stone-100 dark:border-stone-800">
             <table className="table-base min-w-[720px]">

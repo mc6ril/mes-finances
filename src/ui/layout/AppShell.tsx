@@ -13,7 +13,7 @@ import Text from '@/ui/design-system/Text';
 import { cx } from '@/ui/design-system/cx';
 import AccountMenu from './AccountMenu';
 import Brand from './Brand';
-import { NAV_ITEMS } from './navigation';
+import { NAV_ITEMS, navItemOf } from './navigation';
 import PeriodPicker from './PeriodPicker';
 
 type NavListProps = { onNavigate?: () => void };
@@ -132,7 +132,7 @@ const AppShell = ({ children }: AppShellProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   useSyncErrorNotice();
-  const current = NAV_ITEMS.find((item) => item.path === location.pathname) ?? NAV_ITEMS[0];
+  const current = navItemOf(location.pathname);
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location.pathname]);

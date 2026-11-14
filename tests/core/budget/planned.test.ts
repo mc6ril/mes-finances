@@ -25,7 +25,7 @@ describe('settleDuePlanned', () => {
 
   it('ne renvoie que les opérations modifiées', () => {
     const done = aTransaction({ date: '2026-11-01', status: 'realise' });
-    const reconciled = aTransaction({ date: '2026-11-01', status: 'rapproche' });
+    const reconciled = aTransaction({ date: '2026-11-01', status: 'realise', verified: true });
     expect(settleDuePlanned([done, reconciled], '2026-11-26', now)).toEqual([]);
   });
 });

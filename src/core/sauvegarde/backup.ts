@@ -80,6 +80,24 @@ const invalidCollection = (data: Record<string, unknown>, schemaVersion: number)
   return broken ?? null;
 };
 
+/** Statuts admis selon la version du fichier : « rapproché » n'existe plus depuis la v12. */
+const STATUSES_BEFORE_12 = ['prevu', 'realise', 'rapproche'];
+const STATUSES = ['prevu', 'realise'];
+
+const transactionsValid = (items: unknown, schemaVersion: number): boolean => {
+  const statuses = schemaVersion < 12 ? STATUSES_BEFORE_12 : STATUSES;
+  return (
+    isArray(items) &&
+    items.every(
+      (item) =>
+        isObject(item) &&
+        isString(item.status) &&
+        statuses.includes(item.status) &&
+        (item.verified === undefined || typeof item.verified === 'boolean'),
+    )
+  );
+};
+
 const plannedListValid = (items: unknown): boolean =>
   isArray(items) &&
   items.every(
@@ -103,6 +121,9 @@ export const readBackup = (raw: unknown): Result<BackupContent> => {
   const broken = invalidCollection(raw.data, raw.schemaVersion);
   if (broken) {
     return fail('backup-corrupted', { detail: broken });
+  }
+  if (!transactionsValid(raw.data.transactions, raw.schemaVersion)) {
+    return fail('backup-corrupted', { detail: 'transactions' });
   }
   if (!plannedAreIntegers(raw.data)) {
     return fail('backup-corrupted', { detail: 'budgets' });

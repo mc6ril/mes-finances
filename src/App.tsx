@@ -89,6 +89,7 @@ const Gate = () => {
         <Route path="/bilan" element={<BilanPage />} />
         <Route path="/objectifs" element={<ObjectifsPage />} />
         <Route path="/parametres" element={<ParametresPage />} />
+        <Route path="/parametres/:tab" element={<ParametresPage />} />
         <Route path={`${INVITATION_PATH}/:token`} element={<InvitationPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

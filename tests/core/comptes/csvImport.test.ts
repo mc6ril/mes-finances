@@ -152,7 +152,7 @@ describe('transactionsToCsv', () => {
     const [header, line] = csv.split('\n');
     expect(header).toBe('Date;Libellé;Montant;Catégorie;Compte;Type;Statut;Moyen de paiement;Commentaire');
     expect(line).toBe(
-      '05/11/2026;"Resto; ""chez Paul""";-45,90;Restaurants et sorties;Compte courant;Dépense;Réalisé;;',
+      '05/11/2026;"Resto; ""chez Paul""";-45,90;Restaurants et sorties;Compte courant;Dépense;Passé;;',
     );
   });
 });

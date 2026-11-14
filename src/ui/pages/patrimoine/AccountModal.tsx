@@ -1,4 +1,4 @@
-import { FileUp, Trash2 } from 'lucide-react';
+import { FileUp, Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
@@ -6,7 +6,7 @@ import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext } from '@/core/budget/overview';
 import { useChartTheme } from '@/hooks/useTheme';
 import { useReport } from '@/hooks/useReport';
-import { MOVEMENT_LABELS } from '@/ui/constants';
+import { ACCOUNT_KIND_LABELS, MOVEMENT_LABELS } from '@/ui/constants';
 import { isCounted, isInternalMove } from '@/core/comptes/balances';
 import { monthEnd, parseFlexibleDate } from '@/core/shared/dates';
 import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
@@ -22,6 +22,7 @@ import Segmented from '@/ui/design-system/Segmented';
 import Text from '@/ui/design-system/Text';
 import ChartTooltip from '@/ui/charts/ChartTooltip';
 import BrokerImportModal from './BrokerImportModal';
+import SavingsAccountForm from './SavingsAccountForm';
 import { axisProps, euroTick } from '@/ui/charts/axis';
 
 const MOVEMENT_SIGN: Record<SavingsMovementKind, 1 | -1> = {
@@ -48,6 +49,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
   const dataset = useDataset();
   const account = dataset.accounts.find((item) => item.id === initial.id) ?? initial;
   const [importOpen, setImportOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const { today } = usePeriod();
   const finance = useFinanceUseCases();
   const report = useReport();
@@ -145,6 +147,14 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
 
   return (
     <Modal title={account.name} onClose={onClose} size="xl">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <Text variant="small">
+          {ACCOUNT_KIND_LABELS[account.kind]} · suivi depuis le {formatDateFr(account.openingDate)}
+        </Text>
+        <Button size="sm" icon={Pencil} onClick={() => setEditing(true)}>
+          Modifier le compte
+        </Button>
+      </div>
       {account.group === 'investissement' && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-brand-50 px-4 py-3 dark:bg-brand-500/10">
           <Text variant="small">
@@ -291,6 +301,9 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
           </ul>
         )}
       </div>
+      {editing && (
+        <SavingsAccountForm account={account} onClose={() => setEditing(false)} onArchived={onClose} />
+      )}
       {importOpen && <BrokerImportModal account={account} onClose={() => setImportOpen(false)} />}
       {confirm && (
         <ConfirmDialog

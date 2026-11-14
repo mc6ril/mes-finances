@@ -232,7 +232,7 @@ const BilanPage = () => {
           label="Total des revenus"
           icon={Wallet}
           value={<Amount cents={summary.totals.revenus} rounded />}
-          info="Opérations réalisées ou rapprochées des catégories Revenus (salaire, remboursements, revenus complémentaires…). Les virements entre tes comptes et les opérations seulement prévues ne sont pas comptés."
+          info="Opérations passées des catégories Revenus (salaire, remboursements, revenus complémentaires…). Les virements entre tes comptes et les opérations seulement prévues ne sont pas comptés."
         />
         <StatCard
           label="Total des dépenses"

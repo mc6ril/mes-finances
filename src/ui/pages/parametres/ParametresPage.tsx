@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Archive,
+  ArrowRight,
   ArchiveRestore,
   Banknote,
   Download,
@@ -15,6 +16,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { Link, Navigate, useParams } from 'react-router';
 import {
   useDataset,
   useFileUseCases,
@@ -24,15 +26,16 @@ import {
 } from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
-import { ACCOUNT_KIND_LABELS, GROUP_LABELS, groupLabel } from '@/ui/constants';
+import { GROUP_LABELS, groupLabel } from '@/ui/constants';
+import { isSavingsAccount } from '@/core/comptes/accounts';
+import Tabs from '@/ui/design-system/Tabs';
+import { SETTINGS_TABS, settingsPath, type SettingsTab } from '@/ui/layout/navigation';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
 import { mergeSettings, type SettingsMergeSummary } from '@/core/sauvegarde/settingsMerge';
 import { parseFlexibleDate, todayIso } from '@/core/shared/dates';
 import { formatDateFr } from '@/core/shared/format';
 import type {
   Account,
-  AccountGroup,
-  AccountKind,
   BudgetPeriod,
   Category,
   CategoryGroup,
@@ -58,15 +61,6 @@ import AccountCard from './AccountCard';
 import FilePickerButton from './FilePickerButton';
 import WorkspacesCard from './WorkspacesCard';
 import ImportRulesCard from './ImportRulesCard';
-
-const GROUP_BY_KIND: Record<AccountKind, AccountGroup> = {
-  courant: 'courant',
-  livret: 'securise',
-  'assurance-vie': 'investissement',
-  bourse: 'investissement',
-  'commun-immo': 'securise',
-  autre: 'securise',
-};
 
 const ProfileCard = () => {
   const dataset = useDataset();
@@ -144,21 +138,6 @@ const AccountRow = ({ account, isMain }: AccountRowProps) => {
         />
       </td>
       <td>
-        <Select
-          value={account.kind}
-          onChange={(kind) =>
-            save({
-              kind: kind as AccountKind,
-              group: GROUP_BY_KIND[kind as AccountKind],
-              isJoint: kind === 'commun-immo',
-            })
-          }
-          label="Type de compte"
-          className="h-9"
-          options={Object.entries(ACCOUNT_KIND_LABELS).map(([value, label]) => ({ value, label }))}
-        />
-      </td>
-      <td>
         <MoneyInput
           key={`${account.id}-${account.openingBalance}`}
           cents={account.openingBalance}
@@ -207,10 +186,11 @@ const AccountsCard = () => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
   const report = useReport();
-  const add = () => void report(finance.createAccount(), 'Compte ajouté');
+  const add = () => void report(finance.createAccount('courant'), 'Compte ajouté');
+  const currentAccounts = dataset.accounts.filter((account) => !isSavingsAccount(account));
   return (
     <Card
-      title="Comptes"
+      title="Comptes courants"
       subtitle="Solde de départ à une date donnée : les opérations antérieures à cette date sont considérées comme incluses dans ce solde"
       padded={false}
       action={
@@ -220,11 +200,10 @@ const AccountsCard = () => {
       }
     >
       <div className="overflow-x-auto">
-        <table className="table-base min-w-[760px]">
+        <table className="table-base min-w-[620px]">
           <thead>
             <tr>
               <th>Nom</th>
-              <th>Type</th>
               <th>Solde de départ</th>
               <th>À la date du</th>
               <th />
@@ -232,7 +211,7 @@ const AccountsCard = () => {
             </tr>
           </thead>
           <tbody>
-            {dataset.accounts.map((account) => (
+            {currentAccounts.map((account) => (
               <AccountRow
                 key={account.id}
                 account={account}
@@ -251,10 +230,33 @@ const AccountsCard = () => {
           }
           className="w-56"
           label="Compte principal"
-          options={dataset.accounts
+          options={currentAccounts
             .filter((account) => !account.archived)
             .map((account) => ({ value: account.id, label: account.name }))}
         />
+      </div>
+    </Card>
+  );
+};
+
+/** Les comptes d'épargne se créent et se modifient dans Épargne et patrimoine, avec leurs mouvements. */
+const SavingsAccountsNotice = () => {
+  const { accounts } = useDataset();
+  const count = accounts.filter((account) => isSavingsAccount(account) && !account.archived).length;
+  return (
+    <Card title="Comptes d’épargne et placements">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Text variant="muted">
+          {count === 0
+            ? 'Livrets, assurance-vie, bourse, épargne commune : ajoute-les depuis Épargne et patrimoine.'
+            : `${count} compte${count > 1 ? 's' : ''} suivi${count > 1 ? 's' : ''}. Livrets, assurance-vie, bourse et épargne commune se créent et se modifient depuis Épargne et patrimoine.`}
+        </Text>
+        <Link
+          to="/patrimoine"
+          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline dark:text-brand-300"
+        >
+          Épargne et patrimoine <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </Link>
       </div>
     </Card>
   );
@@ -393,7 +395,7 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
       </div>
       {group === 'epargne' && (
         <Text variant="caption" className="pt-2">
-          Une catégorie par compte d’épargne, créée, renommée et archivée avec lui (carte Comptes).
+          Une catégorie par compte d’épargne, créée, renommée et archivée avec lui (Épargne et patrimoine).
         </Text>
       )}
       <ul className="divide-y divide-stone-100 dark:divide-stone-800/70">
@@ -728,18 +730,54 @@ const AuditCard = () => {
   );
 };
 
-const ParametresPage = () => (
-  <div className="flex flex-col gap-5">
-    <PageHeader title="Paramètres" />
-    <WorkspacesCard />
-    <ProfileCard />
-    <BackupCard />
-    <AccountsCard />
-    <CategoriesCard />
-    <ImportRulesCard />
-    <AuditCard />
-    <AccountCard />
-  </div>
-);
+const TAB_CONTENT: Record<SettingsTab, () => ReactNode> = {
+  espace: () => (
+    <>
+      <WorkspacesCard />
+      <ProfileCard />
+    </>
+  ),
+  comptes: () => (
+    <>
+      <AccountsCard />
+      <SavingsAccountsNotice />
+    </>
+  ),
+  categories: () => (
+    <>
+      <CategoriesCard />
+      <ImportRulesCard />
+    </>
+  ),
+  sauvegardes: () => (
+    <>
+      <BackupCard />
+      <AuditCard />
+    </>
+  ),
+  compte: () => <AccountCard />,
+};
+
+const isSettingsTab = (value: string | undefined): value is SettingsTab =>
+  SETTINGS_TABS.some((tab) => tab.id === value);
+
+const ParametresPage = () => {
+  const { tab } = useParams();
+  if (tab !== undefined && !isSettingsTab(tab)) {
+    return <Navigate to={settingsPath('espace')} replace />;
+  }
+  const active: SettingsTab = tab ?? 'espace';
+  return (
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Paramètres" />
+      <Tabs
+        label="Sections des paramètres"
+        active={active}
+        tabs={SETTINGS_TABS.map((item) => ({ ...item, to: settingsPath(item.id) }))}
+      />
+      {TAB_CONTENT[active]()}
+    </div>
+  );
+};
 
 export default ParametresPage;

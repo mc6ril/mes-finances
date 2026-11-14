@@ -80,8 +80,8 @@ const NoSavingsAccount = () => (
   <Card title="Épargne">
     <Text variant="muted">
       Aucun compte d’épargne suivi. Ajoute un livret ou un placement dans{' '}
-      <Link to="/parametres" className="font-medium text-brand-600 hover:underline dark:text-brand-300">
-        Paramètres → Comptes
+      <Link to="/patrimoine" className="font-medium text-brand-600 hover:underline dark:text-brand-300">
+        Épargne et patrimoine
       </Link>{' '}
       : il apparaîtra ici avec son budget.
     </Text>

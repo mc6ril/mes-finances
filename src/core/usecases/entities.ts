@@ -1,19 +1,9 @@
 import { savingsCategoryOfAccount } from '../budget/budget';
-import type { Result } from '../shared/errors';
+import { newAccountDraft } from '../comptes/accounts';
+import { fail, type Result } from '../shared/errors';
 import { todayIso } from '../shared/dates';
-import type { Account, Category, Goal, Recurring } from '../shared/model';
+import type { Account, AccountKind, Category, Cents, Goal, Recurring } from '../shared/model';
 import { withId, type Draft, type FinanceDeps } from './shared';
-
-const NEW_ACCOUNT: Omit<Account, 'id' | 'openingDate'> = {
-  name: 'Nouveau compte',
-  kind: 'livret',
-  group: 'securise',
-  openingBalance: 0,
-  isJoint: false,
-  personalSharePercent: null,
-  archived: false,
-  color: '#64748b',
-};
 
 export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const saveAccount = async (draft: Draft<Account>): Promise<Result<void>> => {
@@ -36,8 +26,19 @@ export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     });
   };
 
-  const createAccount = (): Promise<Result<void>> =>
-    saveAccount({ ...NEW_ACCOUNT, openingDate: todayIso(now()) });
+  /** Compte vierge du type donné, daté du jour : courant depuis Paramètres, épargne depuis Patrimoine. */
+  const createAccount = (kind: AccountKind = 'courant', name = 'Nouveau compte'): Promise<Result<void>> =>
+    saveAccount(newAccountDraft({ name, kind, openingBalance: 0, openingDate: todayIso(now()) }));
+
+  /** « Pour démarrer » : solde du compte principal aujourd'hui, point de départ de tous les calculs. */
+  const setMainOpeningBalance = async (openingBalance: Cents): Promise<Result<void>> => {
+    const dataset = gateway.currentDataset();
+    const main = dataset?.accounts.find((account) => account.id === dataset.settings.mainAccountId);
+    if (!main) {
+      return fail('data-not-loaded');
+    }
+    return saveAccount({ ...main, openingBalance, openingDate: todayIso(now()) });
+  };
 
   const saveCategory = async (draft: Draft<Category>): Promise<Result<void>> => {
     const { entity, isNew } = withId(draft, newId);
@@ -76,5 +77,14 @@ export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const deleteGoal = (goal: Goal): Promise<Result<void>> =>
     gateway.remove('goals', [goal.id], { action: 'suppression', entity: 'Objectif', summary: goal.name });
 
-  return { saveAccount, createAccount, saveCategory, saveRecurring, deleteRecurring, saveGoal, deleteGoal };
+  return {
+    saveAccount,
+    createAccount,
+    setMainOpeningBalance,
+    saveCategory,
+    saveRecurring,
+    deleteRecurring,
+    saveGoal,
+    deleteGoal,
+  };
 };

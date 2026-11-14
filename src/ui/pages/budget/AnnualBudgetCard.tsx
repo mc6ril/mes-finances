@@ -77,7 +77,7 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
           <EmptyState
             icon={CalendarClock}
             title="Aucune catégorie annuelle"
-            description="Dans Paramètres → Catégories, passe une catégorie en « Annuel » pour la suivre sur l’année."
+            description="Dans Paramètres → Catégories et règles, passe une catégorie en « Annuel » pour la suivre sur l’année."
           />
         </div>
       ) : (

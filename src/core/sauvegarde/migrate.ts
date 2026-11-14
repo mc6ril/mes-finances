@@ -262,6 +262,19 @@ const toVersion11 = (dataset: Dataset): Dataset => {
   return { ...dataset, settings };
 };
 
+/**
+ * v12 : deux statuts d'opération (prévu, passé) ; l'ancien statut « rapproché » devient une
+ * opération passée cochée « vérifiée sur mon relevé ».
+ */
+const toVersion12 = (dataset: Dataset): Dataset => ({
+  ...dataset,
+  transactions: dataset.transactions.map((transaction) =>
+    (transaction.status as string) === 'rapproche'
+      ? { ...transaction, status: 'realise', verified: true }
+      : transaction,
+  ),
+});
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -274,6 +287,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 9, apply: toVersion9 },
   { version: 10, apply: toVersion10 },
   { version: 11, apply: toVersion11 },
+  { version: 12, apply: toVersion12 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

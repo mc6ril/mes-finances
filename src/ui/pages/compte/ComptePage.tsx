@@ -21,23 +21,17 @@ import { useReport } from '@/hooks/useReport';
 import {
   cashflowSummary,
   isOutsideAccount,
+  isVerified,
   livePosition,
   periodPhase,
   signedEffectOn,
 } from '@/core/comptes/balances';
-import { STATUS_LABELS, TYPE_LABELS } from '@/core/comptes/csvImport';
+import { statusLabel, TYPE_LABELS } from '@/core/comptes/csvImport';
+import { matchesStatus, STATUS_FILTERS } from '@/core/comptes/filters';
 import { monthEnd, monthStart } from '@/core/shared/dates';
 import { formatDateFr, monthLabel } from '@/core/shared/format';
 import { parseEuros } from '@/core/shared/money';
-import type {
-  Account,
-  Category,
-  Dataset,
-  Imputation,
-  IsoDate,
-  Transaction,
-  TransactionStatus,
-} from '@/core/shared/model';
+import type { Account, Category, Dataset, Imputation, IsoDate, Transaction } from '@/core/shared/model';
 import Amount from '@/ui/design-system/Amount';
 import Badge, { type BadgeTone } from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
@@ -66,10 +60,11 @@ type Filters = {
   maxAmount: string;
 };
 
-const STATUS_TONE: Record<TransactionStatus, BadgeTone> = {
-  prevu: 'info',
-  realise: 'neutral',
-  rapproche: 'good',
+const statusTone = (transaction: Transaction): BadgeTone => {
+  if (transaction.status === 'prevu') {
+    return 'info';
+  }
+  return isVerified(transaction) ? 'good' : 'neutral';
 };
 
 const ALL = '';
@@ -98,7 +93,7 @@ const applyFilters = (transactions: Transaction[], accountId: string, filters: F
         filters.categoryId === ALL || (transaction.categoryId ?? 'none') === filters.categoryId,
     )
     .filter((transaction) => filters.type === ALL || transaction.type === filters.type)
-    .filter((transaction) => filters.status === ALL || transaction.status === filters.status)
+    .filter((transaction) => matchesStatus(transaction, filters.status))
     .filter((transaction) => matchesAmount(transaction, accountId, filters.minAmount, filters.maxAmount));
 };
 
@@ -191,14 +186,14 @@ const BulkBar = ({ selected, categories, onClear, onDelete }: BulkBarProps) => {
         onClick={() =>
           void report(
             finance.updateTransactions(
-              selected.map((transaction) => ({ ...transaction, status: 'rapproche' })),
-              'Opérations rapprochées',
+              selected.map((transaction) => ({ ...transaction, status: 'realise', verified: true })),
+              'Opérations vérifiées',
             ),
-            'Opérations rapprochées',
+            'Opérations vérifiées sur le relevé',
           ).then(onClear)
         }
       >
-        Marquer rapprochées
+        Marquer vérifiées
       </Button>
       <div className="flex items-center gap-1">
         <Select
@@ -273,7 +268,7 @@ const CurrentPeriodCards = ({ account, transactions, from, to }: Omit<SummaryCar
       <SummaryCard
         label="Solde actuel"
         value={<Amount cents={position.current} />}
-        caption="rapprochés à ce jour"
+        caption="opérations vérifiées sur ton relevé"
         valueClassName="text-brand-600 dark:text-brand-300"
       />
       <SummaryCard
@@ -281,7 +276,7 @@ const CurrentPeriodCards = ({ account, transactions, from, to }: Omit<SummaryCar
         value={<Amount cents={position.upcoming} signed colored />}
         caption={
           <>
-            réalisé <Amount cents={position.realised} signed /> · prévu{' '}
+            passé à vérifier <Amount cents={position.realised} signed /> · prévu{' '}
             <Amount cents={position.planned} signed />
           </>
         }
@@ -481,10 +476,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
               value={filters.status}
               onChange={(status) => update({ status })}
               label="Statut"
-              options={[
-                { value: ALL, label: 'Tous statuts' },
-                ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
-              ]}
+              options={STATUS_FILTERS}
             />
             <Input
               value={filters.minAmount}
@@ -586,7 +578,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                       </Text>
                     </td>
                     <td>
-                      <Badge tone={STATUS_TONE[row.status]}>{STATUS_LABELS[row.status]}</Badge>
+                      <Badge tone={statusTone(row)}>{statusLabel(row)}</Badge>
                     </td>
                     <td className="text-right font-medium">
                       {isOutsideAccount(row) ? (

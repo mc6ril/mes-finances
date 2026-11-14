@@ -130,7 +130,7 @@ const RecurringModal = ({ onClose }: RecurringModalProps) => {
       <Text variant="muted" className="mb-4">
         Chaque récurrence ajoute automatiquement son opération « prévue » au début du mois. Si tu l’as déjà
         saisie à la main (même compte, même montant), elle est reconnue au lieu d’être dupliquée, et une
-        opération prévue que tu supprimes ne revient pas. Elle passe en « réalisé » à sa date.
+        opération prévue que tu supprimes ne revient pas. Elle passe en « passé » à sa date.
       </Text>
       {editing ? (
         <div className="grid gap-3 sm:grid-cols-2">

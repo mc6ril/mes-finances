@@ -57,9 +57,9 @@ const recurringSummary = (created: number, linked: number): string => {
 
 const settledSummary = (count: number): string => {
   if (count === 1) {
-    return '1 opération prévue passée en réalisé à sa date';
+    return '1 opération prévue passée à sa date';
   }
-  return `${count} opérations prévues passées en réalisé à leur date`;
+  return `${count} opérations prévues passées à leur date`;
 };
 
 export interface FinanceStoreInterface {

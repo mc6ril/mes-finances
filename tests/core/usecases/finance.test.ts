@@ -1,6 +1,7 @@
 import { fail } from '@/core/shared/errors';
 import type { Dataset, MonthBudget } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
+import { newAccountDraft } from '@/core/comptes/accounts';
 import { anAccount } from '../fixtures';
 import { createFinanceUseCases } from '@/core/usecases/finance';
 import { aTransaction } from '../fixtures';
@@ -159,21 +160,70 @@ describe('comptes, catégories et objectifs', () => {
     expect(calls[0]).toMatchObject({ items: [{ id: 'cat-divers' }], log: { action: 'modification' } });
   });
 
-  it('crée un compte avec des valeurs par défaut datées du jour', async () => {
+  it('crée un compte courant vierge daté du jour, sans ligne d’épargne', async () => {
     const { useCases, calls } = setup();
     await useCases.createAccount();
+    expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({
       collection: 'accounts',
-      items: [{ id: 'id-1', name: 'Nouveau compte', openingBalance: 0, openingDate: '2026-11-08' }],
+      items: [
+        {
+          id: 'id-1',
+          name: 'Nouveau compte',
+          kind: 'courant',
+          group: 'courant',
+          openingBalance: 0,
+          openingDate: '2026-11-08',
+        },
+      ],
     });
   });
 
-  it('crée la ligne d’épargne du budget avec le compte d’épargne', async () => {
+  it('crée la ligne d’épargne du budget avec un compte d’épargne créé vierge', async () => {
     const { useCases, calls } = setup();
-    await useCases.createAccount();
+    await useCases.createAccount('livret');
+    expect(calls[0]).toMatchObject({ items: [{ group: 'securise' }] });
     expect(calls[1]).toMatchObject({
       collection: 'categories',
       items: [{ id: 'id-2', name: 'Nouveau compte', group: 'epargne', archived: false }],
+    });
+  });
+
+  it('enregistre le solde du compte principal à la date du jour', async () => {
+    const { useCases, calls } = setup();
+    await useCases.setMainOpeningBalance(123456);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      collection: 'accounts',
+      items: [{ id: base().settings.mainAccountId, openingBalance: 123456, openingDate: '2026-11-08' }],
+    });
+  });
+
+  it('ne fait rien sans données ouvertes', async () => {
+    const { useCases } = setup(null);
+    expect(await useCases.setMainOpeningBalance(100)).toMatchObject({
+      ok: false,
+      error: { code: 'data-not-loaded' },
+    });
+  });
+
+  it('crée la ligne d’épargne avec un compte saisi depuis Patrimoine (nom, type, solde)', async () => {
+    const { useCases, calls } = setup();
+    await useCases.saveAccount(
+      newAccountDraft({
+        name: 'Assurance-vie',
+        kind: 'assurance-vie',
+        openingBalance: 150000,
+        openingDate: '2026-11-01',
+      }),
+    );
+    expect(calls[0]).toMatchObject({
+      collection: 'accounts',
+      items: [{ id: 'id-1', name: 'Assurance-vie', group: 'investissement', openingBalance: 150000 }],
+    });
+    expect(calls[1]).toMatchObject({
+      collection: 'categories',
+      items: [{ id: 'id-2', name: 'Assurance-vie', group: 'epargne' }],
     });
   });
 });
