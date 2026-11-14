@@ -184,6 +184,31 @@ describe('création et modification d’un espace', () => {
     await assertSucceeds(batch.commit());
   });
 
+  it('crée un espace sans réglages, complétés ensuite par un membre', async () => {
+    const db = verified(STRANGER);
+    const ref = doc(db, 'workspaces/nu');
+    await assertSucceeds(
+      setDoc(ref, {
+        ownerId: STRANGER,
+        memberIds: [STRANGER],
+        kind: 'perso',
+        name: 'Perso',
+        createdAt: serverTimestamp(),
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(ref, { settings: { kind: 'perso' }, schemaVersion: 10, layout: { audit: 1 } }),
+    );
+    await assertFails(
+      setDoc(doc(db, 'workspaces/sans-nature'), {
+        ownerId: STRANGER,
+        memberIds: [STRANGER],
+        name: 'X',
+        createdAt: serverTimestamp(),
+      }),
+    );
+  });
+
   it('refuse un espace créé pour quelqu’un d’autre ou avec un autre membre', async () => {
     const db = verified(STRANGER);
     await assertFails(setDoc(doc(db, 'workspaces/x1'), created(STRANGER, { ownerId: OWNER })));

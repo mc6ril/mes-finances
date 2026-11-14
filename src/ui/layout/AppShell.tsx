@@ -1,8 +1,9 @@
-import { Menu, X } from 'lucide-react';
+import { CloudOff, Menu, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
 import { APP_VERSION } from '@/ui/constants';
@@ -77,6 +78,25 @@ const WorkspaceSwitcher = () => {
   );
 };
 
+/** Hors ligne, la saisie continue : les modifications partent au retour du réseau. */
+const OfflineBanner = () => {
+  const { offline, pendingWrites } = useSyncStatus();
+  if (!offline) {
+    return null;
+  }
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+    >
+      <CloudOff className="h-3.5 w-3.5" aria-hidden />
+      {pendingWrites > 0
+        ? `Hors ligne : ${pendingWrites} modification${pendingWrites > 1 ? 's' : ''} en attente, envoyée${pendingWrites > 1 ? 's' : ''} au retour du réseau.`
+        : 'Hors ligne : tu peux continuer, tes modifications seront envoyées au retour du réseau.'}
+    </div>
+  );
+};
+
 const Toasts = () => {
   const { toasts, dismiss } = useToast();
   return (
@@ -118,6 +138,7 @@ const AppShell = ({ children }: AppShellProps) => {
   }, [location.pathname]);
   return (
     <div className="min-h-screen">
+      <OfflineBanner />
       <div className="flex">
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-stone-200/80 bg-white/70 px-3 py-5 backdrop-blur-sm dark:border-stone-800 dark:bg-[#161615] lg:flex">
           <Brand />

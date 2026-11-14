@@ -37,11 +37,12 @@ service cloud.firestore {
         return signedIn() && resource.data.ownerId == uid();
       }
 
+      // Réglages, version et découpage peuvent arriver ensuite, avec les données (dépôt de l'espace).
       function validCreation() {
         let data = request.resource.data;
         return signedIn()
           && data.keys().hasOnly(['ownerId', 'memberIds', 'kind', 'name', 'schemaVersion', 'settings', 'layout', 'createdAt'])
-          && data.keys().hasAll(['ownerId', 'memberIds', 'kind', 'name', 'schemaVersion', 'settings', 'layout', 'createdAt'])
+          && data.keys().hasAll(['ownerId', 'memberIds', 'kind', 'name', 'createdAt'])
           && data.ownerId == uid()
           && data.memberIds == [uid()]
           && data.kind in ['perso', 'commun']

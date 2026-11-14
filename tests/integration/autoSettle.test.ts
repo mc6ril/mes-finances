@@ -1,15 +1,13 @@
-import 'fake-indexeddb/auto';
-import { IndexedDbRepository } from '@/adapters/storage/IndexedDbRepository';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import { MemoryWorkspaceRegistry } from '../support/memoryAdapters';
+import { MemoryDatabase, MemoryWorkspaceRegistry } from '../support/memoryAdapters';
 import { createInitialDataset } from '@/core/shared/seed';
 import { aTransaction } from '../core/fixtures';
 
 describe('bascule automatique à l’ouverture', () => {
   it('enregistre les opérations prévues échues comme réalisées', async () => {
-    const repository = new IndexedDbRepository('bascule');
+    const db = new MemoryDatabase();
     const dataset = createInitialDataset('2026-11-01', () => 'audit-1');
-    await repository.replaceAll({
+    await db.repository('perso').replaceAll({
       ...dataset,
       transactions: [
         aTransaction({ id: 'mobile', date: '2026-11-05', status: 'prevu', accountId: 'acc-courant' }),
@@ -17,7 +15,7 @@ describe('bascule automatique à l’ouverture', () => {
       ],
     });
     const store = new FinanceStore(
-      () => new IndexedDbRepository('bascule'),
+      db.repository,
       new MemoryWorkspaceRegistry(),
       () => 'id',
       () => new Date('2026-11-26T10:00:00'),
@@ -26,7 +24,7 @@ describe('bascule automatique à l’ouverture', () => {
     const statuses = (transactions: { id: string; status: string }[] | undefined) =>
       Object.fromEntries((transactions ?? []).map((transaction) => [transaction.id, transaction.status]));
     expect(statuses(store.getSnapshot().dataset?.transactions)).toEqual({ mobile: 'realise', noel: 'prevu' });
-    const reloaded = await new IndexedDbRepository('bascule').load();
+    const reloaded = await db.repository('perso').load();
     expect(statuses(reloaded.ok ? reloaded.value?.transactions : [])).toEqual({
       mobile: 'realise',
       noel: 'prevu',
@@ -35,15 +33,15 @@ describe('bascule automatique à l’ouverture', () => {
 
   it('rebascule à la demande quand la date change pendant que l’app est ouverte', async () => {
     let current = new Date('2026-11-26T10:00:00');
-    const repository = new IndexedDbRepository('bascule-2');
-    await repository.replaceAll({
+    const db = new MemoryDatabase();
+    await db.repository('perso').replaceAll({
       ...createInitialDataset('2026-11-01', () => 'audit-1'),
       transactions: [
         aTransaction({ id: 'noel', date: '2026-12-20', status: 'prevu', accountId: 'acc-courant' }),
       ],
     });
     const store = new FinanceStore(
-      () => new IndexedDbRepository('bascule-2'),
+      db.repository,
       new MemoryWorkspaceRegistry(),
       () => 'id',
       () => current,
@@ -55,11 +53,10 @@ describe('bascule automatique à l’ouverture', () => {
   });
 
   it('bascule tout de suite une opération prévue enregistrée avec une date passée', async () => {
-    await new IndexedDbRepository('bascule-3').replaceAll(
-      createInitialDataset('2026-11-01', () => 'audit-1'),
-    );
+    const db = new MemoryDatabase();
+    await db.repository('perso').replaceAll(createInitialDataset('2026-11-01', () => 'audit-1'));
     const store = new FinanceStore(
-      () => new IndexedDbRepository('bascule-3'),
+      db.repository,
       new MemoryWorkspaceRegistry(),
       () => 'id',
       () => new Date('2026-11-26T10:00:00'),

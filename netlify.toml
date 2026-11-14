@@ -9,14 +9,14 @@
 
 # En-têtes de sécurité appliqués à toutes les pages.
 # La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google
-# nécessaires à la connexion (Firebase Auth) :
-# - connect-src : API d'authentification et de renouvellement des jetons ;
+# nécessaires à la connexion (Firebase Auth) et aux données (Firestore) :
+# - connect-src : API d'authentification, de renouvellement des jetons et Firestore ;
 # - script-src / frame-src : fenêtre « Continuer avec Google » (apis.google.com, *.firebaseapp.com).
 # COOP « same-origin-allow-popups » : sans lui, la fenêtre Google ne peut pas renvoyer le résultat.
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'none'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://*.firebaseapp.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
+    Content-Security-Policy = "default-src 'none'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com; frame-src https://*.firebaseapp.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
     Referrer-Policy = "no-referrer"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"

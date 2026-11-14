@@ -40,6 +40,13 @@ export const APP_ERROR_CODES = [
   'auth-requires-recent-login',
   'auth-user-mismatch',
   'auth-failed',
+  'sync-offline',
+  'sync-permission-denied',
+  'sync-quota-exceeded',
+  'sync-document-too-large',
+  'sync-pending-writes',
+  'sync-local-data-not-cleared',
+  'sync-failed',
 ] as const;
 
 export type AppErrorCode = (typeof APP_ERROR_CODES)[number];

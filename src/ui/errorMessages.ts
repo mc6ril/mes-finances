@@ -54,6 +54,19 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'auth-requires-recent-login': () => 'Par sécurité, reconnecte-toi avant de faire cette action.',
   'auth-user-mismatch': () => 'Ce n’est pas le compte Google connecté. Choisis le même compte.',
   'auth-failed': () => 'La connexion a échoué. Réessaie dans un instant.',
+  'sync-offline': () =>
+    'Connexion Internet indisponible et données pas encore présentes sur cet appareil. Réessaie une fois en ligne.',
+  'sync-permission-denied': () =>
+    'Accès refusé à ces données : l’espace n’est peut-être plus partagé avec toi.',
+  'sync-quota-exceeded': () =>
+    'Le quota gratuit quotidien de la base en ligne est atteint. Les modifications seront envoyées plus tard.',
+  'sync-document-too-large': () =>
+    'Ces données sont trop volumineuses pour être enregistrées en ligne. Exporte une sauvegarde complète.',
+  'sync-pending-writes': () =>
+    'Des modifications ne sont pas encore envoyées (hors ligne ?). Reconnecte-toi à Internet avant de te déconnecter.',
+  'sync-local-data-not-cleared': () =>
+    'Déconnexion faite, mais les données de cet appareil n’ont pas pu être effacées : ferme tous les onglets de l’application puis recharge la page.',
+  'sync-failed': () => 'L’enregistrement en ligne a échoué. Réessaie dans un instant.',
 };
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);

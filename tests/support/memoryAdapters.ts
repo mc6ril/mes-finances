@@ -1,3 +1,4 @@
+import { itemKey } from '@/core/shared/collections';
 import { ok, type Result } from '@/core/shared/errors';
 import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
 import type { CollectionItem, DatasetListener, FinanceRepositoryInterface } from '@/core/store/interface';
@@ -8,16 +9,6 @@ import {
   type Workspace,
   type WorkspaceRegistryState,
 } from '@/core/espaces/workspaces';
-
-const keyOf = (collection: CollectionName, item: object): string => {
-  if (collection === 'budgets' || collection === 'monthNotes' || collection === 'commonMonths') {
-    return (item as { month: string }).month;
-  }
-  if (collection === 'yearBudgets') {
-    return (item as { year: string }).year;
-  }
-  return (item as { id: string }).id;
-};
 
 /**
  * Base partagée entre plusieurs « appareils » de test : chaque dépôt créé dessus voit les écritures
@@ -100,8 +91,8 @@ class MemoryRepository implements FinanceRepositoryInterface {
 
   async put<C extends CollectionName>(collection: C, items: CollectionItem<C>[]): Promise<Result<void>> {
     return this.#update((dataset) => {
-      const keys = new Set(items.map((item) => keyOf(collection, item)));
-      const kept = (dataset[collection] as object[]).filter((item) => !keys.has(keyOf(collection, item)));
+      const keys = new Set(items.map((item) => itemKey(collection, item)));
+      const kept = (dataset[collection] as object[]).filter((item) => !keys.has(itemKey(collection, item)));
       return { ...dataset, [collection]: [...kept, ...items] } as Dataset;
     });
   }
@@ -109,7 +100,9 @@ class MemoryRepository implements FinanceRepositoryInterface {
   async remove(collection: CollectionName, keys: string[]): Promise<Result<void>> {
     return this.#update((dataset) => {
       const removed = new Set(keys);
-      const kept = (dataset[collection] as object[]).filter((item) => !removed.has(keyOf(collection, item)));
+      const kept = (dataset[collection] as object[]).filter(
+        (item) => !removed.has(itemKey(collection, item)),
+      );
       return { ...dataset, [collection]: kept } as Dataset;
     });
   }

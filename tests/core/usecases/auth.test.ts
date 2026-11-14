@@ -1,3 +1,5 @@
+import { SIGN_OUT_FLUSH_MS } from '@/core/sync/model';
+import { fakeSync } from '../sync/fakeSync';
 import { fail, ok } from '@/core/shared/errors';
 import { createAuthUseCases } from '@/core/usecases/auth';
 import { aUser, fakeAuthGateway } from './fakeAuthGateway';
@@ -12,7 +14,7 @@ const signUpForm = {
 describe('inscription', () => {
   it('crée le compte avec des identifiants nettoyés puis envoie l’e-mail de vérification', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).signUp(signUpForm);
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signUp(signUpForm);
     expect(result.ok).toBe(true);
     expect(calls).toEqual([
       {
@@ -25,21 +27,24 @@ describe('inscription', () => {
 
   it('n’appelle pas le fournisseur si le formulaire est invalide', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).signUp({ ...signUpForm, confirmation: 'autre' });
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signUp({
+      ...signUpForm,
+      confirmation: 'autre',
+    });
     expect(result).toEqual({ ok: false, error: { code: 'auth-password-mismatch' } });
     expect(calls).toEqual([]);
   });
 
   it('fait remonter un e-mail déjà utilisé sans envoyer de vérification', async () => {
     const { gateway, calls } = fakeAuthGateway({ signUp: fail('auth-email-taken') });
-    const result = await createAuthUseCases({ gateway }).signUp(signUpForm);
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signUp(signUpForm);
     expect(result).toEqual({ ok: false, error: { code: 'auth-email-taken' } });
     expect(calls.map((call) => call.kind)).toEqual(['signUp']);
   });
 
   it('reste réussie si l’e-mail de vérification ne part pas', async () => {
     const { gateway } = fakeAuthGateway({ sendEmailVerification: fail('auth-network') });
-    const result = await createAuthUseCases({ gateway }).signUp(signUpForm);
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signUp(signUpForm);
     expect(result).toEqual({
       ok: true,
       value: aUser({ email: 'camille.d@example.com', displayName: 'Camille' }),
@@ -50,7 +55,7 @@ describe('inscription', () => {
 describe('connexion par e-mail', () => {
   it('se connecte avec l’e-mail normalisé', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).signIn({
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signIn({
       email: ' Jean.D@Example.com ',
       password: 'secret',
     });
@@ -60,14 +65,17 @@ describe('connexion par e-mail', () => {
 
   it('refuse un mot de passe vide sans appeler le fournisseur', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).signIn({ email: 'jean@example.com', password: '' });
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signIn({
+      email: 'jean@example.com',
+      password: '',
+    });
     expect(result).toEqual({ ok: false, error: { code: 'auth-password-empty' } });
     expect(calls).toEqual([]);
   });
 
   it('fait remonter des identifiants incorrects', async () => {
     const { gateway } = fakeAuthGateway({ signIn: fail('auth-invalid-credentials') });
-    const result = await createAuthUseCases({ gateway }).signIn({
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signIn({
       email: 'jean@example.com',
       password: 'faux',
     });
@@ -78,14 +86,14 @@ describe('connexion par e-mail', () => {
 describe('connexion avec Google', () => {
   it('délègue au fournisseur', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).signInWithGoogle();
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).signInWithGoogle();
     expect(result).toEqual({ ok: true, value: aUser({ providers: ['google'], emailVerified: true }) });
     expect(calls).toEqual([{ kind: 'signInWithGoogle' }]);
   });
 
   it('fait remonter une fenêtre fermée par l’utilisateur', async () => {
     const { gateway } = fakeAuthGateway({ signInWithGoogle: fail('auth-cancelled') });
-    expect(await createAuthUseCases({ gateway }).signInWithGoogle()).toEqual({
+    expect(await createAuthUseCases({ gateway, sync: fakeSync() }).signInWithGoogle()).toEqual({
       ok: false,
       error: { code: 'auth-cancelled' },
     });
@@ -93,31 +101,46 @@ describe('connexion avec Google', () => {
 });
 
 describe('déconnexion', () => {
-  it('délègue au fournisseur', async () => {
+  it('attend l’envoi des modifications puis délègue au fournisseur', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    expect(await createAuthUseCases({ gateway }).signOut()).toEqual({ ok: true, value: undefined });
+    const sync = fakeSync();
+    expect(await createAuthUseCases({ gateway, sync }).signOut()).toEqual({ ok: true, value: undefined });
+    expect(sync.flushes).toEqual([SIGN_OUT_FLUSH_MS]);
     expect(calls).toEqual([{ kind: 'signOut' }]);
+  });
+
+  it('reste connecté tant que des modifications ne sont pas envoyées', async () => {
+    const { gateway, calls } = fakeAuthGateway();
+    expect(await createAuthUseCases({ gateway, sync: fakeSync(true) }).signOut()).toEqual({
+      ok: false,
+      error: { code: 'sync-pending-writes' },
+    });
+    expect(calls).toEqual([]);
   });
 });
 
 describe('mot de passe oublié', () => {
   it('envoie le lien à l’adresse normalisée', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).requestPasswordReset(' Jean@Example.com ');
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).requestPasswordReset(
+      ' Jean@Example.com ',
+    );
     expect(result).toEqual({ ok: true, value: 'jean@example.com' });
     expect(calls).toEqual([{ kind: 'sendPasswordReset', email: 'jean@example.com' }]);
   });
 
   it('refuse une adresse invalide sans appeler le fournisseur', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).requestPasswordReset('jean');
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).requestPasswordReset('jean');
     expect(result).toEqual({ ok: false, error: { code: 'auth-email-invalid' } });
     expect(calls).toEqual([]);
   });
 
   it('fait remonter un trop grand nombre de demandes', async () => {
     const { gateway } = fakeAuthGateway({ sendPasswordReset: fail('auth-too-many-requests') });
-    expect(await createAuthUseCases({ gateway }).requestPasswordReset('jean@example.com')).toEqual({
+    expect(
+      await createAuthUseCases({ gateway, sync: fakeSync() }).requestPasswordReset('jean@example.com'),
+    ).toEqual({
       ok: false,
       error: { code: 'auth-too-many-requests' },
     });
@@ -127,7 +150,7 @@ describe('mot de passe oublié', () => {
 describe('vérification de l’adresse', () => {
   it('renvoie l’e-mail de vérification', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    expect(await createAuthUseCases({ gateway }).resendEmailVerification()).toEqual({
+    expect(await createAuthUseCases({ gateway, sync: fakeSync() }).resendEmailVerification()).toEqual({
       ok: true,
       value: undefined,
     });
@@ -138,7 +161,7 @@ describe('vérification de l’adresse', () => {
 describe('confirmation de l’adresse e-mail', () => {
   it('réussit quand le fournisseur indique l’adresse confirmée', async () => {
     const { gateway, calls } = fakeAuthGateway({ reloadUser: ok(aUser({ emailVerified: true })) });
-    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+    expect(await createAuthUseCases({ gateway, sync: fakeSync() }).confirmEmailVerified()).toEqual({
       ok: true,
       value: aUser({ emailVerified: true }),
     });
@@ -147,7 +170,7 @@ describe('confirmation de l’adresse e-mail', () => {
 
   it('signale une adresse pas encore confirmée', async () => {
     const { gateway } = fakeAuthGateway({ reloadUser: ok(aUser({ emailVerified: false })) });
-    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+    expect(await createAuthUseCases({ gateway, sync: fakeSync() }).confirmEmailVerified()).toEqual({
       ok: false,
       error: { code: 'auth-email-not-verified' },
     });
@@ -155,7 +178,7 @@ describe('confirmation de l’adresse e-mail', () => {
 
   it('échoue sans utilisateur connecté', async () => {
     const { gateway } = fakeAuthGateway({ reloadUser: ok(null) });
-    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+    expect(await createAuthUseCases({ gateway, sync: fakeSync() }).confirmEmailVerified()).toEqual({
       ok: false,
       error: { code: 'auth-failed' },
     });
@@ -163,7 +186,7 @@ describe('confirmation de l’adresse e-mail', () => {
 
   it('fait remonter une erreur réseau', async () => {
     const { gateway } = fakeAuthGateway({ reloadUser: fail('auth-network') });
-    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+    expect(await createAuthUseCases({ gateway, sync: fakeSync() }).confirmEmailVerified()).toEqual({
       ok: false,
       error: { code: 'auth-network' },
     });
@@ -173,7 +196,7 @@ describe('confirmation de l’adresse e-mail', () => {
 describe('suppression du compte', () => {
   it('supprime après ré-authentification par mot de passe', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).deleteAccount({
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).deleteAccount({
       method: 'password',
       password: 'secret',
     });
@@ -185,14 +208,19 @@ describe('suppression du compte', () => {
 
   it('refuse un mot de passe vide sans appeler le fournisseur', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    const result = await createAuthUseCases({ gateway }).deleteAccount({ method: 'password', password: '' });
+    const result = await createAuthUseCases({ gateway, sync: fakeSync() }).deleteAccount({
+      method: 'password',
+      password: '',
+    });
     expect(result).toEqual({ ok: false, error: { code: 'auth-password-empty' } });
     expect(calls).toEqual([]);
   });
 
   it('supprime après ré-authentification Google', async () => {
     const { gateway, calls } = fakeAuthGateway();
-    expect(await createAuthUseCases({ gateway }).deleteAccount({ method: 'google' })).toEqual({
+    expect(
+      await createAuthUseCases({ gateway, sync: fakeSync() }).deleteAccount({ method: 'google' }),
+    ).toEqual({
       ok: true,
       value: undefined,
     });
@@ -202,7 +230,10 @@ describe('suppression du compte', () => {
   it('fait remonter un mauvais mot de passe', async () => {
     const { gateway } = fakeAuthGateway({ deleteAccount: fail('auth-invalid-credentials') });
     expect(
-      await createAuthUseCases({ gateway }).deleteAccount({ method: 'password', password: 'faux' }),
+      await createAuthUseCases({ gateway, sync: fakeSync() }).deleteAccount({
+        method: 'password',
+        password: 'faux',
+      }),
     ).toEqual({ ok: false, error: { code: 'auth-invalid-credentials' } });
   });
 });
