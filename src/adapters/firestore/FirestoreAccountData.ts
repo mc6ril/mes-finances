@@ -67,9 +67,9 @@ export class FirestoreAccountData implements AccountDataInterface {
       return;
     }
     const data = await getDocsFromServer(collection(ref, 'data'));
-    // Les données d'abord : les règles exigent que l'espace existe encore pour les effacer.
-    await this.#deleteAll(data.docs.map((item) => item.ref));
-    await this.#deleteAll([ref]);
+    // Données et espace dans le même lot (l'espace en dernier) : aucune écriture ne peut s'intercaler
+    // et laisser des données sans espace, que les règles empêcheraient ensuite d'effacer.
+    await this.#deleteAll([...data.docs.map((item) => item.ref), ref]);
   }
 
   async #deleteAll(refs: DocumentReference[]): Promise<void> {

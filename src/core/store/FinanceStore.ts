@@ -129,6 +129,8 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   #syncing = false;
   #unwatchRegistry: (() => void) | null = null;
   #unwatchDataset: (() => void) | null = null;
+  /** Espaces créés sur cet appareil, pas encore vus dans une liste reçue du serveur. */
+  #unconfirmed = new Map<string, Workspace>();
 
   constructor(
     createRepository: RepositoryFactory,
@@ -216,7 +218,12 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
 
   /** Liste modifiée ailleurs : si l'espace affiché a disparu (accès retiré), retour à l'espace principal. */
   async #onWorkspaces(received: Workspace[]): Promise<void> {
-    const workspaces = withMain(received);
+    received.forEach((item) => this.#unconfirmed.delete(item.id));
+    // Une liste calculée avant une création récente arrive parfois après : l'espace créé reste.
+    const pending = [...this.#unconfirmed.values()].filter(
+      (item) => !received.some((other) => other.id === item.id),
+    );
+    const workspaces = withMain([...received, ...pending]);
     const current = workspaces.find((item) => item.id === this.#state.workspace.id);
     if (current) {
       this.#set({ workspaces, workspace: current });
@@ -295,6 +302,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     this.#unwatchRegistry?.();
     this.#unwatchRegistry = null;
     this.#registryLoaded = false;
+    this.#unconfirmed.clear();
     void this.#repository.close();
     this.#repository = this.#createRepository(DEFAULT_WORKSPACE.id);
     this.#set(INITIAL_STATE);
@@ -484,6 +492,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     if (!created.ok) {
       return created;
     }
+    this.#unconfirmed.set(workspace.value.id, workspace.value);
     this.#set({ workspaces: withMain([...this.#state.workspaces, workspace.value]) });
     return this.switchWorkspace(workspace.value.id);
   }
@@ -531,6 +540,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   }
 
   async #destroy(workspaceId: string): Promise<Result<void>> {
+    this.#unconfirmed.delete(workspaceId);
     const repository = this.#createRepository(workspaceId);
     const destroyed = await repository.destroy();
     if (!destroyed.ok) {
@@ -590,6 +600,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
         if (!created.ok) {
           return created;
         }
+        this.#unconfirmed.set(entry.workspace.id, entry.workspace);
         workspaces = [...workspaces, entry.workspace];
       }
       const repository = this.#createRepository(entry.workspace.id);
