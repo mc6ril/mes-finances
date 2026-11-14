@@ -96,18 +96,57 @@ describe('traduction des erreurs Firebase', () => {
 });
 
 describe('suivi de la session', () => {
-  it('traduit l’utilisateur Firebase et se désabonne', () => {
+  const withToken = (verifiedClaim: boolean, patch: Partial<User> = {}) => {
+    const getIdToken = vi.fn().mockResolvedValue('jeton');
+    const getIdTokenResult = vi.fn().mockResolvedValue({ claims: { email_verified: verifiedClaim } });
+    return { user: firebaseUser({ ...patch, getIdToken, getIdTokenResult } as Partial<User>), getIdToken };
+  };
+
+  const emitting = (...users: (User | null)[]) => {
     const unsubscribe = vi.fn();
     vi.mocked(onAuthStateChanged).mockImplementation((_auth, next) => {
-      (next as (user: User | null) => void)(firebaseUser());
-      (next as (user: User | null) => void)(null);
+      users.forEach((user) => (next as (user: User | null) => void)(user));
       return unsubscribe;
     });
+    return unsubscribe;
+  };
+
+  it('traduit l’utilisateur Firebase, dans l’ordre, et se désabonne', async () => {
+    const unsubscribe = emitting(withToken(true).user, null);
     const listener = vi.fn();
     const stop = setup().gateway.onChange(listener);
-    expect(listener.mock.calls).toEqual([[expectedUser], [null]]);
+    await vi.waitFor(() => expect(listener.mock.calls).toEqual([[expectedUser], [null]]));
     stop();
     expect(unsubscribe).toHaveBeenCalled();
+  });
+
+  it('rafraîchit un jeton qui ne sait pas encore que l’adresse est confirmée (règles Firestore)', async () => {
+    const { user, getIdToken } = withToken(false);
+    emitting(user);
+    const listener = vi.fn();
+    setup().gateway.onChange(listener);
+    await vi.waitFor(() => expect(listener).toHaveBeenCalledWith(expectedUser));
+    expect(getIdToken).toHaveBeenCalledWith(true);
+  });
+
+  it('ne rafraîchit pas un jeton déjà à jour, ni pour une adresse non confirmée', async () => {
+    const fresh = withToken(true);
+    const unverified = withToken(false, { emailVerified: false });
+    emitting(fresh.user, unverified.user);
+    const listener = vi.fn();
+    setup().gateway.onChange(listener);
+    await vi.waitFor(() => expect(listener).toHaveBeenCalledTimes(2));
+    expect(fresh.getIdToken).not.toHaveBeenCalled();
+    expect(unverified.getIdToken).not.toHaveBeenCalled();
+  });
+
+  it('annonce quand même l’utilisateur si le rafraîchissement échoue (hors ligne)', async () => {
+    const { user, getIdToken } = withToken(false);
+    getIdToken.mockRejectedValue(firebaseError('auth/network-request-failed'));
+    emitting(user);
+    const listener = vi.fn();
+    setup().gateway.onChange(listener);
+    await vi.waitFor(() => expect(listener).toHaveBeenCalledWith(expectedUser));
   });
 });
 
