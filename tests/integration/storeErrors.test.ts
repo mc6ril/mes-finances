@@ -97,12 +97,12 @@ describe('erreurs du store', () => {
     await store.start();
     registry.failing = true;
     expect(await store.createWorkspace('Commun')).toEqual({ ok: false, error: { code: 'storage-full' } });
-    expect(store.getSnapshot().workspaces.map((workspace) => workspace.name)).toEqual(['Perso']);
+    expect(store.getSnapshot().workspaces.map((workspace) => workspace.name)).toEqual(['Mon espace']);
     expect(await store.renameWorkspace('perso', 'Jean D.')).toEqual({
       ok: false,
       error: { code: 'storage-full' },
     });
-    expect(store.getSnapshot().workspaces[0]?.name).toBe('Perso');
+    expect(store.getSnapshot().workspaces[0]?.name).toBe('Mon espace');
   });
 
   it('affiche l’échec du chargement de la liste des espaces', async () => {

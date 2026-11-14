@@ -83,7 +83,7 @@ src/
     recurring.ts        Opérations récurrentes
     backup.ts           Sauvegarde / restauration validée et versionnée
     seed.ts             Configuration initiale (vierge)
-    workspaces.ts       Espaces de suivi indépendants (Perso, Commun…)
+    workspaces.ts       Espaces de suivi indépendants (personnels ou communs)
     <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth, partage, sync)
     ports.ts            Ports transverses (lecture / enregistrement de fichiers, CSV, ids, horloge)
     auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur)
@@ -130,7 +130,7 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 
 ## Espaces de suivi
 
-Chaque espace (Perso, Commun…) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
+Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on ajoute) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
 
 - **Créer** un espace : Paramètres → Espaces de suivi.
 - **Espaces perso** : visibles et modifiables uniquement par leur propriétaire.
