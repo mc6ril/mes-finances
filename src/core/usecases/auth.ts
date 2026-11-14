@@ -7,13 +7,17 @@ import {
 } from '../auth/model';
 import { validateEmail, validateReauthentication, validateSignIn, validateSignUp } from '../auth/validation';
 import { fail, ok, type Result } from '../shared/errors';
-import type { AuthGatewayInterface } from '../auth/interface';
+import type { AccountDataInterface, AuthGatewayInterface } from '../auth/interface';
 import type { SyncGatewayInterface } from '../sync/interface';
 import { SIGN_OUT_FLUSH_MS } from '../sync/model';
 
-export type AuthPorts = { gateway: AuthGatewayInterface; sync: SyncGatewayInterface };
+export type AuthPorts = {
+  gateway: AuthGatewayInterface;
+  sync: SyncGatewayInterface;
+  accountData: AccountDataInterface;
+};
 
-export const createAuthUseCases = ({ gateway, sync }: AuthPorts) => {
+export const createAuthUseCases = ({ gateway, sync, accountData }: AuthPorts) => {
   const signUp = async (form: SignUpForm): Promise<Result<AuthUser>> => {
     const credentials = validateSignUp(form);
     if (!credentials.ok) {
@@ -74,12 +78,21 @@ export const createAuthUseCases = ({ gateway, sync }: AuthPorts) => {
     return needsEmailVerification(reloaded.value) ? fail('auth-email-not-verified') : ok(reloaded.value);
   };
 
+  /** Les données en ligne sont effacées avant le compte : si elles ne peuvent pas l'être, le compte reste. */
   const deleteAccount = async (reauthentication: Reauthentication): Promise<Result<void>> => {
     const valid = validateReauthentication(reauthentication);
     if (!valid.ok) {
       return valid;
     }
-    return gateway.deleteAccount(valid.value);
+    const reauthenticated = await gateway.reauthenticate(valid.value);
+    if (!reauthenticated.ok) {
+      return reauthenticated;
+    }
+    const erased = await accountData.erase();
+    if (!erased.ok) {
+      return erased;
+    }
+    return gateway.deleteAccount();
   };
 
   return {

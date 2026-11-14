@@ -248,12 +248,11 @@ describe('rechargement de l’utilisateur', () => {
   });
 });
 
-describe('suppression du compte', () => {
-  it('ré-authentifie avec le mot de passe puis supprime', async () => {
+describe('ré-authentification', () => {
+  it('vérifie le mot de passe du compte connecté', async () => {
     vi.mocked(reauthenticateWithCredential).mockResolvedValue({} as never);
-    vi.mocked(deleteUser).mockResolvedValue();
     const user = firebaseUser();
-    expect(await setup(user).gateway.deleteAccount({ method: 'password', password: 'secret' })).toEqual({
+    expect(await setup(user).gateway.reauthenticate({ method: 'password', password: 'secret' })).toEqual({
       ok: true,
       value: undefined,
     });
@@ -262,50 +261,70 @@ describe('suppression du compte', () => {
       email: 'jean.d@example.com',
       password: 'secret',
     });
-    expect(deleteUser).toHaveBeenCalledWith(user);
+    expect(deleteUser).not.toHaveBeenCalled();
   });
 
-  it('ré-authentifie avec Google puis supprime', async () => {
+  it('rouvre la fenêtre Google', async () => {
     vi.mocked(reauthenticateWithPopup).mockResolvedValue({} as never);
-    vi.mocked(deleteUser).mockResolvedValue();
     const user = firebaseUser();
-    expect(await setup(user).gateway.deleteAccount({ method: 'google' })).toEqual({
+    expect(await setup(user).gateway.reauthenticate({ method: 'google' })).toEqual({
       ok: true,
       value: undefined,
     });
     expect(reauthenticateWithPopup).toHaveBeenCalledWith(user, expect.anything());
-    expect(deleteUser).toHaveBeenCalledWith(user);
   });
 
-  it('ne supprime pas si le mot de passe est incorrect', async () => {
+  it('traduit un mot de passe incorrect', async () => {
     vi.mocked(reauthenticateWithCredential).mockRejectedValue(firebaseError('auth/invalid-credential'));
     expect(
-      await setup(firebaseUser()).gateway.deleteAccount({ method: 'password', password: 'faux' }),
-    ).toEqual({ ok: false, error: { code: 'auth-invalid-credentials' } });
-    expect(deleteUser).not.toHaveBeenCalled();
+      await setup(firebaseUser()).gateway.reauthenticate({ method: 'password', password: 'faux' }),
+    ).toEqual({
+      ok: false,
+      error: { code: 'auth-invalid-credentials' },
+    });
   });
 
   it('refuse un autre compte Google que celui connecté', async () => {
     vi.mocked(reauthenticateWithPopup).mockRejectedValue(firebaseError('auth/user-mismatch'));
-    expect(await setup(firebaseUser()).gateway.deleteAccount({ method: 'google' })).toEqual({
+    expect(await setup(firebaseUser()).gateway.reauthenticate({ method: 'google' })).toEqual({
       ok: false,
       error: { code: 'auth-user-mismatch' },
     });
-    expect(deleteUser).not.toHaveBeenCalled();
   });
 
-  it('échoue sans utilisateur connecté', async () => {
-    expect(await setup(null).gateway.deleteAccount({ method: 'google' })).toEqual({
+  it('échoue sans utilisateur connecté, ou par mot de passe pour un compte sans e-mail', async () => {
+    expect(await setup(null).gateway.reauthenticate({ method: 'google' })).toEqual({
       ok: false,
       error: { code: 'auth-failed' },
     });
-  });
-
-  it('échoue par mot de passe pour un compte sans e-mail', async () => {
     expect(
-      await setup(firebaseUser({ email: null })).gateway.deleteAccount({ method: 'password', password: 'x' }),
+      await setup(firebaseUser({ email: null })).gateway.reauthenticate({
+        method: 'password',
+        password: 'x',
+      }),
     ).toEqual({ ok: false, error: { code: 'auth-failed' } });
     expect(reauthenticateWithCredential).not.toHaveBeenCalled();
+  });
+});
+
+describe('suppression du compte', () => {
+  it('supprime le compte connecté', async () => {
+    vi.mocked(deleteUser).mockResolvedValue();
+    const user = firebaseUser();
+    expect(await setup(user).gateway.deleteAccount()).toEqual({ ok: true, value: undefined });
+    expect(deleteUser).toHaveBeenCalledWith(user);
+  });
+
+  it('demande une connexion récente si le fournisseur l’exige', async () => {
+    vi.mocked(deleteUser).mockRejectedValue(firebaseError('auth/requires-recent-login'));
+    expect(await setup(firebaseUser()).gateway.deleteAccount()).toEqual({
+      ok: false,
+      error: { code: 'auth-requires-recent-login' },
+    });
+  });
+
+  it('échoue sans utilisateur connecté', async () => {
+    expect(await setup(null).gateway.deleteAccount()).toEqual({ ok: false, error: { code: 'auth-failed' } });
   });
 });
 

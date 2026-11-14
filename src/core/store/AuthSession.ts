@@ -140,11 +140,15 @@ export class AuthSession implements AuthGatewayInterface {
     return reloaded.ok ? ok(undefined) : reloaded;
   }
 
-  async deleteAccount(reauthentication: Reauthentication): Promise<Result<void>> {
+  async reauthenticate(reauthentication: Reauthentication): Promise<Result<void>> {
+    return this.#gateway ? this.#gateway.reauthenticate(reauthentication) : notConfigured();
+  }
+
+  async deleteAccount(): Promise<Result<void>> {
     if (!this.#gateway) {
       return notConfigured();
     }
-    const deleted = await this.#gateway.deleteAccount(reauthentication);
+    const deleted = await this.#gateway.deleteAccount();
     if (deleted.ok) {
       this.#signedOut();
     }
