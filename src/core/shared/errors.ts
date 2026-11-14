@@ -18,6 +18,23 @@ export const APP_ERROR_CODES = [
   'invalid-date',
   'invalid-amount',
   'data-not-loaded',
+  'auth-not-configured',
+  'auth-name-empty',
+  'auth-email-invalid',
+  'auth-password-empty',
+  'auth-password-too-short',
+  'auth-password-mismatch',
+  'auth-invalid-credentials',
+  'auth-email-taken',
+  'auth-too-many-requests',
+  'auth-network',
+  'auth-cancelled',
+  'auth-popup-blocked',
+  'auth-other-provider',
+  'auth-user-disabled',
+  'auth-provider-disabled',
+  'auth-unauthorized-domain',
+  'auth-failed',
 ] as const;
 
 export type AppErrorCode = (typeof APP_ERROR_CODES)[number];

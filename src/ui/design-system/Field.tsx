@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cx } from './cx';
 
 const CONTROL =
@@ -24,8 +25,9 @@ export const Field = ({ label, children, hint, error, className }: FieldProps) =
 type InputProps = {
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'date' | 'number' | 'search' | 'month';
+  type?: 'text' | 'date' | 'number' | 'search' | 'month' | 'email' | 'password';
   placeholder?: string;
+  autoComplete?: string;
   className?: string;
   inputMode?: 'decimal' | 'numeric' | 'text';
   onBlur?: () => void;
@@ -45,11 +47,13 @@ export const Input = ({
   label,
   autoFocus,
   onKeyDown,
+  autoComplete,
 }: InputProps) => (
   <input
     type={type}
     value={value}
     placeholder={placeholder}
+    autoComplete={autoComplete}
     inputMode={inputMode}
     aria-label={label}
     autoFocus={autoFocus}
@@ -59,6 +63,47 @@ export const Input = ({
     className={cx(CONTROL, className)}
   />
 );
+
+type PasswordInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: 'current-password' | 'new-password';
+  placeholder?: string;
+  autoFocus?: boolean;
+};
+
+export const PasswordInput = ({
+  value,
+  onChange,
+  autoComplete,
+  placeholder,
+  autoFocus,
+}: PasswordInputProps) => {
+  const [visible, setVisible] = useState(false);
+  const Icon = visible ? EyeOff : Eye;
+  return (
+    <div className="relative">
+      <Input
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        autoFocus={autoFocus}
+        className="pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((current) => !current)}
+        aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+        title={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-stone-400 transition-colors hover:text-stone-700 focus:outline-hidden focus-visible:text-brand-600 dark:hover:text-stone-200"
+      >
+        <Icon className="h-4 w-4" aria-hidden />
+      </button>
+    </div>
+  );
+};
 
 export type SelectOption = { value: string; label: string };
 

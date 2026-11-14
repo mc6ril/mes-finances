@@ -1,3 +1,4 @@
+import { MIN_PASSWORD_LENGTH } from '@/core/auth/validation';
 import type { AppError, AppErrorCode } from '@/core/shared/errors';
 
 const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
@@ -26,6 +27,27 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'invalid-date': () => 'Date illisible',
   'invalid-amount': () => 'Montant illisible',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
+  'auth-not-configured': () =>
+    'La connexion n’est pas configurée : renseigne les variables VITE_FIREBASE_* (voir .env.example).',
+  'auth-name-empty': () => 'Indique ton prénom.',
+  'auth-email-invalid': () => 'Cette adresse e-mail n’est pas valide.',
+  'auth-password-empty': () => 'Saisis ton mot de passe.',
+  'auth-password-too-short': () =>
+    `Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`,
+  'auth-password-mismatch': () => 'Les deux mots de passe ne correspondent pas.',
+  'auth-invalid-credentials': () => 'E-mail ou mot de passe incorrect.',
+  'auth-email-taken': () => 'Un compte existe déjà avec cette adresse. Connecte-toi plutôt.',
+  'auth-too-many-requests': () => 'Trop de tentatives. Patiente quelques minutes avant de réessayer.',
+  'auth-network': () => 'Connexion Internet indisponible. Vérifie ton réseau puis réessaie.',
+  'auth-cancelled': () => 'La connexion a été annulée.',
+  'auth-popup-blocked': () =>
+    'Le navigateur a bloqué la fenêtre de connexion. Autorise les pop-ups puis réessaie.',
+  'auth-other-provider': () =>
+    'Un compte existe déjà avec cette adresse via une autre méthode. Connecte-toi avec celle-ci.',
+  'auth-user-disabled': () => 'Ce compte a été désactivé.',
+  'auth-provider-disabled': () => 'Cette méthode de connexion n’est pas activée sur le projet.',
+  'auth-unauthorized-domain': () => 'Ce domaine n’est pas autorisé pour la connexion.',
+  'auth-failed': () => 'La connexion a échoué. Réessaie dans un instant.',
 };
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
