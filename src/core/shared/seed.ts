@@ -87,79 +87,22 @@ export const DEFAULT_CATEGORIES: Category[] = [
 
 export const MAIN_ACCOUNT_ID = 'acc-courant';
 
+const currentAccount = (name: string, openingDate: IsoDate): Account => ({
+  id: MAIN_ACCOUNT_ID,
+  name,
+  kind: 'courant',
+  group: 'courant',
+  openingBalance: 0,
+  openingDate,
+  isJoint: false,
+  personalSharePercent: null,
+  archived: false,
+  color: '#1d5ff1',
+});
+
+/** Un espace neuf n'a que son compte courant : l'utilisateur ajoute lui-même ses autres comptes. */
 export const initialAccounts = (openingDate: IsoDate): Account[] => [
-  {
-    id: MAIN_ACCOUNT_ID,
-    name: 'Compte courant',
-    kind: 'courant',
-    group: 'courant',
-    openingBalance: 0,
-    openingDate,
-    isJoint: false,
-    personalSharePercent: null,
-    archived: false,
-    color: '#1d5ff1',
-  },
-  {
-    id: 'acc-ldds',
-    name: 'LDDS',
-    kind: 'livret',
-    group: 'securise',
-    openingBalance: 0,
-    openingDate,
-    isJoint: false,
-    personalSharePercent: null,
-    archived: false,
-    color: '#10b981',
-  },
-  {
-    id: 'acc-livret-a',
-    name: 'Livret A',
-    kind: 'livret',
-    group: 'securise',
-    openingBalance: 0,
-    openingDate,
-    isJoint: false,
-    personalSharePercent: null,
-    archived: false,
-    color: '#14b8a6',
-  },
-  {
-    id: 'acc-assurance-vie',
-    name: 'Assurance-vie',
-    kind: 'assurance-vie',
-    group: 'investissement',
-    openingBalance: 0,
-    openingDate,
-    isJoint: false,
-    personalSharePercent: null,
-    archived: false,
-    color: '#8b5cf6',
-  },
-  {
-    id: 'acc-trade-republic',
-    name: 'Trade Republic',
-    kind: 'bourse',
-    group: 'investissement',
-    openingBalance: 0,
-    openingDate,
-    isJoint: false,
-    personalSharePercent: null,
-    archived: false,
-    color: '#f59e0b',
-  },
-  {
-    id: 'acc-immo-commun',
-    name: 'Épargne immobilière commune',
-    kind: 'commun-immo',
-    group: 'securise',
-    openingBalance: 0,
-    openingDate,
-    isJoint: true,
-    personalSharePercent: null,
-    archived: false,
-    color: '#ec4899',
-  },
+  currentAccount('Compte courant', openingDate),
 ];
 
 export const initialSettings: Settings = {
@@ -204,29 +147,7 @@ export const COMMON_CATEGORIES: Category[] = [
   category('cat-divers', 'Divers', 'plaisir'),
 ];
 
-const savingsAccount = (id: string, name: string, color: string, openingDate: IsoDate): Account => ({
-  id,
-  name,
-  kind: 'livret',
-  group: 'securise',
-  openingBalance: 0,
-  openingDate,
-  isJoint: false,
-  personalSharePercent: null,
-  archived: false,
-  color,
-});
-
-const commonAccounts = (openingDate: IsoDate): Account[] => [
-  {
-    ...savingsAccount(MAIN_ACCOUNT_ID, 'Compte commun', '#1d5ff1', openingDate),
-    kind: 'courant',
-    group: 'courant',
-  },
-  savingsAccount('acc-ep-vacances', 'Épargne vacances', '#14b8a6', openingDate),
-  savingsAccount('acc-ep-projets', 'Épargne projets', '#8b5cf6', openingDate),
-  savingsAccount('acc-ep-immo', 'Épargne immobilière', '#ec4899', openingDate),
-];
+const commonAccounts = (openingDate: IsoDate): Account[] => [currentAccount('Compte commun', openingDate)];
 
 const commonSettings: Settings = {
   ...initialSettings,
@@ -263,7 +184,7 @@ export const createInitialDataset = (
         at: `${today}T00:00:00.000Z`,
         action: 'creation',
         entity: 'Configuration',
-        summary: 'Configuration initiale : comptes de départ.',
+        summary: 'Configuration initiale : compte courant.',
       },
     ],
   };
