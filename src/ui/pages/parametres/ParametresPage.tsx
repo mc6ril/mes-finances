@@ -56,6 +56,7 @@ import HouseholdSettings from './HouseholdSettings';
 import PreferenceRow from './SettingRow';
 import { DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
 import { errorMessage } from '@/ui/errorMessages';
+import AccountCard from './AccountCard';
 import FilePickerButton from './FilePickerButton';
 import WorkspacesCard from './WorkspacesCard';
 import ImportRulesCard from './ImportRulesCard';
@@ -813,6 +814,7 @@ const ParametresPage = () => (
     <CategoriesCard />
     <ImportRulesCard />
     <AuditCard />
+    <AccountCard />
   </div>
 );
 

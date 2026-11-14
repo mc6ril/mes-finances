@@ -17,6 +17,7 @@ import { AUTH_PATHS } from '@/ui/pages/auth/authParts';
 import ForgotPasswordPage from '@/ui/pages/auth/ForgotPasswordPage';
 import SignInPage from '@/ui/pages/auth/SignInPage';
 import SignUpPage from '@/ui/pages/auth/SignUpPage';
+import VerifyEmailPage from '@/ui/pages/auth/VerifyEmailPage';
 import BilanPage from '@/ui/pages/bilan/BilanPage';
 import BudgetPage from '@/ui/pages/budget/BudgetPage';
 import ComptePage from '@/ui/pages/compte/ComptePage';
@@ -99,6 +100,9 @@ const AuthGate = () => {
   }
   if (status === 'signed-out') {
     return <AuthRoutes />;
+  }
+  if (status === 'unverified') {
+    return <VerifyEmailPage />;
   }
   return <Gate />;
 };

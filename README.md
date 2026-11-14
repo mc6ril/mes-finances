@@ -47,6 +47,10 @@ npm run preview        # http://127.0.0.1:4173
 
 Sans ces variables, l'application affiche « Connexion indisponible ».
 
+Comportement :
+- Un compte créé par e-mail doit **confirmer son adresse** (lien reçu à l'inscription) avant d'accéder à l'application ; un compte Google est confirmé d'office.
+- **Paramètres → Mon compte** : déconnexion et suppression définitive du compte (mot de passe ou fenêtre Google redemandés). La suppression n'efface pas les données stockées dans le navigateur.
+
 ## Architecture (hexagonale)
 
 ```
@@ -67,8 +71,9 @@ src/
     <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth)
     ports.ts            Ports transverses (lecture / enregistrement de fichiers, CSV, ids, horloge)
     auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur)
-    store/AuthSession   Session observable (vérification, connecté, déconnecté)
-    usecases/auth       Inscription, connexion, Google, déconnexion, mot de passe oublié
+    store/AuthSession   Session observable (vérification, adresse à confirmer, connecté, déconnecté)
+    usecases/auth       Inscription, connexion, Google, déconnexion, mot de passe oublié,
+                        confirmation d'adresse, suppression du compte
   adapters/             Secondary adapters
     auth/               Firebase Authentication (erreurs traduites en codes auth-*)
     storage/            IndexedDB (une base par espace) et liste des espaces

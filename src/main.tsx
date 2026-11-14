@@ -12,6 +12,7 @@ void container.store.start();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     void container.store.refresh();
+    void container.session.refresh();
   }
 });
 

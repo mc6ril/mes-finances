@@ -1,6 +1,7 @@
 import {
   MIN_PASSWORD_LENGTH,
   normalizeEmail,
+  validateReauthentication,
   validateEmail,
   validateSignIn,
   validateSignUp,
@@ -91,5 +92,25 @@ describe('validation de l’inscription', () => {
       ok: true,
       value: { displayName: 'Camille', email: 'camille.d@example.com', password: 'motdepasse' },
     });
+  });
+});
+
+describe('validation de la ré-authentification', () => {
+  it('exige le mot de passe actuel', () => {
+    expect(validateReauthentication({ method: 'password', password: '' })).toEqual({
+      ok: false,
+      error: { code: 'auth-password-empty' },
+    });
+  });
+
+  it('accepte un mot de passe sans le modifier', () => {
+    expect(validateReauthentication({ method: 'password', password: ' secret ' })).toEqual({
+      ok: true,
+      value: { method: 'password', password: ' secret ' },
+    });
+  });
+
+  it('accepte Google sans saisie', () => {
+    expect(validateReauthentication({ method: 'google' })).toEqual({ ok: true, value: { method: 'google' } });
   });
 });

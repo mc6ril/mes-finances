@@ -1,4 +1,4 @@
-import { fail } from '@/core/shared/errors';
+import { fail, ok } from '@/core/shared/errors';
 import { createAuthUseCases } from '@/core/usecases/auth';
 import { aUser, fakeAuthGateway } from './fakeAuthGateway';
 
@@ -132,5 +132,77 @@ describe('vérification de l’adresse', () => {
       value: undefined,
     });
     expect(calls).toEqual([{ kind: 'sendEmailVerification' }]);
+  });
+});
+
+describe('confirmation de l’adresse e-mail', () => {
+  it('réussit quand le fournisseur indique l’adresse confirmée', async () => {
+    const { gateway, calls } = fakeAuthGateway({ reloadUser: ok(aUser({ emailVerified: true })) });
+    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+      ok: true,
+      value: aUser({ emailVerified: true }),
+    });
+    expect(calls).toEqual([{ kind: 'reloadUser' }]);
+  });
+
+  it('signale une adresse pas encore confirmée', async () => {
+    const { gateway } = fakeAuthGateway({ reloadUser: ok(aUser({ emailVerified: false })) });
+    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+      ok: false,
+      error: { code: 'auth-email-not-verified' },
+    });
+  });
+
+  it('échoue sans utilisateur connecté', async () => {
+    const { gateway } = fakeAuthGateway({ reloadUser: ok(null) });
+    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+      ok: false,
+      error: { code: 'auth-failed' },
+    });
+  });
+
+  it('fait remonter une erreur réseau', async () => {
+    const { gateway } = fakeAuthGateway({ reloadUser: fail('auth-network') });
+    expect(await createAuthUseCases({ gateway }).confirmEmailVerified()).toEqual({
+      ok: false,
+      error: { code: 'auth-network' },
+    });
+  });
+});
+
+describe('suppression du compte', () => {
+  it('supprime après ré-authentification par mot de passe', async () => {
+    const { gateway, calls } = fakeAuthGateway();
+    const result = await createAuthUseCases({ gateway }).deleteAccount({
+      method: 'password',
+      password: 'secret',
+    });
+    expect(result).toEqual({ ok: true, value: undefined });
+    expect(calls).toEqual([
+      { kind: 'deleteAccount', reauthentication: { method: 'password', password: 'secret' } },
+    ]);
+  });
+
+  it('refuse un mot de passe vide sans appeler le fournisseur', async () => {
+    const { gateway, calls } = fakeAuthGateway();
+    const result = await createAuthUseCases({ gateway }).deleteAccount({ method: 'password', password: '' });
+    expect(result).toEqual({ ok: false, error: { code: 'auth-password-empty' } });
+    expect(calls).toEqual([]);
+  });
+
+  it('supprime après ré-authentification Google', async () => {
+    const { gateway, calls } = fakeAuthGateway();
+    expect(await createAuthUseCases({ gateway }).deleteAccount({ method: 'google' })).toEqual({
+      ok: true,
+      value: undefined,
+    });
+    expect(calls).toEqual([{ kind: 'deleteAccount', reauthentication: { method: 'google' } }]);
+  });
+
+  it('fait remonter un mauvais mot de passe', async () => {
+    const { gateway } = fakeAuthGateway({ deleteAccount: fail('auth-invalid-credentials') });
+    expect(
+      await createAuthUseCases({ gateway }).deleteAccount({ method: 'password', password: 'faux' }),
+    ).toEqual({ ok: false, error: { code: 'auth-invalid-credentials' } });
   });
 });

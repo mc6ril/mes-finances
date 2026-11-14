@@ -34,6 +34,9 @@ export const APP_ERROR_CODES = [
   'auth-user-disabled',
   'auth-provider-disabled',
   'auth-unauthorized-domain',
+  'auth-email-not-verified',
+  'auth-requires-recent-login',
+  'auth-user-mismatch',
   'auth-failed',
 ] as const;
 

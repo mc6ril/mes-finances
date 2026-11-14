@@ -1,8 +1,13 @@
-import type { AuthUser, SignUpCredentials } from '@/core/auth/model';
-import { fail, type AppError, type Failure, type Result } from '@/core/shared/errors';
+import {
+  needsEmailVerification,
+  type AuthUser,
+  type Reauthentication,
+  type SignUpCredentials,
+} from '@/core/auth/model';
+import { fail, ok, type AppError, type Failure, type Result } from '@/core/shared/errors';
 import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
 
-export type AuthStatus = 'checking' | 'signed-in' | 'signed-out' | 'unavailable';
+export type AuthStatus = 'checking' | 'signed-in' | 'unverified' | 'signed-out' | 'unavailable';
 
 export type AuthState = { status: AuthStatus; user: AuthUser | null; error: AppError | null };
 
@@ -37,7 +42,11 @@ export class AuthSession implements AuthGatewayInterface {
   }
 
   #signedIn(user: AuthUser) {
-    this.#set({ status: 'signed-in', user, error: null });
+    this.#set({ status: needsEmailVerification(user) ? 'unverified' : 'signed-in', user, error: null });
+  }
+
+  #signedOut() {
+    this.#set({ status: 'signed-out', user: null, error: null });
   }
 
   start(): void {
@@ -52,7 +61,7 @@ export class AuthSession implements AuthGatewayInterface {
       if (user) {
         this.#signedIn(user);
       } else {
-        this.#set({ status: 'signed-out', user: null, error: null });
+        this.#signedOut();
       }
     });
   }
@@ -105,5 +114,40 @@ export class AuthSession implements AuthGatewayInterface {
 
   async sendEmailVerification(): Promise<Result<void>> {
     return this.#gateway ? this.#gateway.sendEmailVerification() : notConfigured();
+  }
+
+  async reloadUser(): Promise<Result<AuthUser | null>> {
+    if (!this.#gateway) {
+      return notConfigured();
+    }
+    const reloaded = await this.#gateway.reloadUser();
+    if (reloaded.ok) {
+      if (reloaded.value) {
+        this.#signedIn(reloaded.value);
+      } else {
+        this.#signedOut();
+      }
+    }
+    return reloaded;
+  }
+
+  /** Au retour sur l'onglet : relit le profil seulement si une confirmation d'adresse est attendue. */
+  async refresh(): Promise<Result<void>> {
+    if (this.#state.status !== 'unverified') {
+      return ok(undefined);
+    }
+    const reloaded = await this.reloadUser();
+    return reloaded.ok ? ok(undefined) : reloaded;
+  }
+
+  async deleteAccount(reauthentication: Reauthentication): Promise<Result<void>> {
+    if (!this.#gateway) {
+      return notConfigured();
+    }
+    const deleted = await this.#gateway.deleteAccount(reauthentication);
+    if (deleted.ok) {
+      this.#signedOut();
+    }
+    return deleted;
   }
 }
