@@ -10,7 +10,8 @@ export type AuthCall =
   | { kind: 'sendPasswordReset'; email: string }
   | { kind: 'sendEmailVerification' }
   | { kind: 'reloadUser' }
-  | { kind: 'deleteAccount'; reauthentication: Reauthentication };
+  | { kind: 'reauthenticate'; reauthentication: Reauthentication }
+  | { kind: 'deleteAccount' };
 
 export const aUser = (patch: Partial<AuthUser> = {}): AuthUser => ({
   id: 'user-1',
@@ -29,6 +30,7 @@ type Answers = Partial<{
   sendPasswordReset: Result<void>;
   sendEmailVerification: Result<void>;
   reloadUser: Result<AuthUser | null>;
+  reauthenticate: Result<void>;
   deleteAccount: Result<void>;
 }>;
 
@@ -69,8 +71,12 @@ export const fakeAuthGateway = (answers: Answers = {}) => {
       calls.push({ kind: 'reloadUser' });
       return answers.reloadUser ?? ok(aUser());
     },
-    deleteAccount: async (reauthentication) => {
-      calls.push({ kind: 'deleteAccount', reauthentication });
+    reauthenticate: async (reauthentication) => {
+      calls.push({ kind: 'reauthenticate', reauthentication });
+      return answers.reauthenticate ?? ok(undefined);
+    },
+    deleteAccount: async () => {
+      calls.push({ kind: 'deleteAccount' });
       return answers.deleteAccount ?? ok(undefined);
     },
   };

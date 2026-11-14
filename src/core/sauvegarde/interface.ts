@@ -5,5 +5,4 @@ import type { WorkspaceData } from './fullBackup';
 export interface WorkspaceDataSourceInterface {
   allWorkspaceData(): Promise<Result<WorkspaceData[]>>;
   workspaceData(workspaceId: string): Promise<Result<WorkspaceData | null>>;
-  markShared(workspaceId: string): Result<void>;
 }

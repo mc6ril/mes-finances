@@ -1,43 +1,35 @@
-import { Check, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { Check, LogOut, Pencil, Plus, Trash2, UserMinus, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
-import { useFileUseCases, useFinanceState, useFinanceStore } from '@/hooks/useFinance';
-import { useToast } from '@/hooks/useToast';
+import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import { formatDateFr } from '@/core/shared/format';
-import type { Dataset, WorkspaceKind } from '@/core/shared/model';
-import { DEFAULT_WORKSPACE, hasUnsentChanges, isShared, type Workspace } from '@/core/espaces/workspaces';
+import type { WorkspaceKind } from '@/core/shared/model';
+import { canDelete, canInvite, type Workspace } from '@/core/espaces/workspaces';
+import { useSharingUseCases } from '@/hooks/useSharing';
 import Badge from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
 import Card from '@/ui/design-system/Card';
 import { Input, Select } from '@/ui/design-system/Field';
 import { ConfirmDialog } from '@/ui/design-system/Modal';
 import Text from '@/ui/design-system/Text';
-import { errorMessage } from '@/ui/errorMessages';
-import FilePickerButton from './FilePickerButton';
-import ImportWorkspaceModal from './ImportWorkspaceModal';
+import InviteModal from './InviteModal';
 
-type PendingImport = { dataset: Dataset; workspaceName: string | null };
+type SharingAction = { kind: 'invite' | 'revoke' | 'leave'; workspace: Workspace };
 
 type WorkspaceRowProps = {
   workspace: Workspace;
   isActive: boolean;
   onDelete: (workspace: Workspace) => void;
+  onSharing: (action: SharingAction) => void;
 };
 
-const dayOf = (date: string): string => formatDateFr(date.slice(0, 10));
-
-const SharingDates = ({ workspace }: { workspace: Workspace }) => {
-  const parts = [
-    workspace.importedAt ? `reçu le ${dayOf(workspace.importedAt)}` : null,
-    workspace.sharedAt ? `envoyé le ${dayOf(workspace.sharedAt)}` : null,
-  ].filter(Boolean);
-  if (parts.length === 0) {
-    return null;
+const sharingLabel = (workspace: Workspace): string => {
+  if (workspace.role === 'guest') {
+    return 'Commun · invité';
   }
-  return <Text variant="small">{`Dernier fichier ${parts.join(' · ')}`}</Text>;
+  return workspace.shared ? 'Commun · partagé' : 'Commun';
 };
 
-const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
+const WorkspaceRow = ({ workspace, isActive, onDelete, onSharing }: WorkspaceRowProps) => {
   const store = useFinanceStore();
   const report = useReport();
   const [draft, setDraft] = useState<string | null>(null);
@@ -70,13 +62,12 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
           <div className="flex flex-wrap items-center gap-2">
             <Text variant="strong">{workspace.name}</Text>
             {isActive && <Badge tone="info">Affiché</Badge>}
-            {isShared(workspace) && (
+            {workspace.kind === 'commun' && (
               <Badge tone="neutral">
                 <Users className="mr-1 inline h-3 w-3" aria-hidden />
-                Partagé
+                {sharingLabel(workspace)}
               </Badge>
             )}
-            {hasUnsentChanges(workspace) && <Badge tone="warning">Modifications non envoyées</Badge>}
           </div>
         ) : (
           <Input
@@ -89,7 +80,6 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
             className="h-9 max-w-xs"
           />
         )}
-        <SharingDates workspace={workspace} />
       </div>
       <div className="flex items-center gap-1">
         {!isActive && draft === null && (
@@ -114,7 +104,34 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
             onClick={() => void saveName()}
           />
         )}
-        {workspace.id !== DEFAULT_WORKSPACE.id && (
+        {draft === null && canInvite(workspace) && !workspace.shared && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={UserPlus}
+            label={`Inviter dans ${workspace.name}`}
+            onClick={() => onSharing({ kind: 'invite', workspace })}
+          />
+        )}
+        {draft === null && canInvite(workspace) && workspace.shared && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={UserMinus}
+            label={`Retirer l’accès à ${workspace.name}`}
+            onClick={() => onSharing({ kind: 'revoke', workspace })}
+          />
+        )}
+        {draft === null && workspace.role === 'guest' && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={LogOut}
+            label={`Quitter ${workspace.name}`}
+            onClick={() => onSharing({ kind: 'leave', workspace })}
+          />
+        )}
+        {canDelete(workspace) && (
           <Button
             size="sm"
             variant="ghost"
@@ -129,15 +146,14 @@ const WorkspaceRow = ({ workspace, isActive, onDelete }: WorkspaceRowProps) => {
 };
 
 const WorkspacesCard = () => {
-  const files = useFileUseCases();
   const { workspaces, workspace: active } = useFinanceState();
   const store = useFinanceStore();
   const report = useReport();
-  const { notify } = useToast();
   const [newName, setNewName] = useState('');
   const [newKind, setNewKind] = useState<WorkspaceKind>('perso');
-  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [toDelete, setToDelete] = useState<Workspace | null>(null);
+  const [sharingAction, setSharingAction] = useState<SharingAction | null>(null);
+  const sharing = useSharingUseCases();
 
   const create = async () => {
     if (await report(store.createWorkspace(newName, newKind), 'Espace créé')) {
@@ -146,26 +162,10 @@ const WorkspacesCard = () => {
     }
   };
 
-  const onFile = async (file: File) => {
-    const result = await files.readBackupFile(file);
-    if (!result.ok) {
-      notify(errorMessage(result.error), 'error');
-      return;
-    }
-    if (result.value.kind === 'complete') {
-      notify(
-        'Ce fichier est une sauvegarde complète de tous les espaces : utilise « Restaurer » dans Sauvegardes.',
-        'error',
-      );
-      return;
-    }
-    setPendingImport({ dataset: result.value.dataset, workspaceName: result.value.workspaceName });
-  };
-
   return (
     <Card
       title="Espaces de suivi"
-      subtitle="Chaque espace est indépendant : comptes, catégories, budgets et réglages propres. Un espace partagé (par exemple le compte commun) passe de l’un à l’autre : celui qui fait les comptes l’exporte et l’envoie, l’autre l’importe."
+      subtitle="Chaque espace est indépendant : comptes, catégories, budgets et réglages propres. Un espace commun peut être partagé avec une seule personne, sur invitation."
     >
       <ul className="flex flex-col gap-2">
         {workspaces.map((workspace) => (
@@ -174,6 +174,7 @@ const WorkspacesCard = () => {
             workspace={workspace}
             isActive={workspace.id === active.id}
             onDelete={setToDelete}
+            onSharing={setSharingAction}
           />
         ))}
       </ul>
@@ -200,26 +201,38 @@ const WorkspacesCard = () => {
         <Button icon={Plus} onClick={() => void create()} disabled={!newName.trim()}>
           Créer
         </Button>
-        <FilePickerButton label="Importer un espace" onFile={(file) => void onFile(file)} />
       </div>
-      {pendingImport && (
-        <ImportWorkspaceModal
-          dataset={pendingImport.dataset}
-          workspaceName={pendingImport.workspaceName}
-          onCancel={() => setPendingImport(null)}
-          onConfirm={(target) => {
-            void report(
-              store.importWorkspace(pendingImport.dataset, target),
-              target.kind === 'new' ? 'Espace importé' : 'Espace mis à jour',
-            );
-            setPendingImport(null);
+      {sharingAction?.kind === 'invite' && (
+        <InviteModal workspace={sharingAction.workspace} onClose={() => setSharingAction(null)} />
+      )}
+      {sharingAction?.kind === 'revoke' && (
+        <ConfirmDialog
+          title={`Retirer l’accès à « ${sharingAction.workspace.name} » ?`}
+          message="La personne invitée ne verra plus cet espace. Ses données restent dans l’espace, qui reste le tien. Tu pourras l’inviter de nouveau avec un nouveau lien."
+          confirmLabel="Retirer l’accès"
+          onCancel={() => setSharingAction(null)}
+          onConfirm={() => {
+            void report(sharing.revoke(sharingAction.workspace), 'Accès retiré');
+            setSharingAction(null);
+          }}
+        />
+      )}
+      {sharingAction?.kind === 'leave' && (
+        <ConfirmDialog
+          title={`Quitter « ${sharingAction.workspace.name} » ?`}
+          message="Tu ne verras plus cet espace commun ; il reste à son propriétaire. Pour y revenir, il faudra une nouvelle invitation."
+          confirmLabel="Quitter"
+          onCancel={() => setSharingAction(null)}
+          onConfirm={() => {
+            void report(sharing.leave(sharingAction.workspace), 'Espace quitté');
+            setSharingAction(null);
           }}
         />
       )}
       {toDelete && (
         <ConfirmDialog
           title={`Supprimer l’espace « ${toDelete.name} » ?`}
-          message="Toutes ses données (comptes, opérations, budgets…) seront effacées de ce navigateur. Tes autres espaces ne sont pas touchés. Exporte d’abord une sauvegarde si tu veux pouvoir le retrouver."
+          message="Toutes ses données (comptes, opérations, budgets…) seront effacées, pour toi comme pour la personne invitée. Tes autres espaces ne sont pas touchés. Exporte d’abord une sauvegarde si tu veux pouvoir le retrouver."
           confirmLabel="Supprimer"
           onCancel={() => setToDelete(null)}
           onConfirm={() => {

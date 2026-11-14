@@ -120,8 +120,8 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
         <div className="flex flex-col gap-4">
           <Text variant="muted">
             Dans l’application Trade Republic : Profil → Activité / Documents → Exporter les transactions
-            (CSV). Le fichier est lu uniquement dans ton navigateur : rien n’est envoyé sur Internet, et ni
-            nom ni IBAN ne sont conservés.
+            (CSV). Le fichier est lu dans ton navigateur : seuls les mouvements importés sont enregistrés dans
+            ton espace, ni nom ni IBAN ne sont conservés.
           </Text>
           <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-200 px-6 py-10 text-center hover:border-brand-400 dark:border-stone-700">
             <FileUp className="h-6 w-6 text-brand-600" aria-hidden />

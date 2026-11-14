@@ -51,6 +51,21 @@ export const authErrorCode = (error: unknown): AppErrorCode => {
   return (typeof code === 'string' && ERROR_CODES[code]) || 'auth-failed';
 };
 
+const withFreshClaims = async (user: User): Promise<User> => {
+  if (!user.emailVerified) {
+    return user;
+  }
+  try {
+    const token = await user.getIdTokenResult();
+    if (token.claims.email_verified !== true) {
+      await user.getIdToken(true);
+    }
+  } catch {
+    // Hors ligne : la session reste ouverte, le jeton sera rafraîchi au retour du réseau.
+  }
+  return user;
+};
+
 const toAuthUser = (user: User): AuthUser => ({
   id: user.uid,
   email: user.email,
@@ -80,8 +95,16 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
     this.#auth = auth;
   }
 
+  /**
+   * Annonce chaque changement de session, dans l'ordre. Un jeton émis avant la confirmation de
+   * l'adresse la croit non confirmée pendant jusqu'à une heure (les règles Firestore refuseraient
+   * tout) : il est rafraîchi avant d'annoncer un utilisateur confirmé.
+   */
   onChange(listener: AuthListener): () => void {
-    return onAuthStateChanged(this.#auth, (user) => listener(user ? toAuthUser(user) : null));
+    let queue = Promise.resolve();
+    return onAuthStateChanged(this.#auth, (user) => {
+      queue = queue.then(async () => listener(user ? toAuthUser(await withFreshClaims(user)) : null));
+    });
   }
 
   async signUp({ displayName, email, password }: SignUpCredentials): Promise<Result<AuthUser>> {
@@ -139,7 +162,7 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
     return reloaded.ok ? ok(toAuthUser(user)) : reloaded;
   }
 
-  async deleteAccount(reauthentication: Reauthentication): Promise<Result<void>> {
+  async reauthenticate(reauthentication: Reauthentication): Promise<Result<void>> {
     const user = this.#auth.currentUser;
     if (!user) {
       return fail('auth-failed');
@@ -157,7 +180,14 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
       } else {
         await reauthenticateWithPopup(user, googleProvider());
       }
-      await deleteUser(user);
     });
+  }
+
+  async deleteAccount(): Promise<Result<void>> {
+    const user = this.#auth.currentUser;
+    if (!user) {
+      return fail('auth-failed');
+    }
+    return attempt(() => deleteUser(user));
   }
 }

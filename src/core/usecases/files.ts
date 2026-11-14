@@ -1,4 +1,3 @@
-import { createBackup } from '../sauvegarde/backup';
 import { parseBrokerExport, type BrokerExport } from '../patrimoine/brokerImport';
 import { transactionsToCsv } from '../comptes/csvImport';
 import { todayIso } from '../shared/dates';
@@ -12,7 +11,7 @@ import type {
   UserFile,
 } from '../shared/ports';
 import type { WorkspaceDataSourceInterface } from '../sauvegarde/interface';
-import { workspaceFileSlug, type Workspace } from '../espaces/workspaces';
+import { workspaceFileSlug } from '../espaces/workspaces';
 
 export type FilePorts = {
   reader: TextFileReaderInterface;
@@ -88,30 +87,6 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces }: FilePorts
     return ok(entries.value.length);
   };
 
-  const shareWorkspace = async (workspaceId: string, now: Date): Promise<Result<Workspace>> => {
-    const entry = await workspaces.workspaceData(workspaceId);
-    if (!entry.ok) {
-      return entry;
-    }
-    if (!entry.value) {
-      return fail('workspace-not-found');
-    }
-    const { workspace, dataset } = entry.value;
-    const saved = saver.save({
-      name: `mes-finances-${workspaceFileSlug(workspace.name)}-${todayIso(now)}.json`,
-      content: toJson(createBackup(dataset, now.toISOString(), workspace.name)),
-      mimeType: JSON_TYPE,
-    });
-    if (!saved.ok) {
-      return saved;
-    }
-    const marked = workspaces.markShared(workspace.id);
-    if (!marked.ok) {
-      return marked;
-    }
-    return ok(workspace);
-  };
-
   const exportOperationsCsv = (operations: OperationsExport): Result<void> =>
     saver.save({
       name: `mes-finances-${workspaceFileSlug(operations.fileLabel)}-operations-${operations.period}.csv`,
@@ -124,7 +99,6 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces }: FilePorts
     readBackupFile,
     readBrokerExport,
     saveFullBackup,
-    shareWorkspace,
     exportOperationsCsv,
   };
 };

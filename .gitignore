@@ -7,3 +7,6 @@ tsconfig.tsbuildinfo
 
 # Sauvegardes personnelles (données réelles)
 private/
+firebase-debug.log
+firestore-debug.log
+.firebase/

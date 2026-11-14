@@ -22,8 +22,19 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'workspace-name-empty': () => 'Donne un nom à l’espace.',
   'workspace-name-taken': () => 'Un espace porte déjà ce nom.',
   'workspace-not-found': () => 'Espace introuvable.',
-  'workspace-main-protected': () =>
-    'L’espace principal ne peut être ni supprimé ni remplacé par un import : utilise « Restaurer ».',
+  'workspace-main-protected': () => 'L’espace principal ne peut pas être supprimé.',
+  'workspace-not-owner': () => 'Seul le propriétaire de l’espace peut faire cette action.',
+  'workspace-already-shared': () =>
+    'Cet espace est déjà partagé. Retire l’accès de la personne invitée avant d’inviter quelqu’un d’autre.',
+  'workspace-not-shared': () => 'Cet espace n’est partagé avec personne.',
+  'workspace-owner-cannot-leave': () =>
+    'Tu es propriétaire de cet espace : retire l’accès de la personne invitée ou supprime l’espace.',
+  'invitation-not-found': () => 'Ce lien d’invitation n’existe pas ou a été annulé.',
+  'invitation-expired': () => 'Ce lien d’invitation a expiré. Demande-en un nouveau.',
+  'invitation-used': () => 'Ce lien d’invitation a déjà servi ou n’est plus valable. Demande-en un nouveau.',
+  'invitation-own-workspace': () => 'Ce lien invite dans un espace qui t’appartient déjà.',
+  'workspace-schema-too-recent': () =>
+    'Cet espace a été modifié avec une version plus récente de l’application. Recharge la page pour la mettre à jour.',
   'invalid-date': () => 'Date illisible',
   'invalid-amount': () => 'Montant illisible',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
@@ -52,6 +63,19 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'auth-requires-recent-login': () => 'Par sécurité, reconnecte-toi avant de faire cette action.',
   'auth-user-mismatch': () => 'Ce n’est pas le compte Google connecté. Choisis le même compte.',
   'auth-failed': () => 'La connexion a échoué. Réessaie dans un instant.',
+  'sync-offline': () =>
+    'Connexion Internet indisponible et données pas encore présentes sur cet appareil. Réessaie une fois en ligne.',
+  'sync-permission-denied': () =>
+    'Accès refusé à ces données : l’espace n’est peut-être plus partagé avec toi.',
+  'sync-quota-exceeded': () =>
+    'Le quota gratuit quotidien de la base en ligne est atteint. Les modifications seront envoyées plus tard.',
+  'sync-document-too-large': () =>
+    'Ces données sont trop volumineuses pour être enregistrées en ligne. Exporte une sauvegarde complète.',
+  'sync-pending-writes': () =>
+    'Des modifications ne sont pas encore envoyées (hors ligne ?). Reconnecte-toi à Internet avant de te déconnecter.',
+  'sync-local-data-not-cleared': () =>
+    'Déconnexion faite, mais les données de cet appareil n’ont pas pu être effacées : ferme tous les onglets de l’application puis recharge la page.',
+  'sync-failed': () => 'L’enregistrement en ligne a échoué. Réessaie dans un instant.',
 };
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);

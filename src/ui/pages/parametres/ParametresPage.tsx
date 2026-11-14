@@ -10,7 +10,6 @@ import {
   Plus,
   Receipt,
   RotateCcw,
-  Share2,
   SlidersHorizontal,
   ShieldCheck,
   ShoppingBag,
@@ -551,7 +550,7 @@ type PendingRestore =
 const restoreMessage = (pending: PendingRestore, workspaceName: string): string => {
   if (pending.kind === 'complete') {
     const names = pending.entries.map((entry) => `« ${entry.workspace.name} »`).join(', ');
-    return `Tous les espaces actuels seront remplacés par ceux de la sauvegarde : ${names}. Les espaces absents du fichier seront supprimés de ce navigateur.`;
+    return `Tous les espaces actuels seront remplacés par ceux de la sauvegarde : ${names}. Tes espaces absents du fichier seront supprimés ; les espaces communs où tu es invité ne sont pas touchés.`;
   }
   return `Les données de l’espace « ${workspaceName} » seront remplacées par le fichier (${pending.dataset.transactions.length} opérations, ${pending.dataset.accounts.length} comptes). Tes autres espaces ne sont pas touchés.`;
 };
@@ -601,8 +600,6 @@ const BackupCard = () => {
     }
     setPendingSettings(incoming);
   };
-  const [selectedSharedId, setSharedId] = useState(workspace.id);
-  const sharedId = workspaces.some((item) => item.id === selectedSharedId) ? selectedSharedId : workspace.id;
 
   const exportAll = async () => {
     const saved = await files.saveFullBackup(workspace.id, new Date());
@@ -611,15 +608,6 @@ const BackupCard = () => {
       return;
     }
     notify(`Sauvegarde complète exportée (${saved.value} espace${saved.value > 1 ? 's' : ''})`);
-  };
-
-  const exportOne = async () => {
-    const shared = await files.shareWorkspace(sharedId, new Date());
-    if (!shared.ok) {
-      notify(errorMessage(shared.error), 'error');
-      return;
-    }
-    notify(`Espace « ${shared.value.name} » exporté`);
   };
 
   const exportOperations = () => {
@@ -659,13 +647,13 @@ const BackupCard = () => {
   return (
     <Card
       title="Sauvegardes"
-      subtitle="Les données restent dans ce navigateur : une sauvegarde complète régulière est ta seule copie de sécurité."
+      subtitle="Tes données sont enregistrées en ligne et synchronisées entre tes appareils. La base gratuite n’a pas de sauvegarde automatique : exporte régulièrement une sauvegarde complète."
     >
       <ul className="divide-y divide-stone-100 dark:divide-stone-800">
         <SettingRow
           icon={Archive}
           title="Sauvegarde complète"
-          description={`Tous les espaces, importés compris : ${workspaces.map((item) => item.name).join(', ')}`}
+          description={`Tous tes espaces : ${workspaces.map((item) => item.name).join(', ')}`}
         >
           <Button
             size="sm"
@@ -674,26 +662,6 @@ const BackupCard = () => {
             label="Tout sauvegarder"
             className="w-8 px-0"
             onClick={() => void exportAll()}
-          />
-        </SettingRow>
-        <SettingRow
-          icon={Share2}
-          title="Partager un espace"
-          description="Un seul espace dans le fichier, par exemple le compte commun"
-        >
-          <Select
-            value={sharedId}
-            onChange={setSharedId}
-            label="Espace à exporter"
-            className="h-8 w-40 text-xs"
-            options={workspaces.map((item) => ({ value: item.id, label: item.name }))}
-          />
-          <Button
-            size="sm"
-            icon={Download}
-            label="Exporter cet espace"
-            className="w-8 px-0"
-            onClick={() => void exportOne()}
           />
         </SettingRow>
         <SettingRow
@@ -735,7 +703,7 @@ const BackupCard = () => {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3 dark:border-stone-800">
         <Text variant="caption" className="flex items-center gap-1">
           <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
-          Aucune donnée transmise à un serveur · aucune connexion bancaire
+          Données visibles par toi seul (et la personne invitée pour un commun) · aucune connexion bancaire
         </Text>
         <Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => setConfirmReset(true)}>
           Réinitialiser « {workspace.name} »

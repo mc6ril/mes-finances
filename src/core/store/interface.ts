@@ -3,9 +3,13 @@ import type { Result } from '../shared/errors';
 
 export type CollectionItem<C extends CollectionName> = Dataset[C][number];
 
-/** Persistance d'un espace de suivi (une base par espace). */
+export type DatasetListener = (dataset: Dataset) => void;
+
+/** Persistance d'un espace de suivi. */
 export interface FinanceRepositoryInterface {
   load(): Promise<Result<Dataset | null>>;
+  /** Données modifiées ailleurs (autre appareil, autre membre) ; renvoie de quoi arrêter l'écoute. */
+  watch(listener: DatasetListener): () => void;
   saveSettings(settings: Settings): Promise<Result<void>>;
   put<C extends CollectionName>(collection: C, items: CollectionItem<C>[]): Promise<Result<void>>;
   remove(collection: CollectionName, keys: string[]): Promise<Result<void>>;
