@@ -708,7 +708,7 @@ const ComptePage = () => {
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
-        title="Compte courant"
+        title="Opérations"
         description={`Opérations de ${monthLabel(month)} · suivi depuis le ${formatDateFr(account.openingDate)}`}
         actions={
           <>

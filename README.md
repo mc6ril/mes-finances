@@ -30,14 +30,14 @@ npm run preview        # http://127.0.0.1:4173
 
 ## Commandes
 
-| Commande            | Rôle                                       |
-| ------------------- | ------------------------------------------ |
-| `npm run dev`       | Serveur de développement                   |
-| `npm test`          | Tests (Vitest), sans émulateur             |
-| `npm run test:emulator` | Règles Firestore et adapter sur l'émulateur (Java 21 requis) |
-| `npm run typecheck` | Vérification TypeScript                    |
-| `npm run build`     | Build de production dans `dist/`           |
-| `npm run format -- <fichiers>` | Prettier sur les fichiers modifiés |
+| Commande                       | Rôle                                                         |
+| ------------------------------ | ------------------------------------------------------------ |
+| `npm run dev`                  | Serveur de développement                                     |
+| `npm test`                     | Tests (Vitest), sans émulateur                               |
+| `npm run test:emulator`        | Règles Firestore et adapter sur l'émulateur (Java 21 requis) |
+| `npm run typecheck`            | Vérification TypeScript                                      |
+| `npm run build`                | Build de production dans `dist/`                             |
+| `npm run format -- <fichiers>` | Prettier sur les fichiers modifiés                           |
 
 ## Connexion (Firebase Authentication)
 
@@ -63,6 +63,7 @@ Modèle (voir `firestore.rules`, testées dans `tests/emulator/firestoreRules.te
 Tests sur l'émulateur : `npm run test:emulator` (Java 21 : `brew install openjdk@21`, puis `JAVA_HOME=/opt/homebrew/opt/openjdk@21`). Si `private/mes-finances-sauvegarde-complete-*.json` existe (ou `FINANCES_BACKUP=chemin`), la restauration de cette vraie sauvegarde est vérifiée sans perte, localement, en ne comparant que des empreintes.
 
 Comportement :
+
 - Un compte créé par e-mail doit **confirmer son adresse** (lien reçu à l'inscription) avant d'accéder à l'application ; un compte Google est confirmé d'office.
 - **Déconnexion** : attend l'envoi des modifications faites hors ligne, puis efface tout ce que l'application a laissé sur l'appareil (cache Firestore, anciennes bases IndexedDB, préférences).
 - **Suppression du compte** (Paramètres → Mon compte, mot de passe ou fenêtre Google redemandés) : supprime d'abord les données en ligne (espaces perso, communs sans invité, invitations), transfère à l'invité un espace commun partagé, retire l'utilisateur des communs où il est invité ; puis le compte. Sans réseau, rien n'est supprimé.
@@ -124,7 +125,7 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 - Une dépense **remboursée** se saisit comme dépense positive dans la même catégorie : elle réduit la catégorie.
 - Patrimoine : on distingue **sommes versées**, **intérêts**, **frais**, **plus/moins-values** et **valeur totale**. Les valorisations boursières n'entrent jamais dans les revenus.
 - Le compte commun immobilier est affiché à part ; il n'entre dans le patrimoine personnel qu'une fois la quote-part renseignée.
-- Catégories à **budget annuel** (par défaut Voyages et Cadeaux ; réglable dans Paramètres → Catégories) : suivies sur l'année, hors du rythme mensuel du budget plaisir. Leur budget annuel ÷ 12 est compté comme provision dans les dépenses prévues.
+- Catégories à **budget annuel** (par défaut Voyages et Cadeaux ; réglable dans Paramètres → Catégories) : suivies sur l'année, hors du budget mensuel des dépenses personnelles. Leur budget annuel ÷ 12 est compté comme provision dans les dépenses prévues.
 - **Épargne** : chaque compte d'épargne (livret, assurance-vie, placement…) a sa catégorie du même nom, créée, renommée et archivée avec lui. Un espace neuf n'en a donc aucune : le budget n'affiche que les comptes réellement suivis.
 - Un espace neuf démarre avec un compte courant et quelques catégories courantes, à compléter. Le tableau de bord n'affiche que ce qui a été saisi (revenus, charges, épargne…) ; tant qu'aucune opération n'existe, il présente les premiers pas.
 

@@ -730,7 +730,7 @@ const AuditCard = () => {
 
 const ParametresPage = () => (
   <div className="flex flex-col gap-5">
-    <PageHeader title="Paramètres et sauvegardes" />
+    <PageHeader title="Paramètres" />
     <WorkspacesCard />
     <ProfileCard />
     <BackupCard />

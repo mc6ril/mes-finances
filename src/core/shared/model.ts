@@ -91,7 +91,7 @@ export type YearBudget = {
   planned: Record<string, Cents>;
 };
 
-/** Note libre attachée à un mois, visible sur Budget et Compte courant. */
+/** Note libre attachée à un mois, visible sur Budget et Opérations. */
 export type MonthNote = {
   month: MonthKey;
   text: string;

@@ -1,4 +1,4 @@
-import { ArrowRight, History, Repeat } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
@@ -8,8 +8,8 @@ import { useReport } from '@/hooks/useReport';
 import { groupLabel } from '@/ui/constants';
 import type { BudgetLine, LineStatus } from '@/core/budget/budget';
 import { annualActualInMonth, groupTotal, provisionPerMonth } from '@/core/budget/budget';
-import { monthsOfYear, parseMonthKey } from '@/core/shared/dates';
-import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
+import { parseMonthKey } from '@/core/shared/dates';
+import { capitalize, monthLabel } from '@/core/shared/format';
 import type { CategoryGroup, Cents, MonthKey } from '@/core/shared/model';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
@@ -19,7 +19,6 @@ import { Checkbox } from '@/ui/design-system/Field';
 import MoneyInput from '@/ui/design-system/MoneyInput';
 import ProgressBar, { type ProgressTone } from '@/ui/design-system/ProgressBar';
 import Text from '@/ui/design-system/Text';
-import { cx } from '@/ui/design-system/cx';
 import PageHeader from '@/ui/layout/PageHeader';
 import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
 import CommonMonthCard from './commun/CommonMonthCard';
@@ -43,39 +42,6 @@ const progressTone = (line: BudgetLine): ProgressTone => {
     return 'brand';
   }
   return STATUS_TONE[line.status];
-};
-
-type MonthTabsProps = { month: string; onSelect: (month: string) => void };
-
-const MonthTabs = ({ month, onSelect }: MonthTabsProps) => {
-  const year = parseMonthKey(month).year;
-  return (
-    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <div
-        className="inline-flex gap-1 rounded-xl bg-white p-1 shadow-card dark:bg-[#1c1c1b]"
-        role="tablist"
-        aria-label={`Mois de ${year}`}
-      >
-        {monthsOfYear(year).map((key) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={key === month}
-            onClick={() => onSelect(key)}
-            className={cx(
-              'rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors',
-              key === month
-                ? 'bg-brand-600 text-white'
-                : 'text-stone-500 hover:bg-stone-100 dark:text-stone-400 dark:hover:bg-stone-800',
-            )}
-          >
-            {monthShortLabel(key)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 };
 
 type GapProps = { line: BudgetLine };
@@ -339,7 +305,7 @@ const BudgetOrigin = ({ month, origin, isDefined }: BudgetOriginProps) => {
 
 const BudgetPage = () => {
   const dataset = useDataset();
-  const { month, setMonth } = usePeriod();
+  const { month } = usePeriod();
   const finance = useFinanceUseCases();
   const report = useReport();
   const [recurringOpen, setRecurringOpen] = useState(false);
@@ -350,10 +316,6 @@ const BudgetPage = () => {
   const isCommon = dataset.settings.kind === 'commun';
   // Dans le commun, revenus et épargne sont calculés dans le mois du commun : pas de budget à saisir.
   const groups = BUDGET_GROUPS.filter((group) => !isCommon || (group !== 'revenu' && group !== 'epargne'));
-  const history = dataset.audit
-    .filter((entry) => entry.entity === 'Budget')
-    .sort((a, b) => b.at.localeCompare(a.at))
-    .slice(0, 6);
 
   return (
     <div className="flex flex-col gap-5">
@@ -369,7 +331,6 @@ const BudgetPage = () => {
           </>
         }
       />
-      <MonthTabs month={month} onSelect={setMonth} />
       <MonthNote
         key={`${month}-${noteMonth === month}`}
         month={month}
@@ -381,7 +342,8 @@ const BudgetPage = () => {
           checked={budget?.carryOver ?? false}
           onChange={(checked) => void report(finance.setCarryOver(month, checked))}
         >
-          Reporter les budgets plaisir non utilisés du mois précédent
+          Reporter le budget non utilisé des {groupLabel('plaisir', dataset.settings.kind).toLowerCase()} du
+          mois précédent
         </Checkbox>
         <BudgetOrigin month={month} origin={origin} isDefined={budget !== null} />
       </div>
@@ -401,23 +363,6 @@ const BudgetPage = () => {
         <GroupTable key={group} group={group} lines={lines} month={month} />
       ))}
       <AnnualBudgetCard year={parseMonthKey(month).year} />
-      <Card title="Historique des modifications" subtitle="Dernières modifications du budget">
-        {history.length === 0 ? (
-          <Text variant="muted">Aucune modification enregistrée.</Text>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {history.map((entry) => (
-              <li key={entry.id} className="flex items-start gap-2">
-                <History className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" aria-hidden />
-                <Text variant="small">
-                  {formatDateFr(entry.at.slice(0, 10))} <ArrowRight className="inline h-3 w-3" aria-hidden />{' '}
-                  {entry.summary}
-                </Text>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
       {recurringOpen && <RecurringModal onClose={() => setRecurringOpen(false)} />}
     </div>
   );

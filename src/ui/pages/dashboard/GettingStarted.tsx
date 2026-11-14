@@ -19,7 +19,7 @@ const stepsOf = (content: DashboardContent): Step[] => [
     title: 'Ajouter tes opérations',
     description: 'Saisis-les une à une ou importe le relevé CSV exporté depuis ta banque.',
     to: '/compte',
-    cta: 'Compte courant',
+    cta: 'Opérations',
   },
   {
     done: content.hasBudget,
