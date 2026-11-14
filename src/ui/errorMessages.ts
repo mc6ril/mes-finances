@@ -24,6 +24,15 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'workspace-not-found': () => 'Espace introuvable.',
   'workspace-main-protected': () => 'L’espace principal ne peut pas être supprimé.',
   'workspace-not-owner': () => 'Seul le propriétaire de l’espace peut faire cette action.',
+  'workspace-already-shared': () =>
+    'Cet espace est déjà partagé. Retire l’accès de la personne invitée avant d’inviter quelqu’un d’autre.',
+  'workspace-not-shared': () => 'Cet espace n’est partagé avec personne.',
+  'workspace-owner-cannot-leave': () =>
+    'Tu es propriétaire de cet espace : retire l’accès de la personne invitée ou supprime l’espace.',
+  'invitation-not-found': () => 'Ce lien d’invitation n’existe pas ou a été annulé.',
+  'invitation-expired': () => 'Ce lien d’invitation a expiré. Demande-en un nouveau.',
+  'invitation-used': () => 'Ce lien d’invitation a déjà servi ou n’est plus valable. Demande-en un nouveau.',
+  'invitation-own-workspace': () => 'Ce lien invite dans un espace qui t’appartient déjà.',
   'workspace-schema-too-recent': () =>
     'Cet espace a été modifié avec une version plus récente de l’application. Recharge la page pour la mettre à jour.',
   'invalid-date': () => 'Date illisible',

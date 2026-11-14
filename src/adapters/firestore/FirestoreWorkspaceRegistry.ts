@@ -73,6 +73,7 @@ export class FirestoreWorkspaceRegistry implements WorkspaceRegistryInterface {
       name: data.name,
       kind: data.kind,
       role: data.ownerId === this.#userId ? 'owner' : 'guest',
+      shared: data.memberIds.length > 1,
     };
   }
 
