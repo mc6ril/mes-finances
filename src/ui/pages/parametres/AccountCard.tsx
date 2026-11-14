@@ -31,7 +31,7 @@ const AccountCard = () => {
         </SettingRow>
         <SettingRow
           label="Supprimer mon compte"
-          hint="Supprime définitivement ton identifiant de connexion. Les données de ce navigateur sont conservées."
+          hint="Supprime définitivement ton compte et tes espaces ; un espace commun partagé reste à la personne invitée."
         >
           <Button variant="danger" icon={Trash2} onClick={() => setDeleting(true)}>
             Supprimer…
