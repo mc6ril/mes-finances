@@ -88,6 +88,19 @@ describe('synchronisation entre appareils', () => {
     expect(db.read('perso')?.schemaVersion).toBe(SCHEMA_VERSION + 1);
   });
 
+  it('migre un espace d’une version précédente et l’enregistre dans la version courante', async () => {
+    const db = new MemoryDatabase();
+    db.write(
+      'perso',
+      { ...createInitialDataset('2026-11-01', () => 'seed'), schemaVersion: SCHEMA_VERSION - 1 },
+      null,
+    );
+    const { store } = device(db);
+    await store.start();
+    expect(store.getSnapshot().status).toBe('ready');
+    expect(db.read('perso')?.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
   it('ne génère pas deux fois une récurrence quand les deux appareils l’ouvrent', async () => {
     const db = new MemoryDatabase();
     const loyer: Recurring = {

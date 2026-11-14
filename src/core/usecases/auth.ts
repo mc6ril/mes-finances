@@ -8,10 +8,12 @@ import {
 import { validateEmail, validateReauthentication, validateSignIn, validateSignUp } from '../auth/validation';
 import { fail, ok, type Result } from '../shared/errors';
 import type { AuthGatewayInterface } from '../auth/interface';
+import type { SyncGatewayInterface } from '../sync/interface';
+import { SIGN_OUT_FLUSH_MS } from '../sync/model';
 
-export type AuthPorts = { gateway: AuthGatewayInterface };
+export type AuthPorts = { gateway: AuthGatewayInterface; sync: SyncGatewayInterface };
 
-export const createAuthUseCases = ({ gateway }: AuthPorts) => {
+export const createAuthUseCases = ({ gateway, sync }: AuthPorts) => {
   const signUp = async (form: SignUpForm): Promise<Result<AuthUser>> => {
     const credentials = validateSignUp(form);
     if (!credentials.ok) {
@@ -36,7 +38,14 @@ export const createAuthUseCases = ({ gateway }: AuthPorts) => {
 
   const signInWithGoogle = (): Promise<Result<AuthUser>> => gateway.signInWithGoogle();
 
-  const signOut = (): Promise<Result<void>> => gateway.signOut();
+  /** Les modifications faites hors ligne doivent partir avant : les données locales sont ensuite effacées. */
+  const signOut = async (): Promise<Result<void>> => {
+    const flushed = await sync.flush(SIGN_OUT_FLUSH_MS);
+    if (!flushed.ok) {
+      return flushed;
+    }
+    return gateway.signOut();
+  };
 
   /** Renvoie l'adresse normalisée à laquelle le lien a été envoyé. */
   const requestPasswordReset = async (email: string): Promise<Result<string>> => {

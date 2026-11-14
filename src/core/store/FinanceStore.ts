@@ -6,6 +6,7 @@ import { monthKeyOf, todayIso } from '@/core/shared/dates';
 import type { AuditEntry, CollectionName, Dataset, Settings, WorkspaceKind } from '@/core/shared/model';
 import { SCHEMA_VERSION } from '@/core/shared/model';
 import { orderCategories } from '@/core/budget/categoryOrder';
+import { itemKey } from '@/core/shared/collections';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
 import { fail, ok, type AppError, type Result } from '@/core/shared/errors';
 import {
@@ -101,16 +102,6 @@ const INITIAL_STATE: StoreState = {
   syncError: null,
   workspaces: [DEFAULT_WORKSPACE],
   workspace: DEFAULT_WORKSPACE,
-};
-
-const keyOf = (collection: CollectionName, item: object): string => {
-  if (collection === 'budgets' || collection === 'monthNotes' || collection === 'commonMonths') {
-    return (item as { month: string }).month;
-  }
-  if (collection === 'yearBudgets') {
-    return (item as { year: string }).year;
-  }
-  return (item as { id: string }).id;
 };
 
 const withOrderedCategories = (patch: Partial<StoreState>): Partial<StoreState> => {
@@ -359,9 +350,9 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return result;
     }
     const dataset = this.#dataset();
-    const keys = new Set(items.map((item) => keyOf(collection, item)));
+    const keys = new Set(items.map((item) => itemKey(collection, item)));
     const current = dataset[collection] as CollectionItem<C>[];
-    const kept = current.filter((item) => !keys.has(keyOf(collection, item)));
+    const kept = current.filter((item) => !keys.has(itemKey(collection, item)));
     this.#set({ dataset: { ...dataset, [collection]: [...kept, ...items] } as Dataset });
     return result;
   }
@@ -412,9 +403,9 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return result;
     }
     const dataset = this.#dataset();
-    const keys = new Set(items.map((item) => keyOf(collection, item)));
+    const keys = new Set(items.map((item) => itemKey(collection, item)));
     const current = dataset[collection] as CollectionItem<C>[];
-    const kept = current.filter((item) => !keys.has(keyOf(collection, item)));
+    const kept = current.filter((item) => !keys.has(itemKey(collection, item)));
     const updated = { ...dataset, [collection]: [...kept, ...items] } as Dataset;
     const committed = await this.#commit(updated, log);
     if (!committed.ok) {
@@ -439,7 +430,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     const current = dataset[collection] as object[];
     const updated = {
       ...dataset,
-      [collection]: current.filter((item) => !removed.has(keyOf(collection, item))),
+      [collection]: current.filter((item) => !removed.has(itemKey(collection, item))),
     } as Dataset;
     return this.#commit(updated, log);
   }

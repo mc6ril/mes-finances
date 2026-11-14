@@ -15,7 +15,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import { authErrorCode, FirebaseAuthGateway } from '@/adapters/auth/FirebaseAuthGateway';
-import { readFirebaseConfig } from '@/adapters/auth/firebaseConfig';
+import { readFirebaseConfig } from '@/adapters/firebase/firebaseConfig';
 
 vi.mock('firebase/auth', () => ({
   EmailAuthProvider: { credential: vi.fn((email: string, password: string) => ({ email, password })) },
