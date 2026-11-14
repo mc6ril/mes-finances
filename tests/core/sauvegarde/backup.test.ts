@@ -68,11 +68,6 @@ describe('configuration initiale', () => {
     });
   });
 
-  it('isole l’épargne immobilière commune sans supposer de quote-part', () => {
-    const immo = dataset.accounts.find((account) => account.kind === 'commun-immo');
-    expect(immo).toMatchObject({ isJoint: true, personalSharePercent: null, openingBalance: 0 });
-  });
-
   it('laisse l’enveloppe personnelle vide, à saisir par l’utilisateur', () => {
     expect(dataset.settings).toMatchObject({
       mode: 'simple',

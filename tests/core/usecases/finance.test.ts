@@ -1,11 +1,18 @@
 import { fail } from '@/core/shared/errors';
 import type { Dataset, MonthBudget } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
+import { anAccount } from '../fixtures';
 import { createFinanceUseCases } from '@/core/usecases/finance';
 import { aTransaction } from '../fixtures';
 import { fakeGateway, fixedClock, sequentialIds } from './fakeGateway';
 
 const NOW = '2026-11-08T10:00:00.000Z';
+/** Comptes d'épargne ajoutés par l'utilisateur dans un espace commun. */
+const savingsAccounts = [
+  anAccount({ id: 'acc-ep-vacances', name: 'Épargne vacances', kind: 'livret', group: 'securise' }),
+  anAccount({ id: 'acc-ep-immo', name: 'Épargne immobilière', kind: 'livret', group: 'securise' }),
+];
+
 const base = (): Dataset => createInitialDataset('2026-11-01', () => 'audit');
 
 const setup = (dataset: Dataset | null = base(), failWith: ReturnType<typeof fail> | null = null) => {
@@ -262,7 +269,11 @@ describe('compte commun', () => {
   };
   const commun = (): Dataset => {
     const dataset = createInitialDataset('2026-11-01', () => 'audit', 'commun');
-    return { ...dataset, settings: { ...dataset.settings, household } };
+    return {
+      ...dataset,
+      accounts: [...dataset.accounts, ...savingsAccounts],
+      settings: { ...dataset.settings, household },
+    };
   };
 
   it('enregistre le mois du commun', async () => {
@@ -371,6 +382,7 @@ describe('virement de l’épargne du commun', () => {
     const dataset = createInitialDataset('2026-10-01', () => 'audit', 'commun');
     return {
       ...dataset,
+      accounts: [...dataset.accounts, ...savingsAccounts],
       settings: { ...dataset.settings, household },
       commonMonths: [
         {
