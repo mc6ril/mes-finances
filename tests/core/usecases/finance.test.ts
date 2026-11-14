@@ -160,6 +160,19 @@ describe('comptes, catégories et objectifs', () => {
     expect(calls[0]).toMatchObject({ items: [{ id: 'cat-divers' }], log: { action: 'modification' } });
   });
 
+  it('pré-remplit le budget d’un mois en une écriture', async () => {
+    const { useCases, calls } = setup();
+    await useCases.prefillBudget('2026-11', { 'cat-courses': 31000 });
+    expect(calls).toEqual([
+      {
+        kind: 'upsert',
+        collection: 'budgets',
+        items: [{ month: '2026-11', planned: { 'cat-courses': 31000 }, carryOver: false }],
+        log: expect.objectContaining({ action: 'modification', entity: 'Budget' }),
+      },
+    ]);
+  });
+
   it('crée un compte courant vierge daté du jour, sans ligne d’épargne', async () => {
     const { useCases, calls } = setup();
     await useCases.createAccount();

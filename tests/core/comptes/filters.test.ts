@@ -1,6 +1,6 @@
-import { matchesStatus } from '@/core/comptes/filters';
+import { matchesStatus, needsCategory, toClassify } from '@/core/comptes/filters';
 import { statusLabel } from '@/core/comptes/csvImport';
-import { aTransaction } from '../fixtures';
+import { anAccount, aTransaction } from '../fixtures';
 
 const planned = aTransaction({ status: 'prevu' });
 const past = aTransaction({ status: 'realise' });
@@ -22,5 +22,31 @@ describe('filtre de statut', () => {
     expect(statusLabel(past)).toBe('Passé');
     expect(statusLabel(verified)).toBe('Passé · vérifiée');
     expect(statusLabel(aTransaction({ status: 'prevu', verified: true }))).toBe('Prévu');
+  });
+});
+
+describe('opérations à classer', () => {
+  const accounts = [
+    anAccount(),
+    anAccount({ id: 'joint', archived: false }),
+    anAccount({ id: 'old', archived: true }),
+  ];
+
+  it('compte les dépenses et revenus passés sans catégorie, sur les comptes suivis', () => {
+    const transactions = [
+      aTransaction({ categoryId: null }),
+      aTransaction({ categoryId: null, type: 'revenu', amount: 5000 }),
+      aTransaction({ categoryId: null, accountId: 'joint' }),
+      aTransaction({ categoryId: null, status: 'prevu' }),
+      aTransaction({ categoryId: null, type: 'virement', counterpartAccountId: 'joint' }),
+      aTransaction({ categoryId: null, accountId: 'old' }),
+      aTransaction({ categoryId: 'restaurants' }),
+    ];
+    expect(toClassify(transactions, accounts)).toEqual({ count: 3, accountId: 'courant' });
+  });
+
+  it('ne signale rien quand tout est classé', () => {
+    expect(toClassify([aTransaction()], accounts)).toEqual({ count: 0, accountId: null });
+    expect(needsCategory(aTransaction({ categoryId: null, status: 'prevu' }))).toBe(false);
   });
 });

@@ -43,3 +43,7 @@ export const navItemOf = (pathname: string): NavItem =>
   NAV_ITEMS.find(
     (item) => item.path !== '/' && (pathname === item.path || pathname.startsWith(`${item.path}/`)),
   ) ?? NAV_ITEMS[0]!;
+
+/** Page Opérations filtrée sur les opérations à classer d'un compte, toutes dates confondues. */
+export const toClassifyPath = (accountId: string): string =>
+  `/compte?categorie=aucune&compte=${encodeURIComponent(accountId)}`;

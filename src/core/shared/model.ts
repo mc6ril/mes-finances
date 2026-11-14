@@ -60,6 +60,8 @@ export type Transaction = {
   imputation?: Imputation;
   /** Passée et vérifiée sur le relevé bancaire (anciennement le statut « rapproché »). */
   verified?: boolean;
+  /** Venue de l'import d'un relevé CSV (règles apprises). */
+  imported?: boolean;
   createdAt: string;
   updatedAt: string;
 };

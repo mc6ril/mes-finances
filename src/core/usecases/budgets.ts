@@ -69,5 +69,22 @@ export const createBudgetUseCases = ({ gateway }: FinanceDeps) => {
     });
   };
 
-  return { setBudgetLine, setYearBudgetLine, setCarryOver };
+  /**
+   * Remplit d'un coup le budget d'un mois vide (moyenne des mois précédents) ; comme une saisie,
+   * il vaut aussi pour les mois suivants qui n'ont pas leur propre budget.
+   */
+  const prefillBudget = async (month: MonthKey, planned: Record<string, Cents>): Promise<Result<void>> => {
+    const loaded = loadedDataset(gateway);
+    if (!loaded.ok) {
+      return loaded;
+    }
+    const { budget } = effectiveBudget(loaded.value.budgets, month);
+    return gateway.upsert('budgets', [{ month, planned, carryOver: budget.carryOver }], {
+      action: 'modification',
+      entity: 'Budget',
+      summary: `Budget de ${monthLabel(month)} pré-rempli avec la moyenne des derniers mois (${plural(Object.keys(planned).length, 'catégorie')})`,
+    });
+  };
+
+  return { setBudgetLine, setYearBudgetLine, setCarryOver, prefillBudget };
 };

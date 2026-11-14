@@ -1,6 +1,7 @@
 import { createContext } from 'react';
 import type { Container } from '@/app/container';
 import type { MonthKey } from '@/core/shared/model';
+import type { BackupHistory } from '@/core/sauvegarde/interface';
 
 export type PeriodValue = {
   month: MonthKey;
@@ -24,3 +25,13 @@ export const ContainerContext = createContext<Container | null>(null);
 export const PeriodContext = createContext<PeriodValue | null>(null);
 
 export const ToastContext = createContext<ToastValue | null>(null);
+
+export type BackupHistoryValue = {
+  /** null tant que la date n'est pas connue (chargement, ou hors ligne sans copie locale). */
+  history: BackupHistory | null;
+  /** Exporte la sauvegarde complète puis met la date à jour. */
+  exportAll: () => Promise<void>;
+  hideReminder: () => void;
+};
+
+export const BackupHistoryContext = createContext<BackupHistoryValue | null>(null);

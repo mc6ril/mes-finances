@@ -3,6 +3,7 @@ import { Loader2, TriangleAlert } from 'lucide-react';
 import type { Container } from '@/app/container';
 import FinanceProvider from '@/ui/providers/FinanceProvider';
 import PeriodProvider from '@/ui/providers/PeriodProvider';
+import BackupHistoryProvider from '@/ui/providers/BackupHistoryProvider';
 import ToastProvider from '@/ui/providers/ToastProvider';
 import type { ReactNode } from 'react';
 import { useAuthState } from '@/hooks/useAuth';
@@ -80,20 +81,22 @@ const Gate = () => {
     return <FullScreenLoader />;
   }
   return (
-    <AppShell>
-      <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/budget" element={<BudgetPage />} />
-        <Route path="/compte" element={<ComptePage />} />
-        <Route path="/patrimoine" element={<PatrimoinePage />} />
-        <Route path="/bilan" element={<BilanPage />} />
-        <Route path="/objectifs" element={<ObjectifsPage />} />
-        <Route path="/parametres" element={<ParametresPage />} />
-        <Route path="/parametres/:tab" element={<ParametresPage />} />
-        <Route path={`${INVITATION_PATH}/:token`} element={<InvitationPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AppShell>
+    <BackupHistoryProvider>
+      <AppShell>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/budget" element={<BudgetPage />} />
+          <Route path="/compte" element={<ComptePage />} />
+          <Route path="/patrimoine" element={<PatrimoinePage />} />
+          <Route path="/bilan" element={<BilanPage />} />
+          <Route path="/objectifs" element={<ObjectifsPage />} />
+          <Route path="/parametres" element={<ParametresPage />} />
+          <Route path="/parametres/:tab" element={<ParametresPage />} />
+          <Route path={`${INVITATION_PATH}/:token`} element={<InvitationPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AppShell>
+    </BackupHistoryProvider>
   );
 };
 

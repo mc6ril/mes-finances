@@ -48,6 +48,7 @@ import Legend from '@/ui/charts/Legend';
 import PageHeader from '@/ui/layout/PageHeader';
 import CommonStats from './CommonStats';
 import GettingStarted from './GettingStarted';
+import Attention from './Attention';
 
 const savedInMonth = (dataset: Dataset, month: MonthKey, fromTransactions: Cents): Cents =>
   fromTransactions + depositsInMonth(dataset.savingsMovements, dataset.transactions, month);
@@ -134,6 +135,8 @@ const DashboardPage = () => {
         title="Tableau de bord"
         description={`${isCommon ? 'Votre' : 'Ta'} situation en ${monthLabel(month)}${isCommon ? ' · compte commun' : ''}.`}
       />
+
+      <Attention dataset={dataset} lines={overview.lines} />
 
       {!isCommon && content.isEmpty ? (
         <GettingStarted content={content} />

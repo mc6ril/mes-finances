@@ -1,4 +1,9 @@
-import { materializeRecurring, syncRecurring } from '@/core/budget/recurring';
+import {
+  detectRecurring,
+  materializeRecurring,
+  recurringFromSuggestion,
+  syncRecurring,
+} from '@/core/budget/recurring';
 import type { Recurring } from '@/core/shared/model';
 import { aTransaction } from '../fixtures';
 
@@ -93,5 +98,63 @@ describe('syncRecurring', () => {
     const ended = { ...mobile, endMonth: '2026-12', generatedUntil: '2026-12' };
     expect(syncRecurring([ended], [], '2027-02', now).created).toEqual([]);
     expect(syncRecurring([{ ...mobile, active: false }], [], '2026-11', now).created).toEqual([]);
+  });
+});
+
+describe('récurrences détectées', () => {
+  const monthly = (label: string, months: string[], amounts: number[], patch = {}) =>
+    months.map((month, index) =>
+      aTransaction({ label, date: `${month}-05`, amount: amounts[index] ?? amounts[0]!, ...patch }),
+    );
+  const TODAY = '2026-11-14';
+
+  it('repère une opération qui revient 3 mois de suite à ±10 %', () => {
+    const transactions = monthly(
+      'PRLV FREE MOBILE 0612',
+      ['2026-08', '2026-09', '2026-10', '2026-11'],
+      [-1999, -1999, -2150, -1999],
+    );
+    const [suggestion, ...rest] = detectRecurring(transactions, [], TODAY);
+    expect(rest).toEqual([]);
+    expect(suggestion).toMatchObject({
+      label: 'PRLV FREE MOBILE 0612',
+      amount: -1999,
+      months: 4,
+      dayOfMonth: 5,
+    });
+    expect(recurringFromSuggestion(suggestion!)).toMatchObject({
+      startMonth: '2026-12',
+      endMonth: null,
+      active: true,
+      dayOfMonth: 5,
+    });
+  });
+
+  it('ignore les séries trop courtes, interrompues, aux montants trop éloignés ou anciennes', () => {
+    const short = monthly('Netflix', ['2026-10', '2026-11'], [-1399]);
+    const gap = monthly('Salle de sport', ['2026-07', '2026-08', '2026-10', '2026-11'], [-2990]);
+    const varying = monthly('Courses Lidl', ['2026-09', '2026-10', '2026-11'], [-4000, -6500, -3000]);
+    const stopped = monthly('Ancien loyer', ['2026-03', '2026-04', '2026-05', '2026-06'], [-80000]);
+    expect(detectRecurring([...short, ...gap, ...varying, ...stopped], [], TODAY)).toEqual([]);
+  });
+
+  it('ignore ce qu’une récurrence couvre déjà, et les prévues', () => {
+    const covered = monthly('Loyer Foncia', ['2026-09', '2026-10', '2026-11'], [-80000]);
+    const linked = monthly('EDF', ['2026-09', '2026-10', '2026-11'], [-6000], { recurringId: 'edf' });
+    const planned = monthly('Assurance', ['2026-09', '2026-10', '2026-11'], [-3000], { status: 'prevu' });
+    const recurring = {
+      id: 'loyer',
+      label: 'Loyer',
+      amount: -80000,
+      type: 'depense' as const,
+      categoryId: null,
+      accountId: 'courant',
+      counterpartAccountId: null,
+      dayOfMonth: 5,
+      startMonth: '2026-01',
+      endMonth: null,
+      active: true,
+    };
+    expect(detectRecurring([...covered, ...linked, ...planned], [recurring], TODAY)).toEqual([]);
   });
 });

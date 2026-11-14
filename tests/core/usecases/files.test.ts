@@ -8,7 +8,11 @@ import type {
   TextFileReaderInterface,
   UserFile,
 } from '@/core/shared/ports';
-import type { WorkspaceDataSourceInterface } from '@/core/sauvegarde/interface';
+import type {
+  BackupHistory,
+  BackupHistoryInterface,
+  WorkspaceDataSourceInterface,
+} from '@/core/sauvegarde/interface';
 import { createInitialDataset } from '@/core/shared/seed';
 import { createFileUseCases } from '@/core/usecases/files';
 import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';
@@ -23,6 +27,7 @@ type Fakes = {
   rows?: Result<string[][]>;
   saveResult?: Result<void>;
   entries?: Result<WorkspaceData[]>;
+  recordResult?: Result<void>;
 };
 
 const setup = (fakes: Fakes = {}) => {
@@ -44,8 +49,16 @@ const setup = (fakes: Fakes = {}) => {
       ]),
     workspaceData: async (workspaceId) => ok(workspaceId === 'w1' ? { workspace: commun, dataset } : null),
   };
-  const useCases = createFileUseCases({ reader, csv, saver, workspaces });
-  return { useCases, saved };
+  const history: BackupHistory = { lastFullBackupAt: null, reminderHiddenUntil: null };
+  const backups: BackupHistoryInterface = {
+    load: async () => ok(history),
+    save: (patch) => {
+      Object.assign(history, patch);
+      return fakes.recordResult ?? ok(undefined);
+    },
+  };
+  const useCases = createFileUseCases({ reader, csv, saver, workspaces, backups });
+  return { useCases, saved, history };
 };
 
 const now = new Date('2026-11-08T10:00:00.000Z');
@@ -133,5 +146,27 @@ describe('export des opérations en CSV', () => {
     });
     expect(saved[0]?.content.startsWith('﻿')).toBe(true);
     expect(saved[0]?.content).toContain('Café');
+  });
+});
+
+describe('suivi des sauvegardes', () => {
+  it('mémorise la date d’une sauvegarde complète exportée et réaffiche le rappel ensuite', async () => {
+    const { useCases, history } = setup();
+    history.reminderHiddenUntil = '2026-11-10';
+    expect(await useCases.saveFullBackup('perso', now)).toEqual({ ok: true, value: 2 });
+    expect(history).toEqual({ lastFullBackupAt: now.toISOString(), reminderHiddenUntil: null });
+    expect(await useCases.backupHistory()).toEqual({ ok: true, value: history });
+  });
+
+  it('ne mémorise rien si le fichier n’a pas pu être enregistré', async () => {
+    const { useCases, history } = setup({ saveResult: fail('file-save-failed') });
+    await useCases.saveFullBackup('perso', now);
+    expect(history.lastFullBackupAt).toBeNull();
+  });
+
+  it('masque le rappel pendant 7 jours', () => {
+    const { useCases, history } = setup();
+    expect(useCases.hideBackupReminder(now)).toEqual({ ok: true, value: undefined });
+    expect(history.reminderHiddenUntil).toBe('2026-11-15');
   });
 });

@@ -10,7 +10,8 @@ import type {
   TextFileReaderInterface,
   UserFile,
 } from '../shared/ports';
-import type { WorkspaceDataSourceInterface } from '../sauvegarde/interface';
+import type { BackupHistoryInterface, WorkspaceDataSourceInterface } from '../sauvegarde/interface';
+import { snoozedUntil } from '../sauvegarde/reminder';
 import { workspaceFileSlug } from '../espaces/workspaces';
 
 export type FilePorts = {
@@ -18,6 +19,7 @@ export type FilePorts = {
   csv: CsvParserInterface;
   saver: FileSaverInterface;
   workspaces: WorkspaceDataSourceInterface;
+  backups: BackupHistoryInterface;
 };
 
 export type OperationsExport = {
@@ -42,7 +44,7 @@ const UTF8_BOM = '﻿';
 
 const toJson = (value: unknown): string => JSON.stringify(value, null, 2);
 
-export const createFileUseCases = ({ reader, csv, saver, workspaces }: FilePorts) => {
+export const createFileUseCases = ({ reader, csv, saver, workspaces, backups }: FilePorts) => {
   const readCsvRows = async (file: UserFile): Promise<Result<string[][]>> => {
     const text = await reader.read(file);
     if (!text.ok) {
@@ -84,8 +86,18 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces }: FilePorts
     if (!saved.ok) {
       return saved;
     }
+    // Le fichier est enregistré : la date part en arrière-plan, l'export reste réussi même hors ligne.
+    const recorded = backups.save({ lastFullBackupAt: now.toISOString(), reminderHiddenUntil: null });
+    if (!recorded.ok) {
+      return recorded;
+    }
     return ok(entries.value.length);
   };
+
+  const backupHistory = () => backups.load();
+
+  const hideBackupReminder = (now: Date): Result<void> =>
+    backups.save({ reminderHiddenUntil: snoozedUntil(todayIso(now)) });
 
   const exportOperationsCsv = (operations: OperationsExport): Result<void> =>
     saver.save({
@@ -99,6 +111,8 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces }: FilePorts
     readBackupFile,
     readBrokerExport,
     saveFullBackup,
+    backupHistory,
+    hideBackupReminder,
     exportOperationsCsv,
   };
 };

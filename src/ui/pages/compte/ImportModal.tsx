@@ -154,6 +154,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       ...(row.imputation ? { imputation: row.imputation } : {}),
       paymentMethod: '',
       comment: `Import ${fileName}`,
+      imported: true,
       recurringId: null,
     }));
     if (

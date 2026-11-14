@@ -27,6 +27,8 @@ type TransactionModalProps = {
   /** Champs pré-remplis d'une nouvelle opération (ex. dépense avancée par un membre). */
   preset?: Partial<TransactionFormState>;
   title?: string;
+  /** Opération existante modifiée : état avant et après (règles d'import apprises). */
+  onSaved?: (before: Transaction, after: Transaction) => void;
 };
 
 type TypeChoice = TransactionType | 'remboursement';
@@ -70,6 +72,7 @@ const TransactionModal = ({
   onClose,
   preset,
   title,
+  onSaved,
 }: TransactionModalProps) => {
   const dataset = useDataset();
   const finance = useFinanceUseCases();
@@ -106,6 +109,9 @@ const TransactionModal = ({
       return;
     }
     if (await report(finance.saveTransaction(result.draft, transaction), 'Opération enregistrée')) {
+      if (transaction) {
+        onSaved?.(transaction, { ...transaction, ...result.draft });
+      }
       onClose();
     }
   };

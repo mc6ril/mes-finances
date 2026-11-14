@@ -26,6 +26,8 @@ import {
 } from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
+import { useBackupHistory } from '@/hooks/useBackupHistory';
+import type { BackupHistory } from '@/core/sauvegarde/interface';
 import { GROUP_LABELS, groupLabel } from '@/ui/constants';
 import { isSavingsAccount } from '@/core/comptes/accounts';
 import Tabs from '@/ui/design-system/Tabs';
@@ -530,6 +532,15 @@ const settingsMessage = (summary: SettingsMergeSummary): string => {
     : `${lines.join(' · ')}. Rien n’est supprimé et tes opérations restent en place.`;
 };
 
+const lastBackupText = (history: BackupHistory | null): string => {
+  if (!history) {
+    return 'dernière sauvegarde : inconnue pour l’instant';
+  }
+  return history.lastFullBackupAt
+    ? `dernière le ${formatDateFr(history.lastFullBackupAt.slice(0, 10))}`
+    : 'aucune sauvegarde complète pour l’instant';
+};
+
 const BackupCard = () => {
   const dataset = useDataset();
   const files = useFileUseCases();
@@ -559,14 +570,7 @@ const BackupCard = () => {
     setPendingSettings(incoming);
   };
 
-  const exportAll = async () => {
-    const saved = await files.saveFullBackup(workspace.id, new Date());
-    if (!saved.ok) {
-      notify(errorMessage(saved.error), 'error');
-      return;
-    }
-    notify(`Sauvegarde complète exportée (${saved.value} espace${saved.value > 1 ? 's' : ''})`);
-  };
+  const { history, exportAll } = useBackupHistory();
 
   const exportOperations = () => {
     const saved = files.exportOperationsCsv({
@@ -611,7 +615,7 @@ const BackupCard = () => {
         <SettingRow
           icon={Archive}
           title="Sauvegarde complète"
-          description={`Tous tes espaces : ${workspaces.map((item) => item.name).join(', ')}`}
+          description={`Tous tes espaces : ${workspaces.map((item) => item.name).join(', ')} · ${lastBackupText(history)}`}
         >
           <Button
             size="sm"

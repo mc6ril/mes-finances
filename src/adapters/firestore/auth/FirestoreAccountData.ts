@@ -1,5 +1,6 @@
 import {
   collection,
+  doc,
   getDocsFromServer,
   query,
   updateDoc,
@@ -39,6 +40,7 @@ export class FirestoreAccountData implements AccountDataInterface {
       }
       // En dernier : rattrape aussi une invitation créée pendant la suppression (autre onglet).
       await this.#eraseInvitations();
+      await this.#deleteAll([doc(this.#db, 'users', this.#userId)]);
       return ok(undefined);
     } catch (error) {
       return toSyncFailure(error);

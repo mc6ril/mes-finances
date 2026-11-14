@@ -1,4 +1,5 @@
-import { Repeat } from 'lucide-react';
+import { Repeat, Wand2 } from 'lucide-react';
+import { budgetPrefill, isBudgetEmpty } from '@/core/budget/prefill';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
@@ -303,6 +304,33 @@ const BudgetOrigin = ({ month, origin, isDefined }: BudgetOriginProps) => {
   );
 };
 
+type PrefillProps = { month: MonthKey; planned: Record<string, Cents> };
+
+/** Mois sans budget : le proposer à partir des dépenses réelles des derniers mois. */
+const PrefillBudget = ({ month, planned }: PrefillProps) => {
+  const finance = useFinanceUseCases();
+  const report = useReport();
+  const total = Object.values(planned).reduce((sum, value) => sum + value, 0);
+  const count = Object.keys(planned).length;
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Text variant="small" className="min-w-0 flex-1">
+          Pas encore de budget pour {monthLabel(month)}. D’après tes dépenses réelles des 3 derniers mois :{' '}
+          <Amount cents={total} rounded /> sur {count} catégorie{count > 1 ? 's' : ''}, modifiables ensuite.
+        </Text>
+        <Button
+          variant="primary"
+          icon={Wand2}
+          onClick={() => void report(finance.prefillBudget(month, planned), 'Budget pré-rempli')}
+        >
+          Pré-remplir avec la moyenne des 3 derniers mois
+        </Button>
+      </div>
+    </Card>
+  );
+};
+
 const BudgetPage = () => {
   const dataset = useDataset();
   const { month } = usePeriod();
@@ -313,6 +341,10 @@ const BudgetPage = () => {
   const lines = useMemo(() => linesFor(dataset, month), [dataset, month]);
   const budget = budgetOf(dataset, month);
   const origin = budgetOriginOf(dataset, month);
+  const prefill = useMemo(
+    () => (isBudgetEmpty(budgetOf(dataset, month)) ? budgetPrefill(dataset, month) : null),
+    [dataset, month],
+  );
   const isCommon = dataset.settings.kind === 'commun';
   // Dans le commun, revenus et épargne sont calculés dans le mois du commun : pas de budget à saisir.
   const groups = BUDGET_GROUPS.filter((group) => !isCommon || (group !== 'revenu' && group !== 'epargne'));
@@ -347,6 +379,7 @@ const BudgetPage = () => {
         </Checkbox>
         <BudgetOrigin month={month} origin={origin} isDefined={budget !== null} />
       </div>
+      {prefill && <PrefillBudget month={month} planned={prefill} />}
       {isCommon ? (
         <>
           <CommonMonthCard month={month} />
