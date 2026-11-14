@@ -683,6 +683,18 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
 
 type ImputationHintProps = { transaction: Transaction; dataset: Dataset };
 
+/** Un montant positif (remboursement, somme reçue) se lit dans l'autre sens. */
+const imputationHint = (transaction: Transaction, name: string): string => {
+  const imputation = transaction.imputation!;
+  if (transaction.amount > 0 && imputation.kind === 'charge') {
+    return transaction.type === 'depense' ? `remboursement pour ${name}` : `reçu pour ${name}`;
+  }
+  if (transaction.amount > 0 && imputation.kind === 'avance') {
+    return `reçu par ${name} sur son compte`;
+  }
+  return IMPUTATION_HINTS[imputation.kind](name, imputation.outside === true);
+};
+
 const IMPUTATION_HINTS: Record<Imputation['kind'], (name: string, outside: boolean) => string> = {
   charge: (name, outside) =>
     outside ? `à la charge de ${name}, réglé hors compte` : `à la charge de ${name}`,
@@ -697,9 +709,7 @@ const ImputationHint = ({ transaction, dataset }: ImputationHintProps) => {
   const name = memberLabel(dataset, transaction.imputation.memberId);
   return (
     <Text variant="caption" className="text-amber-700 dark:text-amber-400">
-      {transaction.imputation.kind === 'charge' && transaction.amount > 0
-        ? `reçu pour ${name}`
-        : IMPUTATION_HINTS[transaction.imputation.kind](name, transaction.imputation.outside === true)}
+      {imputationHint(transaction, name)}
     </Text>
   );
 };

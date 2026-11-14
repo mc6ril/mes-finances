@@ -55,6 +55,12 @@ const STATUS_HINTS: Record<TransactionStatus, string> = {
   realise: 'Comptée dans le solde et le budget',
 };
 
+const EXPENSE_FOR_HINT =
+  'À la charge de : payé par le commun, déduit de sa part. Avancé par : payé de sa poche, remboursé.';
+
+const REFUND_FOR_HINT =
+  'Remboursement pour : arrivé sur le commun pour une dépense qu’il a payée lui-même, reversé à lui. Reçu par : arrivé sur son compte pour une dépense du commun, il le doit au commun.';
+
 const modalTitle = (transaction: Transaction | null, template: Transaction | null): string => {
   if (transaction) {
     return 'Modifier l’opération';
@@ -199,22 +205,23 @@ const TransactionModal = ({
           </Field>
         )}
         {isCommon && form.type === 'depense' && (
-          <Field
-            label="Pour qui"
-            hint="À la charge de : payé par le commun, déduit de sa part. Avancé par : payé de sa poche, remboursé."
-          >
+          <Field label="Pour qui" hint={form.isRefund ? REFUND_FOR_HINT : EXPENSE_FOR_HINT}>
             <Select
               value={form.imputation}
               onChange={(imputation) => update({ imputation })}
               options={[
-                { value: '', label: 'Commun' },
+                { value: '', label: form.isRefund ? 'Pour le commun' : 'Commun' },
                 ...members.map((member) => ({
                   value: `charge:${member.id}`,
-                  label: `À la charge de ${memberLabel(dataset, member.id)}`,
+                  label: form.isRefund
+                    ? `Remboursement pour ${memberLabel(dataset, member.id)}`
+                    : `À la charge de ${memberLabel(dataset, member.id)}`,
                 })),
                 ...members.map((member) => ({
                   value: `avance:${member.id}`,
-                  label: `Avancé par ${memberLabel(dataset, member.id)}`,
+                  label: form.isRefund
+                    ? `Reçu par ${memberLabel(dataset, member.id)} sur son compte`
+                    : `Avancé par ${memberLabel(dataset, member.id)}`,
                 })),
               ]}
             />

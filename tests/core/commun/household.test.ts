@@ -155,6 +155,42 @@ describe('règlement de fin de mois', () => {
     expect(settlement.toSettle).toBe(-195132);
   });
 
+  it('reverse au membre un remboursement arrivé sur le commun pour lui, hors dépenses du commun', () => {
+    const base = dataset();
+    const refund = aTransaction({
+      date: '2026-10-21',
+      label: 'VIR INST MUTUELLE',
+      amount: 5000,
+      type: 'depense',
+      categoryId: 'cat-sante',
+      imputation: { kind: 'charge', memberId: 'm1' },
+    });
+    const withRefund = { ...base, transactions: [...base.transactions, refund] };
+    const before = memberSettlement(base, '2026-10', 'm1');
+    const after = memberSettlement(withRefund, '2026-10', 'm1');
+    expect(after.lines.at(-1)).toMatchObject({ kind: 'charge', amount: 5000 });
+    expect(after.toSettle - before.toSettle).toBe(5000);
+    expect(commonMonthSummary(withRefund, '2026-10').expenses).toBe(
+      commonMonthSummary(base, '2026-10').expenses,
+    );
+  });
+
+  it('fait reverser au commun un remboursement reçu par le membre sur son compte', () => {
+    const base = dataset();
+    const received = aTransaction({
+      date: '2026-10-21',
+      amount: 5000,
+      type: 'depense',
+      imputation: { kind: 'avance', memberId: 'm1' },
+    });
+    const after = memberSettlement(
+      { ...base, transactions: [...base.transactions, received] },
+      '2026-10',
+      'm1',
+    );
+    expect(after.toSettle - memberSettlement(base, '2026-10', 'm1').toSettle).toBe(-5000);
+  });
+
   it('reporte ce qui n’a pas été réglé le mois précédent', () => {
     const data = dataset({
       settlements: [

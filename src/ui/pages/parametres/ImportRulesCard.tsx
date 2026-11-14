@@ -17,12 +17,12 @@ type RuleForm = Omit<ImportRule, 'id'> & { id?: string };
 
 const EMPTY: RuleForm = { match: '', type: 'depense', categoryId: null, memberId: null };
 
-const memberLabelFor = (type: TransactionType): string | null => {
+const memberLabelFor = (type: TransactionType, refund: boolean): string | null => {
   if (type === 'revenu') {
     return 'De qui';
   }
   if (type === 'depense') {
-    return 'À la charge de';
+    return refund ? 'Remboursement pour' : 'À la charge de';
   }
   return null;
 };
@@ -35,7 +35,8 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
   const report = useReport();
   const [form, setForm] = useState<RuleForm>(initial);
   const members = dataset.settings.household?.members ?? [];
-  const memberLabel = dataset.settings.kind === 'commun' ? memberLabelFor(form.type) : null;
+  const memberLabel =
+    dataset.settings.kind === 'commun' ? memberLabelFor(form.type, form.refund === true) : null;
   const update = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
 
   const isTransfer = form.type === 'virement' || form.type === 'investissement';
