@@ -14,7 +14,7 @@ import { COLLECTION_NAMES, itemKey } from '@/core/shared/collections';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import type { AuditEntry, CollectionName, Dataset, Settings } from '@/core/shared/model';
 import type { CollectionItem, DatasetListener, FinanceRepositoryInterface } from '@/core/store/interface';
-import { toSyncFailure } from './firestoreErrors';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 import {
   byteSize,
   fromShards,
@@ -30,7 +30,7 @@ import {
   type ItemMap,
   type Layout,
 } from './sharding';
-import type { SyncMonitor } from './SyncMonitor';
+import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 
 export type RepositoryOptions = {
   /** Taille visée par paquet (redécoupage). */

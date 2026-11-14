@@ -1,4 +1,4 @@
-import { toDocumentId, toWorkspaceId } from '@/adapters/firestore/workspaceIds';
+import { toDocumentId, toWorkspaceId } from '@/adapters/firestore/espaces/workspaceIds';
 
 describe('identifiants des espaces en ligne', () => {
   it('rend l’espace principal propre à chaque utilisateur', () => {

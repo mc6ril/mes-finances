@@ -17,9 +17,9 @@ import {
 import type { SharingGatewayInterface } from '@/core/partage/interface';
 import type { Invitation, NewInvitation } from '@/core/partage/model';
 import { fail, ok, type Result } from '@/core/shared/errors';
-import { toSyncFailure } from './firestoreErrors';
-import type { SyncMonitor } from './SyncMonitor';
-import { toDocumentId, toWorkspaceId } from './workspaceIds';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
+import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { toDocumentId, toWorkspaceId } from '@/adapters/firestore/espaces/workspaceIds';
 
 /** Création et acceptation n'aboutissent qu'une fois confirmées par le serveur. */
 const CONFIRMATION_TIMEOUT_MS = 10000;

@@ -1,4 +1,4 @@
-import { SyncMonitor } from '@/adapters/firestore/SyncMonitor';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import type { SyncStatus } from '@/core/sync/model';
 
 const deferred = () => {

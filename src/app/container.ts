@@ -2,11 +2,8 @@ import { createFirebaseAuthGateway } from '@/adapters/auth/firebaseAuth';
 import { firebaseApp } from '@/adapters/firebase/firebaseApp';
 import { BrowserFileSaver } from '@/adapters/files/BrowserFileSaver';
 import { BrowserTextFileReader } from '@/adapters/files/BrowserTextFileReader';
-import {
-  closeBrowserFirestore,
-  openBrowserFirestore,
-  watchBrowserNetwork,
-} from '@/adapters/firestore/browserFirestore';
+import { closeBrowserFirestore, openBrowserFirestore } from '@/adapters/firestore/browserFirestore';
+import { watchBrowserNetwork } from '@/adapters/firestore/sync/browserNetwork';
 import { FirestoreBackend } from '@/adapters/firestore/FirestoreBackend';
 import { randomId } from '@/adapters/ids/randomIdGenerator';
 import { randomToken } from '@/adapters/ids/randomToken';

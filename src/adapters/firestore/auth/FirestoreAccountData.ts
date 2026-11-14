@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import type { AccountDataInterface } from '@/core/auth/interface';
 import { ok, type Result } from '@/core/shared/errors';
-import { toSyncFailure } from './firestoreErrors';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 
 type Membership = { ownerId: string; memberIds: string[] };
 

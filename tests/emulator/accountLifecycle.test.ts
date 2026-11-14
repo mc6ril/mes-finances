@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, getDocs, type Firestore } from 'firebase/firestore';
-import { FirestoreAccountData } from '@/adapters/firestore/FirestoreAccountData';
-import { FirestoreFinanceRepository } from '@/adapters/firestore/FirestoreFinanceRepository';
-import { FirestoreSharing } from '@/adapters/firestore/FirestoreSharing';
-import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/FirestoreWorkspaceRegistry';
-import { SyncMonitor } from '@/adapters/firestore/SyncMonitor';
-import { toDocumentId } from '@/adapters/firestore/workspaceIds';
+import { FirestoreAccountData } from '@/adapters/firestore/auth/FirestoreAccountData';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
+import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
+import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { toDocumentId } from '@/adapters/firestore/espaces/workspaceIds';
 import { randomToken } from '@/adapters/ids/randomToken';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import { createSharingUseCases } from '@/core/usecases/sharing';
