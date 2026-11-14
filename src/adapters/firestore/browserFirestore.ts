@@ -8,7 +8,6 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import type { FirebaseApp } from 'firebase/app';
-import type { SyncMonitor } from './SyncMonitor';
 
 /** Cache local persistant (IndexedDB), partagé entre onglets : la saisie continue hors ligne. */
 export const openBrowserFirestore = (app: FirebaseApp): Firestore => {
@@ -43,14 +42,4 @@ export const closeBrowserFirestore = async (db: Firestore): Promise<void> => {
     }
   }
   throw lastError;
-};
-
-/** Reflète l'état du réseau du navigateur dans le suivi d'envoi. */
-export const watchBrowserNetwork = (monitor: SyncMonitor): void => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  monitor.setOffline(!navigator.onLine);
-  window.addEventListener('online', () => monitor.setOffline(false));
-  window.addEventListener('offline', () => monitor.setOffline(true));
 };

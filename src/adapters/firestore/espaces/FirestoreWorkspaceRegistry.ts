@@ -22,8 +22,8 @@ import {
 } from '@/core/espaces/workspaces';
 import { ok, type Result } from '@/core/shared/errors';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { toSyncFailure } from './firestoreErrors';
-import type { SyncMonitor } from './SyncMonitor';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
+import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { toDocumentId, toWorkspaceId } from './workspaceIds';
 
 /** Mémoire de l'appareil pour l'espace affiché (localStorage dans le navigateur). */

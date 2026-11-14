@@ -98,7 +98,13 @@ src/
   adapters/             Secondary adapters
     auth/               Firebase Authentication (erreurs traduites en codes auth-*)
     firebase/           Configuration et application Firebase partagée
-    firestore/          Espaces, paquets, partage, effacement du compte, suivi d'envoi (codes sync-*)
+    firestore/          Implémentation Firestore des ports du core, rangée par domaine :
+      store/            Dépôt d'un espace (port core/store), découpage en paquets
+      espaces/          Liste des espaces (port core/espaces), identifiants en ligne
+      partage/          Invitations (port core/partage)
+      auth/             Effacement des données du compte (port core/auth)
+      sync/             Suivi d'envoi et état du réseau (port core/sync)
+      (racine)          Connexion par utilisateur, cache navigateur, traduction des erreurs (codes sync-*)
     storage/            Effacement des données locales, lien d'invitation en attente
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
   app/                  Primary adapters : store, actions, sélecteurs, thème

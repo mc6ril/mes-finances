@@ -6,12 +6,15 @@ import { fail, ok, type Result } from '@/core/shared/errors';
 import type { Dataset } from '@/core/shared/model';
 import type { FinanceRepositoryInterface } from '@/core/store/interface';
 import type { UserDataBackendInterface } from '@/core/sync/interface';
-import { FirestoreAccountData } from './FirestoreAccountData';
-import { FirestoreFinanceRepository } from './FirestoreFinanceRepository';
-import { FirestoreSharing } from './FirestoreSharing';
-import { FirestoreWorkspaceRegistry, type KeyValueStorage } from './FirestoreWorkspaceRegistry';
-import { SyncMonitor } from './SyncMonitor';
-import { toDocumentId } from './workspaceIds';
+import { FirestoreAccountData } from '@/adapters/firestore/auth/FirestoreAccountData';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
+import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
+import {
+  FirestoreWorkspaceRegistry,
+  type KeyValueStorage,
+} from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { toDocumentId } from '@/adapters/firestore/espaces/workspaceIds';
 
 export type FirestoreBackendDeps = {
   openFirestore: () => Firestore;

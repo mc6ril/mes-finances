@@ -1,7 +1,7 @@
 import { fail, ok, type AppError, type Result } from '@/core/shared/errors';
 import type { SyncGatewayInterface, SyncListener } from '@/core/sync/interface';
 import { IDLE_SYNC, type SyncStatus } from '@/core/sync/model';
-import { toSyncFailure } from './firestoreErrors';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 
 /**
  * Écritures envoyées en arrière-plan : leur promesse ne se termine qu'à la confirmation du serveur

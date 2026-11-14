@@ -7,9 +7,9 @@ import {
   shardId,
   shardIndex,
   toShards,
-} from '@/adapters/firestore/sharding';
+} from '@/adapters/firestore/store/sharding';
 import { createInitialDataset } from '@/core/shared/seed';
-import { aTransaction } from '../../core/fixtures';
+import { aTransaction } from '../../../core/fixtures';
 
 const itemsOf = (count: number, padding = 0) =>
   Object.fromEntries(

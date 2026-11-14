@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
-import { FirestoreFinanceRepository } from '@/adapters/firestore/FirestoreFinanceRepository';
-import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/FirestoreWorkspaceRegistry';
-import { SyncMonitor } from '@/adapters/firestore/SyncMonitor';
-import { byteSize } from '@/adapters/firestore/sharding';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
+import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { byteSize } from '@/adapters/firestore/store/sharding';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import { DEFAULT_WORKSPACE } from '@/core/espaces/workspaces';
 import type { Dataset } from '@/core/shared/model';

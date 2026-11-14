@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
-import { FirestoreSharing } from '@/adapters/firestore/FirestoreSharing';
-import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/FirestoreWorkspaceRegistry';
-import { SyncMonitor } from '@/adapters/firestore/SyncMonitor';
+import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
+import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { randomToken } from '@/adapters/ids/randomToken';
 import { invitationExpiry } from '@/core/partage/model';
 
