@@ -59,6 +59,7 @@ Modèle (voir `firestore.rules`, testées dans `tests/emulator/firestoreRules.te
 - `workspaces/{id}` : `ownerId`, `memberIds` (un seul membre pour un perso, propriétaire + un invité pour un commun), `kind`, `name`, `settings`, `schemaVersion`, `layout`. L'espace principal d'un utilisateur est `perso-{uid}`.
 - `workspaces/{id}/data/{collection}__{n}` : `{ items: { [clé]: élément } }`. Chaque collection est répartie en paquets (hash de la clé) : une ouverture coûte quelques dizaines de lectures au lieu d'une par opération, pour rester dans le quota gratuit (50 000 lectures/jour) sur la durée. Une collection est redécoupée automatiquement au-delà de 640 Ko par paquet (limite Firestore : 1 Mio).
 - `invitations/{token}` : lien à usage unique, valable 7 jours, lisible avec le lien, jamais listable.
+- `users/{uid}` : suivi des sauvegardes de l'utilisateur (date de la dernière sauvegarde complète, rappel masqué jusqu'à), lisible et modifiable par lui seul, effacé avec son compte. Il n'est pas rangé dans un espace : un espace commun est partagé, et le stockage local est effacé à chaque déconnexion.
 
 Tests sur l'émulateur : `npm run test:emulator` (Java 21 : `brew install openjdk@21`, puis `JAVA_HOME=/opt/homebrew/opt/openjdk@21`). Si `private/mes-finances-sauvegarde-complete-*.json` existe (ou `FINANCES_BACKUP=chemin`), la restauration de cette vraie sauvegarde est vérifiée sans perte, localement, en ne comparant que des empreintes.
 
@@ -66,7 +67,7 @@ Comportement :
 
 - Un compte créé par e-mail doit **confirmer son adresse** (lien reçu à l'inscription) avant d'accéder à l'application ; un compte Google est confirmé d'office.
 - **Déconnexion** : attend l'envoi des modifications faites hors ligne, puis efface tout ce que l'application a laissé sur l'appareil (cache Firestore, anciennes bases IndexedDB, préférences).
-- **Suppression du compte** (Paramètres → Mon compte, mot de passe ou fenêtre Google redemandés) : supprime d'abord les données en ligne (espaces perso, communs sans invité, invitations), transfère à l'invité un espace commun partagé, retire l'utilisateur des communs où il est invité ; puis le compte. Sans réseau, rien n'est supprimé.
+- **Suppression du compte** (Paramètres → Mon compte, mot de passe ou fenêtre Google redemandés) : supprime d'abord les données en ligne (espaces perso, communs sans invité, invitations, suivi des sauvegardes), transfère à l'invité un espace commun partagé, retire l'utilisateur des communs où il est invité ; puis le compte. Sans réseau, rien n'est supprimé.
 
 ## Architecture (hexagonale)
 
@@ -75,14 +76,19 @@ src/
   core/                 Logique métier pure, sans React ni navigateur
     model.ts            Types (montants en centimes entiers)
     money.ts dates.ts   Parsing des montants FR, mois, années bissextiles
-    balances.ts         Soldes, virements internes, prévu / réalisé
+    balances.ts         Soldes, virements internes, prévu / passé, vérifiées
+    accounts.ts         Type et groupe d'un compte, courant ou épargne
+    filters.ts          Filtres de statut, opérations à classer
+    learnedRules.ts     Règles d'import proposées après un classement
     budget.ts           Lignes de budget, report, remboursements, totaux
     patrimoine.ts       Versements vs performance, valorisations, compte commun
     annual.ts           Bilan annuel et texte généré
     goals.ts            Objectifs et scénarios de rendement (hypothèses)
     csvImport.ts        Mapping CSV, doublons, export CSV
-    recurring.ts        Opérations récurrentes
+    recurring.ts        Opérations récurrentes, récurrences détectées
+    prefill.ts          Budget pré-rempli (moyenne des 3 derniers mois)
     backup.ts           Sauvegarde / restauration validée et versionnée
+    reminder.ts         Rappel de sauvegarde (30 jours, masquable 7 jours)
     seed.ts             Configuration initiale (vierge)
     workspaces.ts       Espaces de suivi indépendants (personnels ou communs)
     <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth, partage, sync)
@@ -105,6 +111,7 @@ src/
       partage/          Invitations (port core/partage)
       auth/             Effacement des données du compte (port core/auth)
       sync/             Suivi d'envoi et état du réseau (port core/sync)
+      sauvegarde/       Suivi des sauvegardes de l'utilisateur, users/{uid} (port core/sauvegarde)
       (racine)          Connexion par utilisateur, cache navigateur, traduction des erreurs (codes sync-*)
     storage/            Effacement des données locales, lien d'invitation en attente
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
@@ -121,19 +128,38 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 
 - Tous les montants sont des **centimes entiers**.
 - Un **virement interne** (ou un investissement) n'est jamais compté comme dépense de consommation ni comme revenu ; il crédite le compte destinataire.
-- Les opérations **prévues** ne comptent pas dans le réel tant qu'elles ne sont pas passées en « réalisé » ou « rapproché ». Elles basculent automatiquement en « réalisé » à leur date (à l'ouverture de l'app et au retour sur l'onglet).
+- **Statuts d'une opération** : « prévu » ou « passé » (`prevu` / `realise`), plus une case facultative « vérifiée sur mon relevé » (`verified`). Les opérations prévues ne comptent pas dans le réel ; elles passent automatiquement en « passé » à leur date (à l'ouverture de l'app et au retour sur l'onglet). Sur la page Opérations, le « solde actuel » ne reprend que les opérations vérifiées ; les passées non vérifiées et les prévues sont « à venir ». L'ancien statut « rapproché » est devenu « passé » + vérifiée (migration v12).
 - Une dépense **remboursée** se saisit comme dépense positive dans la même catégorie : elle réduit la catégorie.
 - Patrimoine : on distingue **sommes versées**, **intérêts**, **frais**, **plus/moins-values** et **valeur totale**. Les valorisations boursières n'entrent jamais dans les revenus.
 - Le compte commun immobilier est affiché à part ; il n'entre dans le patrimoine personnel qu'une fois la quote-part renseignée.
 - Catégories à **budget annuel** (par défaut Voyages et Cadeaux ; réglable dans Paramètres → Catégories et règles) : suivies sur l'année, hors du budget mensuel des dépenses personnelles. Leur budget annuel ÷ 12 est compté comme provision dans les dépenses prévues.
-- **Épargne** : chaque compte d'épargne (livret, assurance-vie, placement…) a sa catégorie du même nom, créée, renommée et archivée avec lui. Un espace neuf n'en a donc aucune : le budget n'affiche que les comptes réellement suivis.
+- **Épargne** : chaque compte d'épargne (livret, assurance-vie, placement…) a sa catégorie du même nom, créée, renommée et archivée avec lui. Un espace neuf n'en a donc aucune : le budget n'affiche que les comptes réellement suivis. Les comptes d'épargne se créent, se modifient et s'archivent uniquement depuis Épargne et patrimoine ; le compte courant (et les autres comptes du groupe courant) dans Paramètres → Comptes.
+- **À classer** : une dépense ou un revenu passé sans catégorie, sur un compte suivi. Le tableau de bord en affiche le nombre (s'il y en a) et mène à la page Opérations filtrée « À classer », toutes dates confondues.
+- **Catégories dépassées** : charges fixes ou dépenses personnelles du mois au-delà d'un budget prévu (une catégorie sans budget n'est pas comptée). Signalées sur le tableau de bord.
+- **Budget pré-rempli** : un mois sans aucun montant prévu propose la moyenne des dépenses réelles des 3 mois précédents (seulement les mois saisis), par catégorie mensuelle de charges fixes et de dépenses personnelles, arrondie à l'euro ; les catégories sans dépense sont ignorées. Rien sans au moins un mois d'historique.
+- **Récurrences détectées** : même compte, même type, même libellé normalisé, montant à ±10 % du dernier, au moins 3 mois consécutifs, la dernière ce mois-ci ou le mois dernier, et aucune récurrence active du même libellé ou d'un montant proche sur ce compte. La récurrence créée démarre le mois qui suit la dernière opération.
+- **Règles apprises** : quand on change la catégorie d'une opération importée (dépense ou revenu), l'app propose « toujours classer <mots du libellé normalisé> en <catégorie> », sauf si une règle couvre déjà ce libellé.
+- **Rappel de sauvegarde** : au-delà de 30 jours depuis la dernière sauvegarde complète, ou sans aucune sauvegarde alors que l'espace contient des opérations ; masquable 7 jours.
+
+## Paramètres
+
+Cinq onglets, chacun avec son adresse (`/parametres/<onglet>`), pour que l'app puisse y renvoyer directement :
+
+| Onglet               | Adresse       | Contenu                                                                                                       |
+| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------- |
+| Espace               | `espace`      | Espaces de suivi, type d'espace, foyer du commun, thème                                                       |
+| Comptes              | `comptes`     | Comptes courants et leur solde de départ, compte principal ; renvoi vers Épargne et patrimoine pour l'épargne |
+| Catégories et règles | `categories`  | Catégories, règles d'import des relevés                                                                       |
+| Sauvegardes          | `sauvegardes` | Sauvegarde complète (date de la dernière), restauration, réglages, export CSV, historique des modifications   |
+| Mon compte           | `compte`      | Connexion, déconnexion, suppression du compte                                                                 |
+
 - Un espace neuf démarre avec un compte courant et quelques catégories courantes, à compléter. Le tableau de bord n'affiche que ce qui a été saisi (revenus, charges, épargne…) ; tant qu'aucune opération n'existe, il présente les premiers pas.
 
 ## Espaces de suivi
 
 Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on ajoute) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
 
-- **Créer** un espace : Paramètres → Espaces de suivi.
+- **Créer** un espace : Paramètres → Espace → Espaces de suivi.
 - **Espaces perso** : visibles et modifiables uniquement par leur propriétaire.
 - **Partager un espace commun** : bouton « Inviter », puis envoyer le lien (usage unique, 7 jours) à la personne de son choix. Elle se connecte ou crée son compte, puis rejoint l'espace ; personne d'autre n'y a accès. Le propriétaire peut retirer l'accès, l'invité peut quitter l'espace.
 - **Temps réel et hors ligne** : une modification apparaît chez l'autre sans recharger ; sans réseau, la saisie continue et part au retour de la connexion (bandeau « Hors ligne »).
