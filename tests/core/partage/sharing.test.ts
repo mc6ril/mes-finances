@@ -100,6 +100,24 @@ describe('inviter dans un espace commun', () => {
     expect(created).toEqual([]);
   });
 
+  it('réutilise l’invitation en attente au lieu d’en créer une autre', async () => {
+    const { useCases, created } = setup();
+    expect(await useCases.openInvitation(commun)).toMatchObject({ ok: true, value: { token: TOKEN } });
+    expect(created).toEqual([]);
+  });
+
+  it('ne crée qu’une invitation pour des ouvertures simultanées (double rendu)', async () => {
+    const { useCases, created } = setup(null);
+    const [first, second] = await Promise.all([
+      useCases.openInvitation(commun),
+      useCases.openInvitation(commun),
+    ]);
+    expect(created).toHaveLength(1);
+    expect(first).toEqual(second);
+    await useCases.openInvitation(commun);
+    expect(created).toHaveLength(2);
+  });
+
   it('liste les invitations encore valables', async () => {
     const valid = setup();
     expect(await valid.useCases.pendingInvitations(commun)).toMatchObject({

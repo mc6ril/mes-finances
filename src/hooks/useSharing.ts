@@ -27,11 +27,7 @@ export const useWorkspaceInvitation = (workspace: Workspace) => {
 
   const open = useCallback(async () => {
     setState({ invitation: null, pending: true, error: null });
-    const existing = await sharing.pendingInvitations(workspace);
-    const reused = existing.ok ? existing.value[0] : undefined;
-    const result: Result<NewInvitation> = reused
-      ? { ok: true, value: reused }
-      : await sharing.invite(workspace);
+    const result = await sharing.openInvitation(workspace);
     setState(
       result.ok
         ? { invitation: result.value, pending: false, error: null }
