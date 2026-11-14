@@ -1,0 +1,160 @@
+rules_version = '2';
+
+// Règles Firestore de « Mes finances ». Tout ce qui n'est pas explicitement permis est refusé.
+// - workspaces/{id} : espace de suivi (perso : un seul membre ; commun : propriétaire + un invité) ;
+// - workspaces/{id}/data/{doc} : données de l'espace, réparties en paquets ;
+// - invitations/{token} : lien d'invitation à usage unique, valable 7 jours au plus.
+// Tests : tests/emulator/firestoreRules.test.ts (npm run test:emulator).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function workspacePath(id) {
+      return /databases/$(database)/documents/workspaces/$(id);
+    }
+
+    function invitationPath(token) {
+      return /databases/$(database)/documents/invitations/$(token);
+    }
+
+    function isMemberOf(data) {
+      return signedIn() && uid() in data.memberIds;
+    }
+
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /workspaces/{workspaceId} {
+      function isOwner() {
+        return signedIn() && resource.data.ownerId == uid();
+      }
+
+      function validCreation() {
+        let data = request.resource.data;
+        return signedIn()
+          && data.keys().hasOnly(['ownerId', 'memberIds', 'kind', 'name', 'schemaVersion', 'settings', 'layout', 'createdAt'])
+          && data.keys().hasAll(['ownerId', 'memberIds', 'kind', 'name', 'schemaVersion', 'settings', 'layout', 'createdAt'])
+          && data.ownerId == uid()
+          && data.memberIds == [uid()]
+          && data.kind in ['perso', 'commun']
+          && data.createdAt == request.time;
+      }
+
+      // Nom, réglages, version du schéma, découpage en paquets : tout membre.
+      function memberEdit() {
+        return isMemberOf(resource.data)
+          && changedOnly(['name', 'settings', 'schemaVersion', 'layout']);
+      }
+
+      function revokeGuest() {
+        return isOwner()
+          && resource.data.memberIds.size() == 2
+          && changedOnly(['memberIds'])
+          && request.resource.data.memberIds == [uid()];
+      }
+
+      function leave() {
+        return isMemberOf(resource.data)
+          && resource.data.ownerId != uid()
+          && changedOnly(['memberIds'])
+          && request.resource.data.memberIds == [resource.data.ownerId];
+      }
+
+      // Suppression du compte du propriétaire : l'espace revient à l'invité, seul membre restant.
+      function transferToGuest() {
+        return isOwner()
+          && resource.data.memberIds.size() == 2
+          && changedOnly(['ownerId', 'memberIds'])
+          && request.resource.data.memberIds == resource.data.memberIds.removeAll([uid()])
+          && request.resource.data.ownerId == request.resource.data.memberIds[0];
+      }
+
+      // Acceptation : l'invitation (valide avant le lot) est consommée par moi dans le même lot.
+      function joinWithInvitation() {
+        let token = request.resource.data.lastInvitation;
+        let before = get(invitationPath(token)).data;
+        let after = getAfter(invitationPath(token)).data;
+        return signedIn()
+          && !(uid() in resource.data.memberIds)
+          && resource.data.kind == 'commun'
+          && resource.data.memberIds.size() == 1
+          && changedOnly(['memberIds', 'lastInvitation'])
+          && request.resource.data.memberIds == resource.data.memberIds.concat([uid()])
+          && before.workspaceId == workspaceId
+          && before.ownerId == resource.data.ownerId
+          && before.usedBy == null
+          && request.time < before.expiresAt
+          && after.usedBy == uid();
+      }
+
+      allow get, list: if isMemberOf(resource.data);
+      allow create: if validCreation();
+      allow update: if memberEdit() || revokeGuest() || leave() || transferToGuest() || joinWithInvitation();
+      allow delete: if isOwner();
+
+      match /data/{docId} {
+        // Avant le lot (modification, suppression avec l'espace) ou après (création avec l'espace).
+        function member() {
+          return (exists(workspacePath(workspaceId)) && isMemberOf(get(workspacePath(workspaceId)).data))
+            || (existsAfter(workspacePath(workspaceId)) && isMemberOf(getAfter(workspacePath(workspaceId)).data));
+        }
+
+        allow read: if signedIn() && exists(workspacePath(workspaceId))
+          && isMemberOf(get(workspacePath(workspaceId)).data);
+        allow write: if signedIn() && member();
+      }
+    }
+
+    match /invitations/{token} {
+      function validCreation() {
+        let data = request.resource.data;
+        let workspace = get(workspacePath(data.workspaceId)).data;
+        return signedIn()
+          && token.size() >= 32
+          && data.keys().hasOnly(['workspaceId', 'ownerId', 'workspaceName', 'createdAt', 'expiresAt', 'usedBy', 'usedAt'])
+          && data.keys().hasAll(['workspaceId', 'ownerId', 'workspaceName', 'createdAt', 'expiresAt', 'usedBy', 'usedAt'])
+          && data.ownerId == uid()
+          && data.usedBy == null
+          && data.usedAt == null
+          && data.createdAt == request.time
+          && data.expiresAt > request.time
+          && data.expiresAt <= request.time + duration.value(7, 'd')
+          && workspace.ownerId == uid()
+          && workspace.kind == 'commun'
+          && workspace.memberIds.size() == 1;
+      }
+
+      // Consommée uniquement dans le lot qui ajoute l'invité à l'espace.
+      function validUse() {
+        return signedIn()
+          && resource.data.ownerId != uid()
+          && resource.data.usedBy == null
+          && request.time < resource.data.expiresAt
+          && changedOnly(['usedBy', 'usedAt'])
+          && request.resource.data.usedBy == uid()
+          && request.resource.data.usedAt == request.time
+          && existsAfter(workspacePath(resource.data.workspaceId))
+          && uid() in getAfter(workspacePath(resource.data.workspaceId)).data.memberIds;
+      }
+
+      function concerned() {
+        return signedIn() && (resource.data.ownerId == uid() || resource.data.usedBy == uid());
+      }
+
+      // Lecture par le lien (le token est le secret) ; jamais d'énumération.
+      allow get: if signedIn();
+      allow list: if concerned();
+      allow create: if validCreation();
+      allow update: if validUse();
+      allow delete: if concerned();
+    }
+  }
+}

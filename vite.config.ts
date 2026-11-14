@@ -19,5 +19,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // Exigent l'émulateur Firestore : npm run test:emulator.
+    exclude: ['tests/emulator/**', 'node_modules/**'],
   },
 });

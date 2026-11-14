@@ -23,3 +23,19 @@ jobs:
       - run: npm run build
       - name: Audit des dépendances
         run: npm audit --omit=dev --audit-level=high
+
+  regles-firestore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Règles Firestore et adapter (émulateur)
+        run: npm run test:emulator
