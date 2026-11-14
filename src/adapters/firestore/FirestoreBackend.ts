@@ -1,9 +1,11 @@
 import type { Firestore } from 'firebase/firestore';
+import type { AccountDataInterface } from '@/core/auth/interface';
 import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import type { Dataset } from '@/core/shared/model';
 import type { FinanceRepositoryInterface } from '@/core/store/interface';
 import type { UserDataBackendInterface } from '@/core/sync/interface';
+import { FirestoreAccountData } from './FirestoreAccountData';
 import { FirestoreFinanceRepository } from './FirestoreFinanceRepository';
 import { FirestoreWorkspaceRegistry, type KeyValueStorage } from './FirestoreWorkspaceRegistry';
 import { SyncMonitor } from './SyncMonitor';
@@ -18,7 +20,12 @@ export type FirestoreBackendDeps = {
   storage: KeyValueStorage;
 };
 
-type Connection = { db: Firestore; userId: string; registry: FirestoreWorkspaceRegistry };
+type Connection = {
+  db: Firestore;
+  userId: string;
+  registry: FirestoreWorkspaceRegistry;
+  accountData: FirestoreAccountData;
+};
 
 const disconnected = async <T>(): Promise<Result<T>> => fail('sync-failed');
 
@@ -52,6 +59,7 @@ export class FirestoreBackend implements UserDataBackendInterface {
       db,
       userId,
       registry: new FirestoreWorkspaceRegistry(db, userId, this.sync, this.#deps.storage),
+      accountData: new FirestoreAccountData(db, userId),
     };
   }
 
@@ -85,6 +93,11 @@ export class FirestoreBackend implements UserDataBackendInterface {
       toDocumentId(workspaceId, connection.userId),
       this.sync,
     );
+  };
+
+  /** Données en ligne de l'utilisateur connecté, effacées avant la suppression de son compte. */
+  readonly accountData: AccountDataInterface = {
+    erase: () => this.#connection?.accountData.erase() ?? disconnected(),
   };
 
   /** Liste des espaces de l'utilisateur connecté. */

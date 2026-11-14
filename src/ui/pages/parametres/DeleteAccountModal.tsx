@@ -52,8 +52,9 @@ const DeleteAccountModal = ({ user, onClose }: DeleteAccountModalProps) => {
           Cette action est définitive.
         </Text>
         <Text variant="muted">
-          Les données enregistrées dans ce navigateur ne sont pas effacées. Exporte une sauvegarde complète si
-          tu veux les conserver ailleurs.
+          Tes espaces et leurs données sont supprimés. Un espace commun partagé est transmis à la personne
+          invitée, qui le garde ; tu quittes les espaces communs où tu es invité. Exporte d’abord une
+          sauvegarde complète si tu veux conserver tes données.
         </Text>
         {method === 'password' ? (
           <Field label="Mot de passe actuel">

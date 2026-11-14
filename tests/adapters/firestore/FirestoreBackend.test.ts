@@ -33,6 +33,7 @@ describe('données de l’utilisateur en ligne', () => {
     expect(await backend.registry.load()).toEqual({ ok: false, error: { code: 'sync-failed' } });
     expect(await backend.repository('perso').load()).toEqual({ ok: false, error: { code: 'sync-failed' } });
     expect(backend.repository('perso').watch(() => undefined)).toBeTypeOf('function');
+    expect(await backend.accountData.erase()).toEqual({ ok: false, error: { code: 'sync-failed' } });
   });
 
   it('ouvre une base par connexion et l’efface de l’appareil à la déconnexion', async () => {

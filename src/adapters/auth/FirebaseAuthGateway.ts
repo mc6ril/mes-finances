@@ -139,7 +139,7 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
     return reloaded.ok ? ok(toAuthUser(user)) : reloaded;
   }
 
-  async deleteAccount(reauthentication: Reauthentication): Promise<Result<void>> {
+  async reauthenticate(reauthentication: Reauthentication): Promise<Result<void>> {
     const user = this.#auth.currentUser;
     if (!user) {
       return fail('auth-failed');
@@ -157,7 +157,14 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
       } else {
         await reauthenticateWithPopup(user, googleProvider());
       }
-      await deleteUser(user);
     });
+  }
+
+  async deleteAccount(): Promise<Result<void>> {
+    const user = this.#auth.currentUser;
+    if (!user) {
+      return fail('auth-failed');
+    }
+    return attempt(() => deleteUser(user));
   }
 }

@@ -103,16 +103,16 @@ describe('session d’authentification', () => {
       const session = new AuthSession(gateway);
       session.start();
       emit(aUser());
-      await session.deleteAccount({ method: 'google' });
+      await session.deleteAccount();
       expect(session.getSnapshot()).toEqual({ status: 'signed-out', user: null, error: null });
     });
 
     it('reste connecté si la suppression échoue', async () => {
-      const { gateway, emit } = fakeAuthGateway({ deleteAccount: fail('auth-invalid-credentials') });
+      const { gateway, emit } = fakeAuthGateway({ deleteAccount: fail('auth-requires-recent-login') });
       const session = new AuthSession(gateway);
       session.start();
       emit(aUser());
-      await session.deleteAccount({ method: 'password', password: 'faux' });
+      await session.deleteAccount();
       expect(session.getSnapshot().status).toBe('signed-in');
     });
   });
@@ -136,7 +136,8 @@ describe('session d’authentification', () => {
       expect(await session.signOut()).toEqual(notConfigured);
       expect(await session.sendPasswordReset('jean@example.com')).toEqual(notConfigured);
       expect(await session.reloadUser()).toEqual(notConfigured);
-      expect(await session.deleteAccount({ method: 'google' })).toEqual(notConfigured);
+      expect(await session.reauthenticate({ method: 'google' })).toEqual(notConfigured);
+      expect(await session.deleteAccount()).toEqual(notConfigured);
     });
   });
 });

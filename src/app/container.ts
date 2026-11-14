@@ -45,7 +45,7 @@ export const createContainer = (): Container => {
     storage: browserStorage(),
   });
   watchBrowserNetwork(backend.sync);
-  const auth = createAuthUseCases({ gateway: session, sync: backend.sync });
+  const auth = createAuthUseCases({ gateway: session, sync: backend.sync, accountData: backend.accountData });
   const store = new FinanceStore(backend.repository, backend.registry, randomId);
   const files = createFileUseCases({
     reader: new BrowserTextFileReader(),
