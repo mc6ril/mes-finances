@@ -153,6 +153,23 @@ describe('liste des espaces partagée', () => {
     expect(db.listenerCount(commun.id)).toBe(0);
   });
 
+  it('garde un espace tout juste créé malgré une liste reçue en retard qui ne le contient pas encore', async () => {
+    const db = new MemoryDatabase();
+    const { store, registry } = device(db, [DEFAULT_WORKSPACE]);
+    await store.start();
+    await store.createWorkspace('Maison', 'commun');
+    const created = store.getSnapshot().workspace;
+    expect(created.name).toBe('Maison');
+    registry.remoteChange([DEFAULT_WORKSPACE]);
+    await Promise.resolve();
+    expect(store.getSnapshot().workspace.id).toBe(created.id);
+    expect(store.getSnapshot().workspaces.map((item) => item.id)).toContain(created.id);
+    // Une fois confirmé par le serveur, son retrait ultérieur est bien pris en compte.
+    registry.remoteChange([DEFAULT_WORKSPACE, created]);
+    registry.remoteChange([DEFAULT_WORKSPACE]);
+    await vi.waitFor(() => expect(store.getSnapshot().workspace.id).toBe('perso'));
+  });
+
   it('garde toujours l’espace principal en tête, même absent de la liste reçue', async () => {
     const db = new MemoryDatabase();
     const { store, registry } = device(db, [DEFAULT_WORKSPACE]);

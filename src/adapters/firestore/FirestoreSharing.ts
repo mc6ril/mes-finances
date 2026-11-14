@@ -122,6 +122,10 @@ export class FirestoreSharing implements SharingGatewayInterface {
       if (!accepted.ok && accepted.error.code === 'sync-permission-denied') {
         return fail('invitation-used');
       }
+      if (accepted.ok) {
+        // Consommée, elle ne sert plus : on ne la garde pas.
+        this.#enqueue(() => deleteDoc(this.#invitationRef(invitation.token)));
+      }
       return accepted;
     } catch (error) {
       return toSyncFailure(error);
@@ -137,11 +141,14 @@ export class FirestoreSharing implements SharingGatewayInterface {
           where('workspaceId', '==', toDocumentId(workspaceId, this.#userId)),
         ),
       );
-      return ok(
-        snapshot.docs
-          .map((item) => this.#toInvitation(item.id, item.data()))
-          .filter((invitation) => invitation.usedBy === null),
+      const now = new Date().toISOString();
+      const invitations = snapshot.docs.map((item) => this.#toInvitation(item.id, item.data()));
+      const stale = invitations.filter(
+        (invitation) => invitation.usedBy !== null || invitation.expiresAt <= now,
       );
+      // Ménage au passage : invitations expirées ou déjà servies.
+      stale.forEach((invitation) => this.#enqueue(() => deleteDoc(this.#invitationRef(invitation.token))));
+      return ok(invitations.filter((invitation) => !stale.includes(invitation)));
     } catch (error) {
       return toSyncFailure(error);
     }

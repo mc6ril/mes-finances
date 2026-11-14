@@ -98,8 +98,9 @@ describe('invitation par lien', () => {
       role: 'guest',
       shared: true,
     });
-    const reused = await sharingOf(C).sharing.readInvitation(invitation.token);
-    expect(reused.ok && reused.value?.usedBy).toBe(B);
+    await guest.monitor.flush(5000);
+    // Consommée, l'invitation est effacée : le lien ne mène plus nulle part.
+    expect(await sharingOf(C).sharing.readInvitation(invitation.token)).toEqual({ ok: true, value: null });
   });
 
   it('un lien inconnu ne renvoie rien', async () => {
@@ -117,6 +118,25 @@ describe('invitation par lien', () => {
       error: { code: 'invitation-used' },
     });
     expect(await membersOf(COMMON)).toEqual([A, B]);
+  });
+
+  it('efface les invitations expirées quand le propriétaire liste les siennes', async () => {
+    const expired = randomToken();
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore() as unknown as Firestore, `invitations/${expired}`), {
+        workspaceId: COMMON,
+        ownerId: A,
+        workspaceName: 'Commun',
+        createdAt: Timestamp.now(),
+        expiresAt: Timestamp.fromMillis(Date.now() - 1000),
+        usedBy: null,
+        usedAt: null,
+      });
+    });
+    const owner = sharingOf(A);
+    expect(await owner.sharing.pendingInvitations(COMMON)).toEqual({ ok: true, value: [] });
+    await owner.monitor.flush(5000);
+    expect(await sharingOf(B).sharing.readInvitation(expired)).toEqual({ ok: true, value: null });
   });
 
   it('liste puis annule les invitations en attente du propriétaire', async () => {
