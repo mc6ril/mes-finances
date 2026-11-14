@@ -249,6 +249,19 @@ const toVersion10 = (dataset: Dataset): Dataset => {
   };
 };
 
+/** v11 : suppression du mode simplifié et de son enveloppe personnelle ; tout est suivi en mode complet. */
+const toVersion11 = (dataset: Dataset): Dataset => {
+  const {
+    mode: _mode,
+    personalEnvelope: _envelope,
+    ...settings
+  } = dataset.settings as Settings & {
+    mode?: unknown;
+    personalEnvelope?: unknown;
+  };
+  return { ...dataset, settings };
+};
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -260,6 +273,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 8, apply: toVersion8 },
   { version: 9, apply: toVersion9 },
   { version: 10, apply: toVersion10 },
+  { version: 11, apply: toVersion11 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

@@ -1,9 +1,18 @@
 import { createInitialDataset } from '@/core/shared/seed';
 
 describe('createInitialDataset', () => {
-  it('ne pré-remplit pas l’enveloppe personnelle', () => {
+  it('ne propose aucune catégorie d’épargne : elles naissent avec les comptes d’épargne', () => {
     const dataset = createInitialDataset('2026-11-08', () => 'id');
-    expect(dataset.settings.personalEnvelope).toBe(0);
+    expect(dataset.categories.filter((category) => category.group === 'epargne')).toEqual([]);
+    expect(
+      createInitialDataset('2026-11-08', () => 'id', 'commun').categories.some((c) => c.group === 'epargne'),
+    ).toBe(false);
+  });
+
+  it('n’a plus de mode de suivi ni d’enveloppe', () => {
+    const dataset = createInitialDataset('2026-11-08', () => 'id');
+    expect(dataset.settings).not.toHaveProperty('mode');
+    expect(dataset.settings).not.toHaveProperty('personalEnvelope');
   });
 
   it('démarre avec le seul compte courant : l’utilisateur ajoute ses autres comptes', () => {
@@ -19,8 +28,8 @@ describe('createInitialDataset', () => {
 describe('espace commun', () => {
   const dataset = createInitialDataset('2026-11-08', () => 'id', 'commun');
 
-  it('est typé commun, en suivi complet, avec deux membres à nommer', () => {
-    expect(dataset.settings).toMatchObject({ kind: 'commun', mode: 'complet' });
+  it('est typé commun, avec deux membres à nommer', () => {
+    expect(dataset.settings).toMatchObject({ kind: 'commun' });
     expect(dataset.settings.household?.members.map((member) => [member.name, member.salaryOnCommon])).toEqual(
       [
         ['', true],

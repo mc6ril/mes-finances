@@ -167,6 +167,15 @@ describe('comptes, catégories et objectifs', () => {
       items: [{ id: 'id-1', name: 'Nouveau compte', openingBalance: 0, openingDate: '2026-11-08' }],
     });
   });
+
+  it('crée la ligne d’épargne du budget avec le compte d’épargne', async () => {
+    const { useCases, calls } = setup();
+    await useCases.createAccount();
+    expect(calls[1]).toMatchObject({
+      collection: 'categories',
+      items: [{ id: 'id-2', name: 'Nouveau compte', group: 'epargne', archived: false }],
+    });
+  });
 });
 
 describe('épargne', () => {
@@ -212,7 +221,7 @@ describe('espace', () => {
     await useCases.resetWorkspace();
     expect(calls[0]).toMatchObject({
       kind: 'restore',
-      dataset: { transactions: [], settings: { personalEnvelope: 0 } },
+      dataset: { transactions: [], settings: { plaisirBudget: 0 } },
       log: { entity: 'Réinitialisation' },
     });
   });

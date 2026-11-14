@@ -1,3 +1,4 @@
+import { savingsCategoryOfAccount } from '../budget/budget';
 import type { Result } from '../shared/errors';
 import { todayIso } from '../shared/dates';
 import type { Account, Category, Goal, Recurring } from '../shared/model';
@@ -17,10 +18,21 @@ const NEW_ACCOUNT: Omit<Account, 'id' | 'openingDate'> = {
 export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const saveAccount = async (draft: Draft<Account>): Promise<Result<void>> => {
     const { entity, isNew } = withId(draft, newId);
-    return gateway.upsert('accounts', [entity], {
+    const dataset = gateway.currentDataset();
+    const previous = dataset?.accounts.find((account) => account.id === entity.id);
+    const saved = await gateway.upsert('accounts', [entity], {
       action: isNew ? 'creation' : 'modification',
       entity: 'Compte',
       summary: entity.name,
+    });
+    const category = dataset && savingsCategoryOfAccount(entity, previous, dataset.categories, newId);
+    if (!saved.ok || !category) {
+      return saved;
+    }
+    return gateway.upsert('categories', [category], {
+      action: isNew ? 'creation' : 'modification',
+      entity: 'Catégorie',
+      summary: category.name,
     });
   };
 

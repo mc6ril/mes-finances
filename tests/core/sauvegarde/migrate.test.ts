@@ -11,7 +11,10 @@ const v1Dataset = () => {
   return {
     ...rest,
     schemaVersion: 1,
-    categories: current.categories.map(({ period: _period, ...category }) => category),
+    categories: [
+      ...current.categories.map(({ period: _period, ...category }) => category),
+      { id: 'cat-exceptionnelles', name: 'Dépenses exceptionnelles', group: 'plaisir', archived: false },
+    ],
     budgets: [
       { month: '2026-10', planned: { 'cat-voyages': 1500, 'cat-restaurants': 8000 }, carryOver: false },
       {
@@ -304,5 +307,21 @@ describe('migrateDataset v9 → v10', () => {
       ['2026-09', { m2: 0 }],
       ['2026-10', { m2: 210000 }],
     ]);
+  });
+});
+
+describe('migrateDataset v10 → v11', () => {
+  it('retire le mode simplifié et son enveloppe', () => {
+    const current = createInitialDataset('2026-11-05', ids);
+    const v10 = {
+      ...current,
+      schemaVersion: 10,
+      settings: { ...current.settings, mode: 'simple', personalEnvelope: 46000 },
+    };
+    const migrated = migrateDataset(v10 as never);
+    expect(migrated.schemaVersion).toBe(11);
+    expect(migrated.settings).not.toHaveProperty('mode');
+    expect(migrated.settings).not.toHaveProperty('personalEnvelope');
+    expect(migrated.settings.mainAccountId).toBe(current.settings.mainAccountId);
   });
 });

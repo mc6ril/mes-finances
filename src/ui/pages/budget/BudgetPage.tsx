@@ -1,8 +1,9 @@
 import { ArrowRight, History, Repeat } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import { budgetOf, budgetOriginOf, linesFor, visibleGroups, yearBudgetOf } from '@/core/budget/overview';
+import { BUDGET_GROUPS, budgetOf, budgetOriginOf, linesFor, yearBudgetOf } from '@/core/budget/overview';
 import { useReport } from '@/hooks/useReport';
 import { groupLabel } from '@/ui/constants';
 import type { BudgetLine, LineStatus } from '@/core/budget/budget';
@@ -109,6 +110,18 @@ const Trend = ({ line }: TrendProps) => {
   );
 };
 
+const NoSavingsAccount = () => (
+  <Card title="Épargne">
+    <Text variant="muted">
+      Aucun compte d’épargne suivi. Ajoute un livret ou un placement dans{' '}
+      <Link to="/parametres" className="font-medium text-brand-600 hover:underline dark:text-brand-300">
+        Paramètres → Comptes
+      </Link>{' '}
+      : il apparaîtra ici avec son budget.
+    </Text>
+  </Card>
+);
+
 type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: string };
 
 const GroupTable = ({ group, lines, month }: GroupTableProps) => {
@@ -116,6 +129,9 @@ const GroupTable = ({ group, lines, month }: GroupTableProps) => {
   const report = useReport();
   const { settings } = useDataset();
   const rows = lines.filter((line) => line.group === group);
+  if (rows.length === 0) {
+    return group === 'epargne' ? <NoSavingsAccount /> : null;
+  }
   const planned = groupTotal(rows, group, 'available');
   const actual = groupTotal(rows, group, 'actual');
   return (
@@ -202,42 +218,11 @@ const GroupTable = ({ group, lines, month }: GroupTableProps) => {
 
 type SummaryProps = {
   lines: BudgetLine[];
-  isSimple: boolean;
-  envelope: Cents;
   provision: Cents;
   annualSpent: Cents;
 };
 
-const Summary = ({ lines, isSimple, envelope, provision, annualSpent }: SummaryProps) => {
-  if (isSimple) {
-    const allocated =
-      groupTotal(lines, 'epargne', 'available') + groupTotal(lines, 'plaisir', 'available') + provision;
-    const used =
-      groupTotal(lines, 'epargne', 'actual') + groupTotal(lines, 'plaisir', 'actual') + annualSpent;
-    const difference = envelope - allocated;
-    return (
-      <Card>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <SummaryItem label="Enveloppe personnelle" value={<Amount cents={envelope} />} />
-          <SummaryItem
-            label="Répartie (épargne + plaisir + provision)"
-            value={<Amount cents={allocated} />}
-            hint={
-              <>
-                dont <Amount cents={provision} /> de provision pour les budgets annuels ·{' '}
-                {allocationHint(difference)}
-              </>
-            }
-          />
-          <SummaryItem
-            label="Utilisée ce mois"
-            value={<Amount cents={used} />}
-            hint={<AnnualSpentHint annualSpent={annualSpent} />}
-          />
-        </div>
-      </Card>
-    );
-  }
+const Summary = ({ lines, provision, annualSpent }: SummaryProps) => {
   const income = groupTotal(lines, 'revenu', 'actual');
   const plannedIncome = groupTotal(lines, 'revenu', 'available');
   const spending = groupTotal(lines, 'fixe', 'actual') + groupTotal(lines, 'plaisir', 'actual') + annualSpent;
@@ -323,51 +308,6 @@ const BudgetFigure = ({ label, actual, budget, progress }: BudgetFigureProps) =>
   </div>
 );
 
-type AnnualSpentHintProps = { annualSpent: Cents };
-
-const AnnualSpentHint = ({ annualSpent }: AnnualSpentHintProps) => {
-  if (annualSpent === 0) {
-    return null;
-  }
-  return (
-    <>
-      dont <Amount cents={annualSpent} /> sur les budgets annuels
-    </>
-  );
-};
-
-const allocationHint = (difference: Cents) => {
-  if (difference === 0) {
-    return 'Enveloppe entièrement répartie';
-  }
-  if (difference > 0) {
-    return (
-      <>
-        <Amount cents={difference} /> encore à répartir
-      </>
-    );
-  }
-  return (
-    <>
-      Répartition supérieure de <Amount cents={-difference} /> à l’enveloppe
-    </>
-  );
-};
-
-type SummaryItemProps = { label: string; value: React.ReactNode; hint?: React.ReactNode };
-
-const SummaryItem = ({ label, value, hint }: SummaryItemProps) => (
-  <div>
-    <Text variant="label">{label}</Text>
-    <div className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-50">{value}</div>
-    {hint && (
-      <Text variant="small" className="mt-0.5">
-        {hint}
-      </Text>
-    )}
-  </div>
-);
-
 type BudgetOriginProps = { month: MonthKey; origin: MonthKey | null; isDefined: boolean };
 
 const BudgetOrigin = ({ month, origin, isDefined }: BudgetOriginProps) => {
@@ -404,12 +344,9 @@ const BudgetPage = () => {
   const lines = useMemo(() => linesFor(dataset, month), [dataset, month]);
   const budget = budgetOf(dataset, month);
   const origin = budgetOriginOf(dataset, month);
-  const isSimple = dataset.settings.mode === 'simple';
   const isCommon = dataset.settings.kind === 'commun';
   // Dans le commun, revenus et épargne sont calculés dans le mois du commun : pas de budget à saisir.
-  const groups = visibleGroups(dataset).filter(
-    (group) => !isCommon || (group !== 'revenu' && group !== 'epargne'),
-  );
+  const groups = BUDGET_GROUPS.filter((group) => !isCommon || (group !== 'revenu' && group !== 'epargne'));
   const history = dataset.audit
     .filter((entry) => entry.entity === 'Budget')
     .sort((a, b) => b.at.localeCompare(a.at))
@@ -419,7 +356,7 @@ const BudgetPage = () => {
     <div className="flex flex-col gap-5">
       <PageHeader
         title="Budget"
-        description={`${capitalize(monthLabel(month))} · ${isCommon ? 'compte commun' : isSimple ? 'mode simplifié (enveloppe personnelle)' : 'mode complet'}`}
+        description={`${capitalize(monthLabel(month))}${isCommon ? ' · compte commun' : ''}`}
         actions={
           <>
             <MonthNoteButton month={month} onClick={() => setNoteMonth(month)} />
@@ -453,8 +390,6 @@ const BudgetPage = () => {
       ) : (
         <Summary
           lines={lines}
-          isSimple={isSimple}
-          envelope={dataset.settings.personalEnvelope}
           provision={provisionPerMonth(yearBudgetOf(dataset, month.slice(0, 4)), dataset.categories)}
           annualSpent={annualActualInMonth(dataset.transactions, dataset.categories, month)}
         />

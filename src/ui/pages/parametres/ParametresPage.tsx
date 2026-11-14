@@ -38,7 +38,6 @@ import type {
   CategoryGroup,
   Dataset,
   ThemePreference,
-  TrackingMode,
   WorkspaceKind,
 } from '@/core/shared/model';
 import Badge from '@/ui/design-system/Badge';
@@ -77,9 +76,7 @@ const ProfileCard = () => {
   const changeKind = (kind: WorkspaceKind) =>
     void report(
       finance.updateSettings(
-        kind === 'commun'
-          ? { kind, household: settings.household ?? DEFAULT_HOUSEHOLD, mode: 'complet' }
-          : { kind },
+        kind === 'commun' ? { kind, household: settings.household ?? DEFAULT_HOUSEHOLD } : { kind },
         kind === 'commun' ? 'Espace commun' : 'Espace perso',
       ),
     );
@@ -97,58 +94,12 @@ const ProfileCard = () => {
             ]}
           />
         </PreferenceRow>
-        {settings.kind === 'commun' && settings.household ? (
+        {settings.kind === 'commun' && settings.household && (
           <HouseholdSettings household={settings.household} />
-        ) : (
-          <PersonalSettings />
         )}
         <ThemePicker />
       </div>
     </Card>
-  );
-};
-
-const PersonalSettings = () => {
-  const { settings } = useDataset();
-  const finance = useFinanceUseCases();
-  const report = useReport();
-  return (
-    <>
-      <PreferenceRow
-        label="Mode de suivi"
-        hint={
-          settings.mode === 'simple'
-            ? 'Seuls l’épargne personnelle et le budget plaisir sont suivis, dans ton enveloppe. Charges communes et projet immobilier sont considérés comme déjà déduits.'
-            : 'Revenus, charges, épargne et plaisir sont suivis à partir de toutes les opérations du compte courant.'
-        }
-      >
-        <Segmented<TrackingMode>
-          value={settings.mode}
-          label="Mode de suivi"
-          onChange={(mode) => void report(finance.updateSettings({ mode }, `Mode de suivi : ${mode}`))}
-          options={[
-            { value: 'simple', label: 'Simplifié' },
-            { value: 'complet', label: 'Complet' },
-          ]}
-        />
-      </PreferenceRow>
-      {settings.mode === 'simple' && (
-        <PreferenceRow
-          label="Enveloppe personnelle"
-          hint="Ce qui te reste chaque mois après charges et projet immobilier."
-        >
-          <MoneyInput
-            key={`env-${settings.personalEnvelope}`}
-            cents={settings.personalEnvelope}
-            label="Enveloppe personnelle"
-            className="w-40"
-            onCommit={(personalEnvelope) =>
-              void report(finance.updateSettings({ personalEnvelope }, 'Enveloppe personnelle modifiée'))
-            }
-          />
-        </PreferenceRow>
-      )}
-    </>
   );
 };
 
@@ -440,6 +391,11 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
         </span>
         <Text variant="strong">{groupLabel(group, settings.kind)}</Text>
       </div>
+      {group === 'epargne' && (
+        <Text variant="caption" className="pt-2">
+          Une catégorie par compte d’épargne, créée, renommée et archivée avec lui (carte Comptes).
+        </Text>
+      )}
       <ul className="divide-y divide-stone-100 dark:divide-stone-800/70">
         {active.map((category) => (
           <CategoryRow key={`${category.id}-${category.name}`} category={category} />

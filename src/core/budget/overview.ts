@@ -40,12 +40,7 @@ export const patrimoineContext = (dataset: Dataset): PatrimoineContext => ({
   valuations: dataset.valuations,
 });
 
-export const visibleGroups = (dataset: Dataset): CategoryGroup[] => {
-  if (dataset.settings.mode === 'simple') {
-    return ['epargne', 'plaisir'];
-  }
-  return ['revenu', 'fixe', 'epargne', 'plaisir'];
-};
+export const BUDGET_GROUPS: CategoryGroup[] = ['revenu', 'fixe', 'epargne', 'plaisir'];
 
 export const referenceDate = (month: MonthKey, today: IsoDate): IsoDate => {
   if (monthKeyOf(today) === month) {
@@ -127,3 +122,32 @@ export const spendingSlices = (dataset: Dataset, month: MonthKey): SpendingSlice
 };
 
 export type MonthOverview = ReturnType<typeof monthOverview>;
+
+/** Ce que l'espace contient déjà : le tableau de bord n'affiche que ce qui a été saisi. */
+export const dashboardContent = (dataset: Dataset) => {
+  const groups = new Map(dataset.categories.map((category) => [category.id, category.group]));
+  const expenses = dataset.transactions.filter((transaction) => transaction.type === 'depense');
+  const savingsAccounts = dataset.accounts.filter(
+    (account) => account.group !== 'courant' && !account.archived,
+  );
+  const hasAmount = (planned: Record<string, number>) => Object.values(planned).some((value) => value !== 0);
+  return {
+    isEmpty:
+      dataset.transactions.length === 0 &&
+      dataset.savingsMovements.length === 0 &&
+      dataset.valuations.length === 0,
+    hasOpeningBalance: dataset.accounts.some(
+      (account) => account.id === dataset.settings.mainAccountId && account.openingBalance !== 0,
+    ),
+    hasIncome: dataset.transactions.some((transaction) => transaction.type === 'revenu'),
+    hasFixedCharges: expenses.some((transaction) => groups.get(transaction.categoryId ?? '') === 'fixe'),
+    hasPersonalSpending: expenses.some((transaction) => groups.get(transaction.categoryId ?? '') !== 'fixe'),
+    hasSavingsAccounts: savingsAccounts.length > 0,
+    hasJointAccount: savingsAccounts.some((account) => account.isJoint),
+    hasBudget:
+      dataset.budgets.some((budget) => hasAmount(budget.planned)) ||
+      dataset.yearBudgets.some((budget) => hasAmount(budget.planned)),
+  };
+};
+
+export type DashboardContent = ReturnType<typeof dashboardContent>;
