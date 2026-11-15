@@ -1,4 +1,4 @@
-import { savingsCategoryOfAccount } from '../budget/budget';
+import { savingsAccountOfCategory, savingsCategoryOfAccount } from '../budget/budget';
 import { newAccountDraft } from '../comptes/accounts';
 import { fail, type Result } from '../shared/errors';
 import { todayIso } from '../shared/dates';
@@ -42,10 +42,22 @@ export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
 
   const saveCategory = async (draft: Draft<Category>): Promise<Result<void>> => {
     const { entity, isNew } = withId(draft, newId);
-    return gateway.upsert('categories', [entity], {
+    const dataset = gateway.currentDataset();
+    const previous = dataset?.categories.find((category) => category.id === entity.id);
+    const saved = await gateway.upsert('categories', [entity], {
       action: isNew ? 'creation' : 'modification',
       entity: 'Catégorie',
       summary: entity.name,
+    });
+    // Une catégorie d'épargne et son compte vont ensemble : l'archivage ou le nom suit.
+    const account = dataset && savingsAccountOfCategory(entity, previous, dataset.accounts);
+    if (!saved.ok || !account) {
+      return saved;
+    }
+    return gateway.upsert('accounts', [account], {
+      action: 'modification',
+      entity: 'Compte',
+      summary: account.name,
     });
   };
 

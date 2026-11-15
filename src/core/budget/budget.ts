@@ -494,6 +494,27 @@ export const savingsCategoryOfAccount = (
 };
 
 /**
+ * Compte d'épargne qui suit sa catégorie, dans l'autre sens : archiver, réactiver ou renommer la
+ * catégorie depuis Paramètres fait de même pour le compte du même nom. null : rien à changer.
+ */
+export const savingsAccountOfCategory = (
+  category: Category,
+  previous: Category | undefined,
+  accounts: Account[],
+): Account | null => {
+  if (category.group !== 'epargne') {
+    return null;
+  }
+  const named = (name: string) =>
+    accounts.find((account) => account.group !== 'courant' && comparable(account.name) === comparable(name));
+  const existing = (previous ? named(previous.name) : undefined) ?? named(category.name);
+  if (!existing || (existing.name === category.name && existing.archived === category.archived)) {
+    return null;
+  }
+  return { ...existing, name: category.name, archived: category.archived };
+};
+
+/**
  * Catégories de dépenses (charges fixes, dépenses personnelles) qui dépassent un budget prévu ce
  * mois-ci. Une catégorie sans budget n'est pas comptée : rien n'a été prévu, rien n'est dépassé.
  */
