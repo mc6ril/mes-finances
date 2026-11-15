@@ -114,7 +114,6 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
       status: 'realise',
       paymentMethod: 'Virement',
       comment: '',
-      recurringId: null,
       createdAt: stamp,
       updatedAt: stamp,
     }));

@@ -165,7 +165,6 @@ export const validateForm = (
       status: form.status,
       ...(form.status === 'realise' && form.verified ? { verified: true } : {}),
       comment: form.comment.trim(),
-      recurringId: null,
       ...imputationOf(form, members),
     },
   };

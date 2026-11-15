@@ -1,8 +1,8 @@
-import { savingsCategoryOfAccount } from '../budget/budget';
+import { savingsAccountOfCategory, savingsCategoryOfAccount } from '../budget/budget';
 import { newAccountDraft } from '../comptes/accounts';
 import { fail, type Result } from '../shared/errors';
 import { todayIso } from '../shared/dates';
-import type { Account, AccountKind, Category, Cents, Goal, Recurring } from '../shared/model';
+import type { Account, AccountKind, Category, Cents, Goal } from '../shared/model';
 import { withId, type Draft, type FinanceDeps } from './shared';
 
 export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
@@ -42,28 +42,24 @@ export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
 
   const saveCategory = async (draft: Draft<Category>): Promise<Result<void>> => {
     const { entity, isNew } = withId(draft, newId);
-    return gateway.upsert('categories', [entity], {
+    const dataset = gateway.currentDataset();
+    const previous = dataset?.categories.find((category) => category.id === entity.id);
+    const saved = await gateway.upsert('categories', [entity], {
       action: isNew ? 'creation' : 'modification',
       entity: 'Catégorie',
       summary: entity.name,
     });
-  };
-
-  const saveRecurring = async (draft: Draft<Recurring>): Promise<Result<void>> => {
-    const { entity, isNew } = withId(draft, newId);
-    return gateway.upsert('recurrings', [entity], {
-      action: isNew ? 'creation' : 'modification',
-      entity: 'Récurrence',
-      summary: entity.label,
+    // Une catégorie d'épargne et son compte vont ensemble : l'archivage ou le nom suit.
+    const account = dataset && savingsAccountOfCategory(entity, previous, dataset.accounts);
+    if (!saved.ok || !account) {
+      return saved;
+    }
+    return gateway.upsert('accounts', [account], {
+      action: 'modification',
+      entity: 'Compte',
+      summary: account.name,
     });
   };
-
-  const deleteRecurring = (recurring: Recurring): Promise<Result<void>> =>
-    gateway.remove('recurrings', [recurring.id], {
-      action: 'suppression',
-      entity: 'Récurrence',
-      summary: recurring.label,
-    });
 
   const saveGoal = async (draft: Draft<Goal>): Promise<Result<void>> => {
     const { entity, isNew } = withId(draft, newId);
@@ -82,8 +78,6 @@ export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     createAccount,
     setMainOpeningBalance,
     saveCategory,
-    saveRecurring,
-    deleteRecurring,
     saveGoal,
     deleteGoal,
   };

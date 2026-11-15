@@ -77,20 +77,6 @@ const setup = (options: { failingCollections?: string[]; failingDestroy?: boolea
   return { store, registry };
 };
 
-const mobile = {
-  id: 'r-mobile',
-  label: 'Forfait mobile',
-  amount: -799,
-  type: 'depense' as const,
-  categoryId: null,
-  accountId: 'acc-courant',
-  counterpartAccountId: null,
-  dayOfMonth: 5,
-  startMonth: '2026-11',
-  endMonth: null,
-  active: true,
-};
-
 describe('erreurs du store', () => {
   it('fait remonter l’échec d’enregistrement de la liste des espaces', async () => {
     const { store, registry } = setup();
@@ -110,17 +96,6 @@ describe('erreurs du store', () => {
     registry.failingLoad = true;
     await store.start();
     expect(store.getSnapshot()).toMatchObject({ status: 'error', error: { code: 'storage-unavailable' } });
-  });
-
-  it('signale l’échec de la génération automatique au lieu de l’ignorer', async () => {
-    const { store } = setup({ failingCollections: ['recurrings'] });
-    await store.start();
-    const saved = await store.upsert('recurrings', [mobile], {
-      action: 'creation',
-      entity: 'Récurrence',
-      summary: 'Forfait',
-    });
-    expect(saved).toEqual({ ok: false, error: { code: 'storage-full' } });
   });
 
   it('expose l’échec d’un rafraîchissement en arrière-plan', async () => {

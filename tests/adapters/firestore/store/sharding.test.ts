@@ -94,13 +94,13 @@ describe('découpage d’un jeu de données', () => {
   it('prévoit un paquet par collection pour un petit espace', () => {
     const layout = planLayout(dataset, 256 * 1024);
     expect(Object.values(layout).every((count) => count === 1)).toBe(true);
-    expect(Object.keys(layout)).toHaveLength(13);
+    expect(Object.keys(layout)).toHaveLength(12);
   });
 
   it('écrit tous les paquets, vides compris, et relit exactement les mêmes données', () => {
     const layout = { ...planLayout(dataset, 256 * 1024), transactions: 4 };
     const shards = toShards(dataset, layout);
-    expect(shards).toHaveLength(12 + 4);
+    expect(shards).toHaveLength(11 + 4);
     expect(shards.find((shard) => shard.id === 'goals__0')?.items).toEqual({});
     const read = fromShards(shards, layout);
     expect(read.transactions.map((item) => item.id).sort()).toEqual(

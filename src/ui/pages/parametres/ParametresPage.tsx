@@ -385,6 +385,13 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
   const archived = categories.filter((category) => category.archived);
   const [showArchived, setShowArchived] = useState(false);
   const GroupIcon = GROUP_STYLES[group].icon;
+
+  // Groupe sans aucune catégorie : masqué. S'il ne reste que des archivées, le bouton ci-dessous
+  // permet de les réactiver.
+  if (categories.length === 0) {
+    return null;
+  }
+
   return (
     <section>
       <div className="flex items-center gap-2.5 border-b border-stone-100 pb-2.5 dark:border-stone-800">
@@ -395,11 +402,6 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
         </span>
         <Text variant="strong">{groupLabel(group, settings.kind)}</Text>
       </div>
-      {group === 'epargne' && (
-        <Text variant="caption" className="pt-2">
-          Une catégorie par compte d’épargne, créée, renommée et archivée avec lui (Épargne et patrimoine).
-        </Text>
-      )}
       <ul className="divide-y divide-stone-100 dark:divide-stone-800/70">
         {active.map((category) => (
           <CategoryRow key={`${category.id}-${category.name}`} category={category} />

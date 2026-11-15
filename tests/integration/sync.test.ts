@@ -1,6 +1,6 @@
 import { FinanceStore } from '@/core/store/FinanceStore';
 import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';
-import { SCHEMA_VERSION, type Recurring } from '@/core/shared/model';
+import { SCHEMA_VERSION } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
 import { aTransaction } from '../core/fixtures';
 import { MemoryDatabase, MemoryWorkspaceRegistry } from '../support/memoryAdapters';
@@ -99,36 +99,6 @@ describe('synchronisation entre appareils', () => {
     await store.start();
     expect(store.getSnapshot().status).toBe('ready');
     expect(db.read('perso')?.schemaVersion).toBe(SCHEMA_VERSION);
-  });
-
-  it('ne génère pas deux fois une récurrence quand les deux appareils l’ouvrent', async () => {
-    const db = new MemoryDatabase();
-    const loyer: Recurring = {
-      id: 'r-loyer',
-      label: 'Loyer',
-      amount: -90000,
-      type: 'depense',
-      categoryId: null,
-      accountId: 'acc-courant',
-      counterpartAccountId: null,
-      dayOfMonth: 5,
-      startMonth: '2026-11',
-      endMonth: null,
-      active: true,
-    };
-    db.write(
-      commun.id,
-      { ...createInitialDataset('2026-11-01', () => 'seed', 'commun'), recurrings: [loyer] },
-      null,
-    );
-    const a = device(db, [DEFAULT_WORKSPACE, commun], commun.id);
-    const b = device(db, [DEFAULT_WORKSPACE, guestCommun], commun.id);
-    // Les deux appareils chargent l'espace avant de voir l'écriture de l'autre.
-    const [loadedA, loadedB] = await Promise.all([a.store.start(), b.store.start()]);
-    void loadedA;
-    void loadedB;
-    const generated = db.read(commun.id)?.transactions.filter((item) => item.recurringId === 'r-loyer');
-    expect(generated?.map((item) => item.id)).toEqual(['rec-r-loyer-2026-11']);
   });
 });
 

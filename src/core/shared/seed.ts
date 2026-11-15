@@ -158,7 +158,6 @@ export const createInitialDataset = (
     monthNotes: [],
     commonMonths: [],
     settlements: [],
-    recurrings: [],
     goals: [],
     audit: [
       {
