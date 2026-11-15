@@ -102,9 +102,10 @@ const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
 type Group = { key: string; label: string; lines: SettlementLine[]; always: boolean; detailed: boolean };
 
 /**
- * Récap du règlement, identique pour les deux membres. Celui dont le salaire arrive sur le
- * commun le lit du côté de ce que le commun lui doit ; l'autre, du côté de ce qu'il doit au
- * commun (sa part en positif). Tout vient des réglages, du mois du commun et des opérations.
+ * Récap du règlement, même structure pour chaque membre. Un membre dont le salaire arrive sur
+ * le commun le lit du côté de ce que le commun lui doit ; un membre payé ailleurs, du côté de ce
+ * qu'il doit au commun (sa part en positif). Les deux salaires, un seul ou aucun peuvent arriver
+ * sur le commun. Tout vient des réglages, du mois du commun et des opérations.
  */
 const SettlementLines = ({
   name,

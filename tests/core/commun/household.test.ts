@@ -352,6 +352,52 @@ describe('épargne versée par un membre', () => {
   });
 });
 
+describe('salaires sur le commun : les deux ou aucun', () => {
+  const withSalaries = (m1: boolean, m2: boolean, transactions: Dataset['transactions']) =>
+    dataset({
+      settings: {
+        ...dataset().settings,
+        household: {
+          members: [
+            { id: 'm1', name: 'Alex', salaryOnCommon: m1 },
+            { id: 'm2', name: 'Sam', salaryOnCommon: m2 },
+          ],
+          contributionRate: 0.5,
+          savingsPaidBy: 'commun',
+        },
+      },
+      commonMonths: [{ month: '2026-10', envelope: null, savingsRates: null }],
+      transactions,
+    });
+
+  it('reverse à chacun ce qui dépasse sa part quand les deux salaires arrivent sur le commun', () => {
+    const data = withSalaries(true, true, [
+      income('2026-10-01', 300000, 'm1'),
+      income('2026-10-01', 200000, 'm2'),
+    ]);
+    expect(commonMonthSummary(data, '2026-10')).toMatchObject({ totalIncome: 500000, envelope: 250000 });
+    expect(memberSettlement(data, '2026-10', 'm1').toSettle).toBe(150000);
+    expect(memberSettlement(data, '2026-10', 'm2').toSettle).toBe(100000);
+  });
+
+  it('fait verser sa part à chacun quand aucun salaire n’arrive sur le commun', () => {
+    const data = withSalaries(false, false, [
+      income('2026-10-01', 300000, 'm1', true),
+      income('2026-10-01', 200000, 'm2', true),
+    ]);
+    expect(commonMonthSummary(data, '2026-10')).toMatchObject({ totalIncome: 500000, envelope: 250000 });
+    expect(memberSettlement(data, '2026-10', 'm1').toSettle).toBe(-150000);
+    expect(memberSettlement(data, '2026-10', 'm2').toSettle).toBe(-100000);
+  });
+
+  it('épargne : le commun la verse si les deux salaires y arrivent, sinon le premier payé ailleurs', () => {
+    const both = members.map((member) => ({ ...member, salaryOnCommon: true }));
+    const none = members.map((member) => ({ ...member, salaryOnCommon: false }));
+    expect(savingsPayerOf({ members: both, contributionRate: 0.5 })).toBeNull();
+    expect(savingsPayerOf({ members: none, contributionRate: 0.5 })).toBe('m1');
+  });
+});
+
 describe('savingsPayerOf', () => {
   it('par défaut, le membre dont le salaire n’arrive pas sur le commun verse l’épargne', () => {
     expect(savingsPayerOf({ members, contributionRate: 0.75 })).toBe('m2');

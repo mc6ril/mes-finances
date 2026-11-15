@@ -231,8 +231,8 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               </div>
               {summary.totalIncome === 0 && (
                 <p className="mt-2 text-xs text-stone-400">
-                  Aucun revenu ce mois-ci : le salaire versé sur le commun vient des opérations (type Revenu,
-                  « De qui ») ; l’autre se saisit dans le récapitulatif.
+                  Aucun revenu ce mois-ci : un salaire versé sur le commun vient des opérations (type Revenu,
+                  « De qui ») ; un salaire versé ailleurs se saisit dans le récapitulatif.
                 </p>
               )}
             </Indented>

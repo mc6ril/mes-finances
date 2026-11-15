@@ -3,7 +3,7 @@ import { SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
 import type { Household, HouseholdMember } from '@/core/shared/model';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import { Input } from '@/ui/design-system/Field';
+import { Checkbox, Input } from '@/ui/design-system/Field';
 import Segmented from '@/ui/design-system/Segmented';
 import SettingRow from './SettingRow';
 
@@ -47,11 +47,13 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
       'Membres du compte commun modifiés',
     );
 
-  const setSalaryOnCommon = (memberId: string) =>
+  const setSalaryOnCommon = (memberId: string, salaryOnCommon: boolean) =>
     save(
       {
         ...household,
-        members: household.members.map((member) => ({ ...member, salaryOnCommon: member.id === memberId })),
+        members: household.members.map((member) =>
+          member.id === memberId ? { ...member, salaryOnCommon } : member,
+        ),
       },
       'Salaire versé sur le commun modifié',
     );
@@ -66,8 +68,6 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
       save({ ...household, contributionRate: parsed }, `Part versée au commun : ${percentText(parsed)} %`);
     }
   };
-
-  const onCommon = household.members.find((member) => member.salaryOnCommon)?.id ?? '';
 
   return (
     <>
@@ -85,17 +85,23 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
       </SettingRow>
       <SettingRow
         label="Salaire versé sur le commun"
-        hint="Il récupère son solde en fin de mois ; l’autre verse sa part."
+        hint="Cochez chaque personne payée sur le compte commun (les deux, une seule ou aucune). En fin de mois, le commun lui reverse ce qui dépasse sa part ; les autres versent leur part depuis leur compte."
       >
-        <Segmented<string>
-          value={onCommon}
-          label="Salaire versé sur le commun"
-          onChange={setSalaryOnCommon}
-          options={household.members.map((member, index) => ({
-            value: member.id,
-            label: member.name.trim() || `Personne ${index + 1}`,
-          }))}
-        />
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {household.members.map((member, index) => {
+            const name = member.name.trim() || `Personne ${index + 1}`;
+            return (
+              <Checkbox
+                key={member.id}
+                checked={member.salaryOnCommon}
+                label={`Salaire de ${name} versé sur le commun`}
+                onChange={(checked) => setSalaryOnCommon(member.id, checked)}
+              >
+                {name}
+              </Checkbox>
+            );
+          })}
+        </div>
       </SettingRow>
       <SettingRow
         label="Épargne du mois versée depuis"

@@ -66,8 +66,8 @@ export const effectiveOutsideIncome = (
 export const SAVINGS_FROM_COMMON = 'commun';
 
 /**
- * Qui verse l'épargne du mois : le réglage s'il est fait, sinon le membre dont le salaire
- * n'arrive pas sur le commun (c'est lui qui alimente les livrets depuis son compte).
+ * Qui verse l'épargne du mois : le réglage s'il est fait, sinon le premier membre dont le
+ * salaire n'arrive pas sur le commun (il alimente les livrets depuis son compte), sinon le commun.
  */
 export const savingsPayerOf = (household: Household | null): string | null => {
   if (!household) {

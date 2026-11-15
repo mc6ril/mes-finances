@@ -28,11 +28,11 @@ describe('createInitialDataset', () => {
 describe('espace commun', () => {
   const dataset = createInitialDataset('2026-11-08', () => 'id', 'commun');
 
-  it('est typé commun, avec deux membres à nommer', () => {
+  it('est typé commun, avec deux membres à nommer, salaires versés sur leur compte', () => {
     expect(dataset.settings).toMatchObject({ kind: 'commun' });
     expect(dataset.settings.household?.members.map((member) => [member.name, member.salaryOnCommon])).toEqual(
       [
-        ['', true],
+        ['', false],
         ['', false],
       ],
     );

@@ -104,7 +104,7 @@ export const initialSettings: Settings = {
 
 export const DEFAULT_HOUSEHOLD: Household = {
   members: [
-    { id: 'm1', name: '', salaryOnCommon: true },
+    { id: 'm1', name: '', salaryOnCommon: false },
     { id: 'm2', name: '', salaryOnCommon: false },
   ],
   contributionRate: 0.7,
