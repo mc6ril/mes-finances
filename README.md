@@ -43,8 +43,8 @@ npm run preview        # http://127.0.0.1:4173
 
 1. Créer un projet sur https://console.firebase.google.com, puis une application **Web** (Paramètres du projet → Vos applications).
 2. Authentication → Sign-in method : activer **E-mail/Mot de passe** et **Google**.
-3. Authentication → Settings → Domaines autorisés : ajouter `127.0.0.1` (le serveur local écoute sur cette adresse ; seul `localhost` est présent par défaut) et le domaine Netlify.
-4. Copier `.env.example` en `.env.local` et y reporter la configuration web (apiKey, authDomain, projectId, appId). Sur Netlify, déclarer les mêmes variables dans Site configuration → Environment variables.
+3. Authentication → Settings → Domaines autorisés : ajouter `127.0.0.1` (le serveur local écoute sur cette adresse ; seul `localhost` est présent par défaut) le domaine Firebase Hosting (`mes-finances-271ea.web.app`, en principe présent par défaut) et celui de Netlify pour les aperçus.
+4. Copier `.env.example` en `.env.local` et y reporter la configuration web (apiKey, authDomain, projectId, appId). Sur Netlify (aperçus) et dans l'environnement GitHub `release` (secrets `VITE_FIREBASE_*`, pour le déploiement), déclarer les mêmes variables.
 
 Sans ces variables, l'application affiche « Connexion indisponible ».
 
@@ -171,7 +171,8 @@ Le schéma est versionné (`SCHEMA_VERSION` dans `core/shared/model.ts`). Toute 
 ## Sécurité et déploiement
 
 - `firestore.rules` : tout est refusé sauf ce qui est explicitement permis, adresse confirmée obligatoire. Testées sur l'émulateur (propriétaire, invité, autre compte, invitation expirée ou déjà utilisée, adresse non confirmée) en CI.
-- `netlify.toml` : build (`npm run build` → `dist/`) et en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google ») et aux données (`firestore.googleapis.com`).
+- `firebase.json` (hébergement) : l'app est en ligne sur Firebase Hosting (`https://mes-finances-271ea.web.app`), déployée par le workflow Release (job `deploy`, compte de service dans l'environnement `release`). En-têtes de sécurité identiques à `netlify.toml` ; `index.html` sans cache, fichiers de `assets/` en cache permanent (noms versionnés). Déploiement manuel : `npm run build && npx firebase deploy --only hosting --project mes-finances-271ea`.
+- `netlify.toml` : aperçus des pull requests sur Netlify, mêmes en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google ») et aux données (`firestore.googleapis.com`).
 - `overrides` dans `package.json` : force une version corrigée de `@grpc/grpc-js` (dépendance Node de Firestore, absente du bundle navigateur) pour que `npm audit` reste propre.
 - `.github/dependabot.yml` : mises à jour hebdomadaires des dépendances npm (et mensuelles des GitHub Actions), proposées en pull requests.
 - `.github/workflows/ci.yml` : typecheck, tests, build et `npm audit` à chaque push sur `main` et sur chaque pull request ; tests des règles et de l'adapter sur l'émulateur Firestore.
