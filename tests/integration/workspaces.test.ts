@@ -106,48 +106,4 @@ describe('espaces de suivi', () => {
     expect(workspace).toMatchObject({ id: communId, kind: 'commun', role: 'owner' });
     expect(dataset?.transactions.map((transaction) => transaction.id)).toEqual(['courses']);
   });
-
-  it('génère les récurrences à l’ouverture sans doubler une saisie manuelle', async () => {
-    const { store } = setup();
-    await store.start();
-    const recurring = {
-      id: 'r-mobile',
-      label: 'Forfait mobile',
-      amount: -799,
-      type: 'depense' as const,
-      categoryId: 'cat-telephone',
-      accountId: 'acc-courant',
-      counterpartAccountId: null,
-      dayOfMonth: 5,
-      startMonth: '2026-11',
-      endMonth: null,
-      active: true,
-    };
-    await store.upsert(
-      'transactions',
-      [aTransaction({ id: 'manuel', date: '2026-11-05', amount: -799, accountId: 'acc-courant' })],
-      {
-        action: 'creation',
-        entity: 'Opération',
-        summary: 'Forfait',
-      },
-    );
-    await store.upsert('recurrings', [recurring], {
-      action: 'creation',
-      entity: 'Récurrence',
-      summary: 'Forfait',
-    });
-    const mobiles = () =>
-      (store.getSnapshot().dataset?.transactions ?? []).filter((transaction) => transaction.amount === -799);
-    expect(mobiles().map((transaction) => [transaction.id, transaction.recurringId])).toEqual([
-      ['manuel', 'r-mobile'],
-    ]);
-    await store.remove('transactions', ['manuel'], {
-      action: 'suppression',
-      entity: 'Opération',
-      summary: 'Forfait',
-    });
-    await store.refresh();
-    expect(mobiles()).toEqual([]);
-  });
 });

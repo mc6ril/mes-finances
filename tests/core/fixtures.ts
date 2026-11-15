@@ -39,7 +39,6 @@ export const aTransaction = (overrides: Partial<Transaction> = {}): Transaction 
     status: 'realise',
     paymentMethod: '',
     comment: '',
-    recurringId: null,
     createdAt: '2026-03-10T10:00:00.000Z',
     updatedAt: '2026-03-10T10:00:00.000Z',
     ...overrides,

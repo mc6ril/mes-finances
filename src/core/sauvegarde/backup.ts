@@ -31,7 +31,6 @@ const COLLECTIONS: CollectionName[] = [
   'savingsMovements',
   'valuations',
   'budgets',
-  'recurrings',
   'goals',
   'audit',
 ];
@@ -41,7 +40,6 @@ const INTEGER_FIELDS: Partial<Record<CollectionName, string[]>> = {
   transactions: ['amount'],
   savingsMovements: ['amount'],
   valuations: ['value'],
-  recurrings: ['amount', 'dayOfMonth'],
   goals: ['targetAmount', 'initialAmount', 'monthlyContribution'],
 };
 

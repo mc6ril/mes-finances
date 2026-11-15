@@ -155,7 +155,6 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       paymentMethod: '',
       comment: `Import ${fileName}`,
       imported: true,
-      recurringId: null,
     }));
     if (
       await report(

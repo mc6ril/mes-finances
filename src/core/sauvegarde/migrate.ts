@@ -164,7 +164,6 @@ const toVersion8 = (dataset: Dataset): Dataset => {
         status: 'realise',
         paymentMethod: '',
         comment: '',
-        recurringId: null,
         createdAt: `${date}T00:00:00.000Z`,
         updatedAt: `${date}T00:00:00.000Z`,
         ...partial,
@@ -275,6 +274,18 @@ const toVersion12 = (dataset: Dataset): Dataset => ({
   ),
 });
 
+/** v13 : suppression des récurrences (la saisie vient des relevés importés). */
+const toVersion13 = (dataset: Dataset): Dataset => {
+  const { recurrings: _recurrings, ...rest } = dataset as Dataset & { recurrings?: unknown };
+  return {
+    ...rest,
+    transactions: dataset.transactions.map((transaction) => {
+      const { recurringId: _recurringId, ...kept } = transaction as Transaction & { recurringId?: unknown };
+      return kept;
+    }),
+  };
+};
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -288,6 +299,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 10, apply: toVersion10 },
   { version: 11, apply: toVersion11 },
   { version: 12, apply: toVersion12 },
+  { version: 13, apply: toVersion13 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

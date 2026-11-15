@@ -1,4 +1,4 @@
-import { settleDuePlanned } from '@/core/budget/recurring';
+import { settleDuePlanned } from '@/core/budget/planned';
 import { aTransaction } from '../fixtures';
 
 const now = '2026-11-26T08:00:00.000Z';

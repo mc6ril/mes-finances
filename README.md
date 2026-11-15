@@ -85,7 +85,7 @@ src/
     annual.ts           Bilan annuel et texte généré
     goals.ts            Objectifs et scénarios de rendement (hypothèses)
     csvImport.ts        Mapping CSV, doublons, export CSV
-    recurring.ts        Opérations récurrentes, récurrences détectées
+    planned.ts          Opérations prévues passées à leur date
     prefill.ts          Budget pré-rempli (moyenne des 3 derniers mois)
     backup.ts           Sauvegarde / restauration validée et versionnée
     reminder.ts         Rappel de sauvegarde (30 jours, masquable 7 jours)
@@ -128,7 +128,7 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 
 - Tous les montants sont des **centimes entiers**.
 - Un **virement interne** (ou un investissement) n'est jamais compté comme dépense de consommation ni comme revenu ; il crédite le compte destinataire.
-- **Statuts d'une opération** : « prévu » ou « passé » (`prevu` / `realise`), plus une case facultative « vérifiée sur mon relevé » (`verified`). Les opérations prévues ne comptent pas dans le réel ; elles passent automatiquement en « passé » à leur date (à l'ouverture de l'app et au retour sur l'onglet). Sur la page Opérations, le « solde actuel » ne reprend que les opérations vérifiées ; les passées non vérifiées et les prévues sont « à venir ». L'ancien statut « rapproché » est devenu « passé » + vérifiée (migration v12).
+- **Statuts d'une opération** : « prévu » ou « passé » (`prevu` / `realise`), plus une case facultative « vérifiée sur mon relevé » (`verified`). Les opérations prévues ne comptent pas dans le réel ; elles passent automatiquement en « passé » à leur date (à l'ouverture de l'app et au retour sur l'onglet). Sur la page Opérations, le « solde actuel » ne reprend que les opérations vérifiées ; les passées non vérifiées et les prévues sont « à venir ». L'ancien statut « rapproché » est devenu « passé » + vérifiée (migration v12). Il n'y a plus de récurrences : les opérations viennent des relevés importés ou de la saisie (migration v13, qui retire aussi les récurrences des sauvegardes restaurées).
 - Une dépense **remboursée** se saisit comme dépense positive dans la même catégorie : elle réduit la catégorie.
 - Patrimoine : on distingue **sommes versées**, **intérêts**, **frais**, **plus/moins-values** et **valeur totale**. Les valorisations boursières n'entrent jamais dans les revenus.
 - Le compte commun immobilier est affiché à part ; il n'entre dans le patrimoine personnel qu'une fois la quote-part renseignée.
@@ -137,7 +137,6 @@ Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs
 - **À classer** : une dépense ou un revenu passé sans catégorie, sur un compte suivi. Le tableau de bord en affiche le nombre (s'il y en a) et mène à la page Opérations filtrée « À classer », toutes dates confondues.
 - **Catégories dépassées** : charges fixes ou dépenses personnelles du mois au-delà d'un budget prévu (une catégorie sans budget n'est pas comptée). Signalées sur le tableau de bord.
 - **Budget pré-rempli** : un mois sans aucun montant prévu propose la moyenne des dépenses réelles des 3 mois précédents (seulement les mois saisis), par catégorie mensuelle de charges fixes et de dépenses personnelles, arrondie à l'euro ; les catégories sans dépense sont ignorées. Rien sans au moins un mois d'historique.
-- **Récurrences détectées** : même compte, même type, même libellé normalisé, montant à ±10 % du dernier, au moins 3 mois consécutifs, la dernière ce mois-ci ou le mois dernier, et aucune récurrence active du même libellé ou d'un montant proche sur ce compte. La récurrence créée démarre le mois qui suit la dernière opération.
 - **Règles apprises** : quand on change la catégorie d'une opération importée (dépense ou revenu), l'app propose « toujours classer <mots du libellé normalisé> en <catégorie> », sauf si une règle couvre déjà ce libellé.
 - **Rappel de sauvegarde** : au-delà de 30 jours depuis la dernière sauvegarde complète, ou sans aucune sauvegarde alors que l'espace contient des opérations ; masquable 7 jours.
 
@@ -157,7 +156,7 @@ Cinq onglets, chacun avec son adresse (`/parametres/<onglet>`), pour que l'app p
 
 ## Espaces de suivi
 
-Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on ajoute) est indépendant : comptes, catégories, archivages, budgets, récurrences, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
+Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on ajoute) est indépendant : comptes, catégories, archivages, budgets, objectifs et réglages propres. Le sélecteur en haut du menu change d’espace.
 
 - **Créer** un espace : Paramètres → Espace → Espaces de suivi.
 - **Espaces perso** : visibles et modifiables uniquement par leur propriétaire.
@@ -168,8 +167,6 @@ Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on aj
 ## Évolutions et compatibilité
 
 Le schéma est versionné (`SCHEMA_VERSION` dans `core/shared/model.ts`). Toute évolution passe par une migration dans `core/sauvegarde/migrate.ts`, appliquée à l'ouverture d'un espace et à la restauration d'une sauvegarde, pour ne jamais casser les données déjà enregistrées. Un appareil resté sur une ancienne version de l'application refuse d'ouvrir un espace écrit par une version plus récente (« recharge la page ») au lieu de l'écraser.
-
-Les opérations générées par les récurrences ont un identifiant déterministe (`rec-{récurrence}-{mois}`) : deux appareils ouverts en même temps ne les doublent pas.
 
 ## Sécurité et déploiement
 

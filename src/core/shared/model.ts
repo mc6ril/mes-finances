@@ -56,7 +56,6 @@ export type Transaction = {
   status: TransactionStatus;
   paymentMethod: string;
   comment: string;
-  recurringId: string | null;
   imputation?: Imputation;
   /** Passée et vérifiée sur le relevé bancaire (anciennement le statut « rapproché »). */
   verified?: boolean;
@@ -100,21 +99,6 @@ export type YearBudget = {
 export type MonthNote = {
   month: MonthKey;
   text: string;
-};
-
-export type Recurring = {
-  id: string;
-  label: string;
-  amount: Cents;
-  type: TransactionType;
-  categoryId: string | null;
-  accountId: string;
-  counterpartAccountId: string | null;
-  dayOfMonth: number;
-  startMonth: MonthKey;
-  endMonth: MonthKey | null;
-  active: boolean;
-  generatedUntil?: MonthKey | null;
 };
 
 export type Goal = {
@@ -238,11 +222,10 @@ export type Dataset = {
   monthNotes: MonthNote[];
   commonMonths: CommonMonth[];
   settlements: Settlement[];
-  recurrings: Recurring[];
   goals: Goal[];
   audit: AuditEntry[];
 };
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;

@@ -1,8 +1,7 @@
 import { createInitialDataset } from '@/core/shared/seed';
 import { migrateDataset } from '@/core/sauvegarde/migrate';
-import { settleDuePlanned } from '@/core/budget/recurring';
-import { syncRecurring } from '@/core/budget/recurring';
-import { monthKeyOf, todayIso } from '@/core/shared/dates';
+import { settleDuePlanned } from '@/core/budget/planned';
+import { todayIso } from '@/core/shared/dates';
 import type { AuditEntry, CollectionName, Dataset, Settings, WorkspaceKind } from '@/core/shared/model';
 import { SCHEMA_VERSION } from '@/core/shared/model';
 import { orderCategories } from '@/core/budget/categoryOrder';
@@ -43,18 +42,6 @@ type RepositoryFactory = (workspaceId: string) => FinanceRepositoryInterface;
 
 const MAX_AUDIT_ENTRIES = 500;
 
-const recurringSummary = (created: number, linked: number): string => {
-  const parts = [
-    created > 0
-      ? `${created} opération${created > 1 ? 's' : ''} prévue${created > 1 ? 's' : ''} ajoutée${created > 1 ? 's' : ''}`
-      : '',
-    linked > 0
-      ? `${linked} opération${linked > 1 ? 's' : ''} saisie${linked > 1 ? 's' : ''} à la main rattachée${linked > 1 ? 's' : ''}`
-      : '',
-  ];
-  return `Génération automatique : ${parts.filter(Boolean).join(', ')}`;
-};
-
 const settledSummary = (count: number): string => {
   if (count === 1) {
     return '1 opération prévue passée à sa date';
@@ -69,7 +56,6 @@ export interface FinanceStoreInterface {
   stop(): void;
   settleDue(): Promise<Result<void>>;
   refresh(): Promise<Result<void>>;
-  syncRecurring(): Promise<Result<void>>;
   upsert<C extends CollectionName>(
     collection: C,
     items: CollectionItem<C>[],
@@ -126,7 +112,6 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   #now: () => Date;
   #registry: WorkspaceRegistryInterface;
   #registryLoaded = false;
-  #syncing = false;
   #unwatchRegistry: (() => void) | null = null;
   #unwatchDataset: (() => void) | null = null;
   /** Espaces créés sur cet appareil, pas encore vus dans une liste reçue du serveur. */
@@ -309,59 +294,8 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   }
 
   async refresh(): Promise<Result<void>> {
-    const synced = await this.syncRecurring();
-    const result = synced.ok ? await this.settleDue() : synced;
+    const result = await this.settleDue();
     this.#set({ syncError: result.ok ? null : result.error });
-    return result;
-  }
-
-  async syncRecurring(): Promise<Result<void>> {
-    const dataset = this.#state.dataset;
-    if (!dataset || this.#syncing) {
-      return ok(undefined);
-    }
-    const now = this.#now();
-    const sync = syncRecurring(
-      dataset.recurrings,
-      dataset.transactions,
-      monthKeyOf(todayIso(now)),
-      now.toISOString(),
-    );
-    if (sync.recurrings.length === 0) {
-      return ok(undefined);
-    }
-    this.#syncing = true;
-    try {
-      const transactions = [...sync.created, ...sync.linked];
-      if (transactions.length > 0) {
-        const saved = await this.upsert('transactions', transactions, {
-          action: 'creation',
-          entity: 'Récurrences',
-          summary: recurringSummary(sync.created.length, sync.linked.length),
-        });
-        if (!saved.ok) {
-          return saved;
-        }
-      }
-      return await this.#saveWithoutAudit('recurrings', sync.recurrings);
-    } finally {
-      this.#syncing = false;
-    }
-  }
-
-  async #saveWithoutAudit<C extends CollectionName>(
-    collection: C,
-    items: CollectionItem<C>[],
-  ): Promise<Result<void>> {
-    const result = await this.#repository.put(collection, items);
-    if (!result.ok) {
-      return result;
-    }
-    const dataset = this.#dataset();
-    const keys = new Set(items.map((item) => itemKey(collection, item)));
-    const current = dataset[collection] as CollectionItem<C>[];
-    const kept = current.filter((item) => !keys.has(itemKey(collection, item)));
-    this.#set({ dataset: { ...dataset, [collection]: [...kept, ...items] } as Dataset });
     return result;
   }
 
@@ -418,9 +352,6 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     const committed = await this.#commit(updated, log);
     if (!committed.ok) {
       return committed;
-    }
-    if (collection === 'recurrings') {
-      return this.syncRecurring();
     }
     if (collection === 'transactions') {
       return this.settleDue();

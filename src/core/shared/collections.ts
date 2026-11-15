@@ -12,7 +12,6 @@ export const COLLECTION_KEYS = {
   monthNotes: 'month',
   commonMonths: 'month',
   settlements: 'id',
-  recurrings: 'id',
   goals: 'id',
   audit: 'id',
 } as const satisfies Record<CollectionName, 'id' | 'month' | 'year'>;

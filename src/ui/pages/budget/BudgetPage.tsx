@@ -1,7 +1,6 @@
-import { Repeat, Wand2 } from 'lucide-react';
+import { Wand2 } from 'lucide-react';
 import { budgetPrefill, isBudgetEmpty } from '@/core/budget/prefill';
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { BUDGET_GROUPS, budgetOf, budgetOriginOf, linesFor, yearBudgetOf } from '@/core/budget/overview';
@@ -25,7 +24,6 @@ import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
 import CommonMonthCard from './commun/CommonMonthCard';
 import SettlementCard from './commun/SettlementCard';
 import AnnualBudgetCard from './AnnualBudgetCard';
-import RecurringModal from './RecurringModal';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',
@@ -77,18 +75,6 @@ const Trend = ({ line }: TrendProps) => {
   );
 };
 
-const NoSavingsAccount = () => (
-  <Card title="Épargne">
-    <Text variant="muted">
-      Aucun compte d’épargne suivi. Ajoute un livret ou un placement dans{' '}
-      <Link to="/patrimoine" className="font-medium text-brand-600 hover:underline dark:text-brand-300">
-        Épargne et patrimoine
-      </Link>{' '}
-      : il apparaîtra ici avec son budget.
-    </Text>
-  </Card>
-);
-
 type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: string };
 
 const GroupTable = ({ group, lines, month }: GroupTableProps) => {
@@ -96,8 +82,9 @@ const GroupTable = ({ group, lines, month }: GroupTableProps) => {
   const report = useReport();
   const { settings } = useDataset();
   const rows = lines.filter((line) => line.group === group);
+  // Groupe vide (ex. épargne sans compte suivi) : rien à afficher.
   if (rows.length === 0) {
-    return group === 'epargne' ? <NoSavingsAccount /> : null;
+    return null;
   }
   const planned = groupTotal(rows, group, 'available');
   const actual = groupTotal(rows, group, 'actual');
@@ -336,7 +323,6 @@ const BudgetPage = () => {
   const { month } = usePeriod();
   const finance = useFinanceUseCases();
   const report = useReport();
-  const [recurringOpen, setRecurringOpen] = useState(false);
   const [noteMonth, setNoteMonth] = useState<MonthKey | null>(null);
   const lines = useMemo(() => linesFor(dataset, month), [dataset, month]);
   const budget = budgetOf(dataset, month);
@@ -354,14 +340,7 @@ const BudgetPage = () => {
       <PageHeader
         title="Budget"
         description={`${capitalize(monthLabel(month))}${isCommon ? ' · compte commun' : ''}`}
-        actions={
-          <>
-            <MonthNoteButton month={month} onClick={() => setNoteMonth(month)} />
-            <Button icon={Repeat} onClick={() => setRecurringOpen(true)}>
-              Récurrences
-            </Button>
-          </>
-        }
+        actions={<MonthNoteButton month={month} onClick={() => setNoteMonth(month)} />}
       />
       <MonthNote
         key={`${month}-${noteMonth === month}`}
@@ -396,7 +375,6 @@ const BudgetPage = () => {
         <GroupTable key={group} group={group} lines={lines} month={month} />
       ))}
       <AnnualBudgetCard year={parseMonthKey(month).year} />
-      {recurringOpen && <RecurringModal onClose={() => setRecurringOpen(false)} />}
     </div>
   );
 };

@@ -282,7 +282,6 @@ describe('migrateDataset v9 → v10', () => {
       status: 'realise' as const,
       paymentMethod: '',
       comment: '',
-      recurringId: null,
       createdAt: '',
       updatedAt: '',
       imputation: { kind: 'revenu' as const, memberId: 'm2', outside: true },
@@ -340,7 +339,6 @@ describe('migrateDataset v11 → v12', () => {
     status,
     paymentMethod: 'Carte',
     comment: '',
-    recurringId: null,
     createdAt: '2026-11-02T00:00:00.000Z',
     updatedAt: '2026-11-02T00:00:00.000Z',
   });
@@ -352,7 +350,7 @@ describe('migrateDataset v11 → v12', () => {
       transactions: [operation('a', 'rapproche'), operation('b', 'realise'), operation('c', 'prevu')],
     };
     const migrated = migrateDataset(v11 as never);
-    expect(migrated.schemaVersion).toBe(12);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
     expect(migrated.transactions.map(({ id, status, verified }) => ({ id, status, verified }))).toEqual([
       { id: 'a', status: 'realise', verified: true },
       { id: 'b', status: 'realise', verified: undefined },
@@ -387,5 +385,34 @@ describe('migrateDataset v11 → v12', () => {
       error: { code: 'backup-corrupted', detail: 'transactions' },
     });
     expect(readBackup(backup('annule', 11))).toMatchObject({ ok: false });
+  });
+});
+
+describe('migrateDataset v12 → v13', () => {
+  const current = createInitialDataset('2026-11-05', ids);
+
+  it('retire les récurrences et le lien des opérations générées', () => {
+    const v12 = {
+      ...current,
+      schemaVersion: 12,
+      recurrings: [{ id: 'r-loyer', label: 'Loyer', amount: -90000, dayOfMonth: 5 }],
+      transactions: [{ ...current.transactions[0], id: 'rec-r-loyer-2026-11', recurringId: 'r-loyer' }],
+    };
+    const migrated = migrateDataset(v12 as never);
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated).not.toHaveProperty('recurrings');
+    expect(migrated.transactions.map((transaction) => transaction.id)).toEqual(['rec-r-loyer-2026-11']);
+    expect(migrated.transactions[0]).not.toHaveProperty('recurringId');
+  });
+
+  it('relit une sauvegarde v12 qui contient des récurrences', () => {
+    const backup = {
+      app: 'mes-finances',
+      schemaVersion: 12,
+      exportedAt: '2026-11-14T10:00:00.000Z',
+      data: { ...current, schemaVersion: 12, recurrings: [{ id: 'r-1', amount: -799, dayOfMonth: 5 }] },
+    };
+    const read = readBackup(backup);
+    expect(read.ok && read.value.dataset).not.toHaveProperty('recurrings');
   });
 });
