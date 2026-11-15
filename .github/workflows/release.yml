@@ -23,6 +23,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # Le secret RELEASE_DEPLOY_KEY n'existe que dans cet environnement, réservé à main-dev.
+    environment: release
     steps:
       - name: Lancée depuis main-dev uniquement
         if: github.ref != 'refs/heads/main-dev'
@@ -39,7 +41,7 @@ jobs:
             exit 1
           fi
 
-      # Clé de déploiement autorisée à contourner les règles de main et main-dev.
+      # Clé de déploiement (environnement release) autorisée à contourner les règles de main et main-dev.
       - uses: actions/checkout@v7
         with:
           ref: main-dev
