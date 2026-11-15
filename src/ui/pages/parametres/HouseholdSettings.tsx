@@ -10,7 +10,7 @@ import SettingRow from './SettingRow';
 const percentText = (rate: number): string => String(Math.round(rate * 1000) / 10).replace('.', ',');
 
 const parsePercent = (text: string): number | null => {
-  const value = Number(text.replace(',', '.').replace('%', '').trim());
+  const value = Number(text.replaceAll(',', '.').replaceAll('%', '').trim());
   return Number.isFinite(value) && value > 0 && value <= 100 ? value / 100 : null;
 };
 
