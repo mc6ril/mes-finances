@@ -1,0 +1,96 @@
+name: Release
+
+# Lancement manuel depuis main-dev (Actions → Release → Run workflow) :
+# vérifie le code, inscrit la version dans package.json sur main-dev,
+# avance main sur main-dev (fast-forward, sans commit de merge), pose le tag
+# et crée la release GitHub. main n'est jamais modifiée autrement.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version à publier, sans « v » (ex. 0.11.0)'
+        required: true
+        type: string
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lancée depuis main-dev uniquement
+        if: github.ref != 'refs/heads/main-dev'
+        run: |
+          echo "::error::Lancer la release depuis la branche main-dev (sélecteur « Use workflow from »)."
+          exit 1
+
+      - name: Format de la version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version « $VERSION » invalide : attendu X.Y.Z (ex. 0.11.0)."
+            exit 1
+          fi
+
+      # Clé de déploiement autorisée à contourner les règles de main et main-dev.
+      - uses: actions/checkout@v7
+        with:
+          ref: main-dev
+          fetch-depth: 0
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+
+      - name: Version supérieure à la dernière publiée, main en retard sur main-dev
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git fetch --tags --force
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Le tag v$VERSION existe déjà."
+            exit 1
+          fi
+          LATEST=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -n "$LATEST" ]; then
+            HIGHEST=$(printf '%s\n%s\n' "${LATEST#v}" "$VERSION" | sort -V | tail -n 1)
+            if [ "$HIGHEST" != "$VERSION" ]; then
+              echo "::error::v$VERSION n'est pas supérieure à la dernière version publiée ($LATEST)."
+              exit 1
+            fi
+          fi
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "::error::main contient des commits absents de main-dev : impossible d'avancer main sans merge."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Commit de version, avance de main et tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          npm version "$VERSION" --no-git-tag-version
+          git commit -am "Version $VERSION"
+          git tag -a "v$VERSION" -m "Version $VERSION"
+          # Tout ou rien : main-dev, main et le tag avancent ensemble.
+          git push --atomic origin HEAD:main-dev HEAD:main "v$VERSION"
+
+      - name: Release GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: gh release create "v$VERSION" --title "v$VERSION" --generate-notes --verify-tag
