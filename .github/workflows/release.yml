@@ -2,8 +2,9 @@ name: Release
 
 # Lancement manuel depuis main-dev (Actions → Release → Run workflow) :
 # vérifie le code, inscrit la version dans package.json sur main-dev,
-# avance main sur main-dev (fast-forward, sans commit de merge), pose le tag
-# et crée la release GitHub. main n'est jamais modifiée autrement.
+# avance main sur main-dev (fast-forward, sans commit de merge), pose le tag,
+# crée la release GitHub puis met la version en ligne sur Firebase Hosting.
+# main n'est jamais modifiée autrement.
 
 on:
   workflow_dispatch:
@@ -96,3 +97,36 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ inputs.version }}
         run: gh release create "v$VERSION" --title "v$VERSION" --generate-notes --verify-tag
+
+  # Mise en ligne sur Firebase Hosting de la version taguée. En cas d'échec,
+  # « Re-run failed jobs » relance uniquement ce job.
+  deploy:
+    needs: release
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+    env:
+      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+      VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+      VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ inputs.version }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Déploiement Firebase Hosting
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          KEY="$RUNNER_TEMP/firebase-service-account.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY"
+          export GOOGLE_APPLICATION_CREDENTIALS="$KEY"
+          npx firebase deploy --only hosting --project "$VITE_FIREBASE_PROJECT_ID" --non-interactive
+          rm -f "$KEY"
