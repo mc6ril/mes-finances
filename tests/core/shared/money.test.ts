@@ -1,4 +1,4 @@
-import { applyShare, parseEuros, sumCents } from '@/core/shared/money';
+import { applyShare, centsToInput, parseEuros, sumCents } from '@/core/shared/money';
 
 describe('parseEuros', () => {
   it.each([
@@ -50,5 +50,32 @@ describe('parseEuros : formats de relevés bancaires', () => {
     expect(parseEuros('4,20-')).toBe(-420);
     expect(parseEuros('(4,20)')).toBe(-420);
     expect(parseEuros('-4,20 EUR')).toBe(-420);
+  });
+});
+
+describe('centsToInput', () => {
+  it('écrit le montant à la française, avec deux décimales', () => {
+    expect(centsToInput(1250)).toBe('12,50');
+    expect(centsToInput(10000)).toBe('100,00');
+    expect(centsToInput(-4599)).toBe('-45,99');
+    expect(centsToInput(0)).toBe('0,00');
+  });
+
+  it('peut omettre les centimes nuls (montant rond)', () => {
+    expect(centsToInput(10000, { compact: true })).toBe('100');
+    expect(centsToInput(1250, { compact: true })).toBe('12,50');
+    expect(centsToInput(1005, { compact: true })).toBe('10,05');
+  });
+
+  it('peut laisser le champ vide pour zéro', () => {
+    expect(centsToInput(0, { blankZero: true })).toBe('');
+    expect(centsToInput(1250, { blankZero: true })).toBe('12,50');
+  });
+
+  it('se relit à l’identique', () => {
+    [1250, 10000, -4599, 1, 123456].forEach((cents) => {
+      expect(parseEuros(centsToInput(cents))).toBe(cents);
+      expect(parseEuros(centsToInput(cents, { compact: true }))).toBe(cents);
+    });
   });
 });
