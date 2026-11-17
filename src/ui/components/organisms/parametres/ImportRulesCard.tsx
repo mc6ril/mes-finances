@@ -16,7 +16,7 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
 import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
-import { categoriesForType } from '@/hooks/compte/transactionForm';
+import { categoriesForType } from '@/core/comptes/transactionDraft';
 
 type RuleForm = Omit<ImportRule, 'id'> & { id?: string };
 

@@ -50,6 +50,10 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
     'Renseigne un nom, un montant cible, une date cible, un départ et des montants valides.',
   'goal-start-after-target': () => 'La date de départ doit précéder la date cible.',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
+  'transaction-date-invalid': () => 'Date invalide',
+  'transaction-label-empty': () => 'Le libellé est obligatoire',
+  'transaction-amount-invalid': () => 'Montant invalide (ex. 45,90)',
+  'transaction-counterpart-invalid': () => 'Choisis un compte de destination différent',
   'auth-not-configured': () =>
     'La connexion n’est pas configurée : renseigne les variables VITE_FIREBASE_* (voir .env.example).',
   'auth-name-empty': () => 'Indique ton prénom.',

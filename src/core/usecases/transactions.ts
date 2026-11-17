@@ -16,6 +16,8 @@ export const createTransactionUseCases = ({ gateway, newId, now }: FinanceDeps) 
     }
     const timestamp = now().toISOString();
     const transaction: Transaction = {
+      // Le formulaire ne porte pas la provenance : une opération importée le reste après modification.
+      ...(existing?.imported ? { imported: true } : {}),
       ...draft,
       id: existing?.id ?? newId(),
       createdAt: existing?.createdAt ?? timestamp,

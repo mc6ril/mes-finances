@@ -11,7 +11,9 @@ import {
   type EditingState,
 } from './ledgerState';
 
-export type CategoryChange = { before: Transaction; after: Transaction };
+import type { CategoryChange } from '@/core/comptes/transactionDraft';
+
+export type { CategoryChange };
 
 /** Actions du grand livre : stables d'un rendu à l'autre (les lignes mémoïsées ne se redessinent pas). */
 export type LedgerActions = {
