@@ -15,7 +15,7 @@ type CardProps = {
 const Card = ({ children, title, subtitle, action, className, padded = true }: CardProps) => (
   <section
     className={cx(
-      'rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none',
+      'rounded-2xl border border-line-card bg-surface shadow-card dark:shadow-none',
       padded && 'p-4 sm:p-5',
       className,
     )}

@@ -48,19 +48,19 @@ const VerifyEmailPage = () => {
           type="button"
           onClick={useAnotherAccount}
           disabled={busy}
-          className="font-medium text-brand-600 underline-offset-2 hover:underline focus:outline-hidden focus-visible:underline disabled:opacity-60 dark:text-brand-300"
+          className="font-medium text-accent-ink underline-offset-2 hover:underline focus:outline-hidden focus-visible:underline disabled:opacity-60"
         >
           Utiliser un autre compte
         </button>
       }
     >
       <div className="flex flex-col gap-5">
-        <div className="flex items-start gap-3 rounded-xl bg-brand-50 p-4 dark:bg-brand-500/10">
-          <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden />
+        <div className="flex items-start gap-3 rounded-xl bg-accent-soft p-4">
+          <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-accent-ink" aria-hidden />
           <Text>
             Un lien de confirmation a été envoyé à{' '}
-            <strong className="font-semibold text-stone-900 dark:text-stone-50">{user.email}</strong>. Clique
-            dessus, puis reviens ici.
+            <strong className="font-semibold text-ink-strong">{user.email}</strong>. Clique dessus, puis
+            reviens ici.
           </Text>
         </div>
         {error && <Notice tone="error">{error}</Notice>}

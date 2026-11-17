@@ -111,7 +111,7 @@ const SavingsAccountForm = ({ account, onClose, onArchived }: SavingsAccountForm
         Les opérations antérieures à cette date sont considérées comme incluses dans ce solde. Une ligne
         d’épargne du même nom est ajoutée au budget.
       </Text>
-      {error && <Text className="mt-2 text-red-600 dark:text-red-400">{error}</Text>}
+      {error && <Text className="mt-2 text-negative">{error}</Text>}
     </Modal>
   );
 };

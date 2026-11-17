@@ -73,14 +73,14 @@ const BilanStats = ({ summary, evolution, kind }: BilanStatsProps) => (
         </>
       }
       info={`Catégories du groupe ${groupLabel('plaisir', kind)} : les dépenses mensuelles (restaurants, shopping, loisirs…) et les budgets annuels comme les voyages, les cadeaux et les dépenses exceptionnelles.`}
-      accent="text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-300"
+      accent="text-plaisir-ink bg-plaisir-soft"
     />
     <StatCard
       label="Versements d’épargne"
       icon={PiggyBank}
       value={<Amount cents={summary.totals.epargne} rounded />}
       info="Virements du compte courant vers tes comptes d’épargne et placements, plus les versements saisis directement dans Épargne et patrimoine (sans double comptage)."
-      accent="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+      accent="text-positive-ink bg-positive-soft"
     />
     <StatCard
       label="Évolution du patrimoine"
@@ -88,7 +88,7 @@ const BilanStats = ({ summary, evolution, kind }: BilanStatsProps) => (
       value={<EvolutionValue evolution={evolution} />}
       hint={<EvolutionHint evolution={evolution} />}
       info="Variation de ton patrimoine personnel sur la période. Versements nets : argent ajouté moins argent retiré. Performance : le reste (intérêts, plus ou moins-values, frais)."
-      accent="text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-300"
+      accent="text-insight-ink bg-insight-soft"
     />
   </div>
 );

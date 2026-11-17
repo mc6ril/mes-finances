@@ -24,7 +24,7 @@ type BackupRowProps = { icon: LucideIcon; title: string; description: string; ch
 /** Ligne d'action de la carte Sauvegardes : icône, intitulé et description, bouton à droite. */
 const BackupRow = ({ icon: Icon, title, description, children }: BackupRowProps) => (
   <li className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 first:pt-1 last:pb-1">
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-muted text-ink-subtle">
       <Icon className="h-4 w-4" aria-hidden />
     </span>
     <div className="min-w-48 flex-1">
@@ -59,7 +59,7 @@ const BackupCard = () => {
       title="Sauvegardes"
       subtitle="Tes données sont enregistrées en ligne et synchronisées entre tes appareils. La base gratuite n’a pas de sauvegarde automatique : exporte régulièrement une sauvegarde complète."
     >
-      <ul className="divide-y divide-stone-100 dark:divide-stone-800">
+      <ul className="divide-y divide-line">
         <BackupRow
           icon={Archive}
           title="Sauvegarde complète"
@@ -110,9 +110,9 @@ const BackupCard = () => {
           />
         </BackupRow>
       </ul>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3 dark:border-stone-800">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
         <Text variant="caption" className="flex items-center gap-1">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
+          <ShieldCheck className="h-3.5 w-3.5 text-positive-fixed" aria-hidden />
           Données visibles par toi seul (et la personne invitée pour un commun) · aucune connexion bancaire
         </Text>
         <Button size="sm" variant="ghost" icon={RotateCcw} onClick={requestReset}>

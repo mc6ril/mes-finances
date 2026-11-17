@@ -33,8 +33,6 @@ import Text from '@/ui/design-system/Text';
 import ChartTooltip from '@/ui/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/charts/axis';
 import Legend from '@/ui/charts/Legend';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
-import { cx } from '@/ui/design-system/cx';
 
 const NO_RETURNS = [0];
 
@@ -63,12 +61,7 @@ const PlanGap = ({ gap, planned, goal }: GapProps) => (
         'Dans la trajectoire'
       ) : (
         <>
-          <Amount
-            cents={Math.abs(gap)}
-            className={
-              gap > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
-            }
-          />{' '}
+          <Amount cents={Math.abs(gap)} className={gap > 0 ? 'text-positive' : 'text-warning'} />{' '}
           {gap > 0 ? 'd’avance' : 'de retard'}
         </>
       )}
@@ -87,18 +80,18 @@ const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
   const withPlanned = current + total;
   const percentWith = Math.min(100, Math.round((withPlanned / goal.targetAmount) * 1000) / 10);
   return (
-    <div className="mt-3 rounded-xl border border-dashed border-stone-200 px-3 py-2.5 dark:border-stone-700">
+    <div className="mt-3 rounded-xl border border-dashed border-line-field px-3 py-2.5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <Text variant="small">Apports prévus hors comptes · prévisionnel</Text>
         <Text variant="small">
-          avec eux : <Amount cents={withPlanned} className="font-medium text-stone-900 dark:text-stone-50" />{' '}
-          · {String(percentWith).replace('.', ',')} %
+          avec eux : <Amount cents={withPlanned} className="font-medium text-ink-strong" /> ·{' '}
+          {String(percentWith).replace('.', ',')} %
         </Text>
       </div>
       <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
         {(goal.plannedContributions ?? []).map((line) => (
-          <li key={line.id} className={cx('text-xs', MUTED_TEXT)}>
-            {line.label} <Amount cents={line.amount} rounded className="text-stone-700 dark:text-stone-200" />
+          <li key={line.id} className="text-xs text-ink-muted">
+            {line.label} <Amount cents={line.amount} rounded className="text-ink-body" />
           </li>
         ))}
       </ul>
@@ -187,8 +180,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
     >
       <div className="flex items-baseline justify-between gap-2">
         <Text variant="muted">
-          <Amount cents={current} className="text-lg font-semibold text-stone-900 dark:text-stone-50" />{' '}
-          constitués
+          <Amount cents={current} className="text-lg font-semibold text-ink-strong" /> constitués
         </Text>
         <Text variant="strong">{String(progress.percent).replace('.', ',')} %</Text>
       </div>
@@ -223,7 +215,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
         )}
       </div>
 
-      <div className="mt-4 grid gap-3 border-t border-stone-100 pt-4 dark:border-stone-800 sm:grid-cols-3">
+      <div className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-3">
         <div>
           <Text variant="label">Reste à constituer</Text>
           <Text variant="strong" className="mt-0.5">

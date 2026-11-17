@@ -33,8 +33,8 @@ const NavList = ({ onNavigate }: NavListProps) => (
           cx(
             'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
             isActive
-              ? 'bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200'
-              : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100',
+              ? 'bg-accent-soft-strong text-accent-ink-strong'
+              : 'text-ink-secondary-soft hover:bg-surface-muted hover:text-ink',
           )
         }
       >
@@ -63,7 +63,7 @@ const WorkspaceSwitcher = () => {
     return null;
   }
   return (
-    <div className="flex flex-col gap-1.5 border-t border-stone-200/80 px-2 pt-4 dark:border-stone-800">
+    <div className="flex flex-col gap-1.5 border-t border-line-card px-2 pt-4">
       <Text variant="label" className="px-1">
         Espace
       </Text>
@@ -90,7 +90,7 @@ const OfflineBanner = () => {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-amber-50 px-4 py-2 text-center text-xs font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+      className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-warning-soft-strong px-4 py-2 text-center text-xs font-medium text-warning-ink-deepest"
     >
       <CloudOff className="h-3.5 w-3.5" aria-hidden />
       {pendingWrites > 0
@@ -112,7 +112,7 @@ const BackupReminderBanner = () => {
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-stone-100 px-4 py-2 text-center text-xs text-stone-700 dark:bg-stone-800/70 dark:text-stone-200"
+      className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-surface-muted-soft px-4 py-2 text-center text-xs text-ink-body"
     >
       <Archive className="h-3.5 w-3.5" aria-hidden />
       {reminder.kind === 'never'
@@ -121,15 +121,11 @@ const BackupReminderBanner = () => {
       <button
         type="button"
         onClick={() => void exportAll()}
-        className="font-medium text-brand-700 hover:underline dark:text-brand-300"
+        className="font-medium text-accent-ink-medium hover:underline"
       >
         Sauvegarder maintenant
       </button>
-      <button
-        type="button"
-        onClick={hideReminder}
-        className="text-stone-500 hover:underline dark:text-stone-400"
-      >
+      <button type="button" onClick={hideReminder} className="text-ink-subtle hover:underline">
         Masquer 7 jours
       </button>
     </div>
@@ -150,12 +146,9 @@ const Toasts = () => {
           onClick={() => dismiss(toast.id)}
           className={cx(
             'pointer-events-auto animate-in rounded-xl px-4 py-3 text-left text-sm font-medium shadow-lg ring-1',
-            toast.tone === 'error' &&
-              'bg-red-50 text-red-800 ring-red-200 dark:bg-red-950 dark:text-red-200 dark:ring-red-900',
-            toast.tone === 'success' &&
-              'bg-white text-stone-800 ring-stone-200 dark:bg-stone-800 dark:text-stone-100 dark:ring-stone-700',
-            toast.tone === 'info' &&
-              'bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-950 dark:text-sky-200 dark:ring-sky-900',
+            toast.tone === 'error' && 'bg-negative-banner text-negative-ink-deep ring-negative-line',
+            toast.tone === 'success' && 'bg-surface-raised text-ink-emphasis ring-line-field',
+            toast.tone === 'info' && 'bg-info-banner text-info-ink-deep ring-info-line',
           )}
         >
           {toast.message}
@@ -180,19 +173,15 @@ const AppShell = ({ children }: AppShellProps) => {
       <OfflineBanner />
       <BackupReminderBanner />
       <div className="flex">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-stone-200/80 bg-white/70 px-3 py-5 backdrop-blur-sm dark:border-stone-800 dark:bg-[#161615] lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-6 border-r border-line-card bg-sidebar-translucent px-3 py-5 backdrop-blur-sm lg:flex">
           <Brand />
           <NavList />
           <SidebarFooter />
         </aside>
         {menuOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
-            <div
-              className="absolute inset-0 bg-stone-950/40"
-              onClick={() => setMenuOpen(false)}
-              aria-hidden
-            />
-            <aside className="relative flex h-full w-72 flex-col gap-6 bg-white px-3 py-5 shadow-xl animate-in dark:bg-[#161615]">
+            <div className="absolute inset-0 bg-scrim" onClick={() => setMenuOpen(false)} aria-hidden />
+            <aside className="relative flex h-full w-72 flex-col gap-6 bg-sidebar px-3 py-5 shadow-xl animate-in">
               <div className="flex items-center justify-between">
                 <Brand />
                 <Button
@@ -210,7 +199,7 @@ const AppShell = ({ children }: AppShellProps) => {
         )}
         {/* overflow-x-clip : filet de sécurité contre le défilement latéral, sans casser l’en-tête collant. */}
         <div className="min-w-0 flex-1 overflow-x-clip">
-          <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-[#f6f6f3]/85 backdrop-blur-sm dark:border-stone-800 dark:bg-[#121211]/85">
+          <header className="sticky top-0 z-30 border-b border-line-header bg-page/85 backdrop-blur-sm">
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
               <div className="flex items-center gap-2">
                 <Button

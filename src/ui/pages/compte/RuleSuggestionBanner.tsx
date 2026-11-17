@@ -21,10 +21,10 @@ const RuleSuggestionBanner = ({ suggestion, onDone }: RuleSuggestionBannerProps)
   return (
     <div
       role="status"
-      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-brand-50 px-3.5 py-2.5 animate-in dark:bg-brand-500/10"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-accent-soft px-3.5 py-2.5 animate-in"
     >
-      <Sparkles className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-300" aria-hidden />
-      <Text variant="small" className="min-w-0 flex-1 text-stone-800 dark:text-stone-100">
+      <Sparkles className="h-4 w-4 shrink-0 text-accent-ink" aria-hidden />
+      <Text variant="small" className="min-w-0 flex-1 text-ink-emphasis">
         Toujours classer « {suggestion.match} » en {category} lors des prochains imports ?
       </Text>
       <div className="flex gap-2">

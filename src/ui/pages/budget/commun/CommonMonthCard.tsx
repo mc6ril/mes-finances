@@ -18,7 +18,7 @@ import { Input, Select } from '@/ui/design-system/Field';
 import MoneyInput from '@/ui/design-system/MoneyInput';
 import Text from '@/ui/design-system/Text';
 import Title from '@/ui/design-system/Title';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { MEMBER_COLORS, NEUTRAL_MARK } from '@/ui/design-system/tokens';
 
 const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;
 
@@ -48,9 +48,7 @@ const RatePercent = ({ rate, onCommit, label }: RatePercentProps) => {
         inputMode="decimal"
         className="h-8 pr-7 text-right text-sm"
       />
-      <span
-        className={cx('pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs', MUTED_TEXT)}
-      >
+      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">
         %
       </span>
     </span>
@@ -87,7 +85,7 @@ const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
       type="button"
       onClick={() => setDraft(name)}
       title="Renommer"
-      className="min-w-0 flex-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-stone-100 dark:hover:bg-stone-800"
+      className="min-w-0 flex-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-surface-muted"
     >
       <Text as="span" className="block">
         {name}
@@ -104,9 +102,9 @@ const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
 type Tone = 'brand' | 'emerald' | 'stone';
 
 const TONES: Record<Tone, string> = {
-  brand: 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300',
-  emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300',
-  stone: 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-300',
+  brand: 'bg-accent-soft text-accent-ink',
+  emerald: 'bg-positive-soft text-positive-ink',
+  stone: 'bg-surface-muted text-ink-subtle-strong',
 };
 
 type HeadingProps = { icon: LucideIcon; tone: Tone; title: string; hint?: string };
@@ -149,12 +147,7 @@ const RecapLine = ({ label, amount, detail, sign, dot, strong = false, input }: 
         {dot ? <span className="h-2 w-2 -translate-y-px rounded-full" style={{ background: dot }} /> : sign}
       </Text>
       <span>
-        <span
-          className={cx(
-            'text-sm',
-            strong ? 'font-semibold text-stone-900 dark:text-stone-50' : 'text-stone-600 dark:text-stone-300',
-          )}
-        >
+        <span className={cx('text-sm', strong ? 'font-semibold text-ink-strong' : 'text-ink-secondary')}>
           {label}
         </span>
         {detail && (
@@ -167,18 +160,13 @@ const RecapLine = ({ label, amount, detail, sign, dot, strong = false, input }: 
     {input ?? (
       <Amount
         cents={amount}
-        className={cx(
-          'text-sm',
-          strong ? 'font-semibold text-stone-900 dark:text-stone-50' : 'text-stone-700 dark:text-stone-200',
-        )}
+        className={cx('text-sm', strong ? 'font-semibold text-ink-strong' : 'text-ink-body')}
       />
     )}
   </div>
 );
 
-const Divider = () => <div className="my-2 border-t border-stone-200/70 dark:border-stone-700/70" />;
-
-const MEMBER_DOTS = ['#3b82f6', '#a78bfa'];
+const Divider = () => <div className="my-2 border-t border-line-faint" />;
 
 /** Le mois du compte commun : enveloppe et épargne à gauche, récapitulatif du calcul à droite. */
 const CommonMonthCard = ({ month }: { month: MonthKey }) => {
@@ -205,8 +193,8 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
   const payer = savingsPayerOf(dataset.settings.household);
 
   return (
-    <section className="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none">
-      <header className="border-b border-stone-100 px-5 py-4 dark:border-stone-800 sm:px-6">
+    <section className="rounded-2xl border border-line-card bg-surface shadow-card dark:shadow-none">
+      <header className="border-b border-line px-5 py-4 sm:px-6">
         <Title level={2}>Le mois du commun</Title>
         <Text variant="small" className="mt-0.5">
           Enveloppe, épargne et reste du mois
@@ -214,7 +202,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
       </header>
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="flex flex-col divide-y divide-stone-100 px-5 dark:divide-stone-800 sm:px-6">
+        <div className="flex flex-col divide-y divide-line px-5 sm:px-6">
           <div className="py-6">
             <Heading
               icon={Wallet}
@@ -232,14 +220,14 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   onCommit={(cents) => save({ envelope: cents === summary.suggestedEnvelope ? null : cents })}
                 />
                 {entry.envelope === null ? (
-                  <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs text-brand-700 dark:bg-brand-500/10 dark:text-brand-300">
+                  <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent-ink-medium">
                     Montant proposé
                   </span>
                 ) : (
                   <button
                     type="button"
                     onClick={() => save({ envelope: null })}
-                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-ink-subtle-fixed transition-colors hover:bg-surface-muted hover:text-ink-emphasis"
                   >
                     <RotateCcw className="h-3 w-3" aria-hidden />
                     Revenir à {formatEuros(summary.suggestedEnvelope)}
@@ -271,7 +259,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                     <li key={`${line.accountId}-${index}`} className="group flex items-center gap-3 py-1.5">
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: account?.color ?? '#a8a29e' }}
+                        style={{ background: account?.color ?? NEUTRAL_MARK }}
                         aria-hidden
                       />
                       <SavingsName
@@ -298,15 +286,12 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                           )
                         }
                       />
-                      <Amount
-                        cents={line.amount}
-                        className="w-24 text-right text-sm text-stone-700 dark:text-stone-200"
-                      />
+                      <Amount cents={line.amount} className="w-24 text-right text-sm text-ink-body" />
                       <button
                         type="button"
                         aria-label={`Retirer ${name}`}
                         onClick={() => saveRates(savingsRates.filter((_, position) => position !== index))}
-                        className="rounded-md p-1 text-stone-300 opacity-0 transition hover:bg-stone-100 hover:text-stone-600 focus:opacity-100 group-hover:opacity-100 dark:hover:bg-stone-800"
+                        className="rounded-md p-1 text-ink-ghost-fixed opacity-0 transition hover:bg-surface-muted hover:text-ink-secondary-fixed focus:opacity-100 group-hover:opacity-100"
                       >
                         <X className="h-3.5 w-3.5" aria-hidden />
                       </button>
@@ -319,7 +304,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   <Select
                     value=""
                     label="Ajouter une épargne"
-                    className="h-9 border-dashed text-sm text-stone-500"
+                    className="h-9 border-dashed text-sm text-ink-prompt"
                     onChange={(accountId) =>
                       accountId && saveRates([...savingsRates, { accountId, rate: 0.1 }])
                     }
@@ -336,10 +321,10 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                 </Text>
               )}
               {summary.savingsTotal > 0 && (
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50/60 px-3 py-2.5 dark:bg-emerald-500/5">
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-positive-soft-faint px-3 py-2.5">
                   {entry.savingsTransfer ? (
                     <>
-                      <span className="flex items-center gap-2 text-sm text-emerald-800 dark:text-emerald-200">
+                      <span className="flex items-center gap-2 text-sm text-positive-ink-deep">
                         <Check className="h-4 w-4" aria-hidden />
                         {payer
                           ? `Épargne versée par ${memberLabel(dataset, payer)} le ${formatDateFr(entry.savingsTransfer.date)}`
@@ -350,14 +335,14 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                         onClick={() =>
                           void report(finance.cancelSavingsTransfer(month), 'Virement d’épargne annulé')
                         }
-                        className="text-xs text-stone-500 underline-offset-2 hover:text-stone-800 hover:underline dark:hover:text-stone-200"
+                        className="text-xs text-ink-subtle-fixed underline-offset-2 hover:text-ink-emphasis-soft hover:underline"
                       >
                         Annuler
                       </button>
                     </>
                   ) : (
                     <>
-                      <span className="text-sm text-stone-600 dark:text-stone-300">
+                      <span className="text-sm text-ink-secondary">
                         {payer
                           ? `À verser par ${memberLabel(dataset, payer)} sur les livrets :`
                           : 'À virer en fin de mois :'}{' '}
@@ -373,7 +358,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                               : 'Virement d’épargne ajouté au compte commun',
                           )
                         }
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 shadow-xs ring-1 ring-emerald-200 transition-colors hover:bg-emerald-50 dark:bg-stone-900 dark:text-emerald-300 dark:ring-emerald-500/30"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-surface-field px-3 py-1.5 text-xs font-medium text-positive-ink-strong shadow-xs ring-1 ring-positive-line-soft transition-colors hover:bg-positive-soft-fixed"
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden />
                         {payer ? 'Épargne versée' : 'Virement fait'}
@@ -386,7 +371,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
           </div>
         </div>
 
-        <aside className="border-t border-stone-100 bg-stone-50/70 px-5 py-6 dark:border-stone-800 dark:bg-stone-900/40 sm:px-6 lg:rounded-br-2xl lg:border-l lg:border-t-0">
+        <aside className="border-t border-line bg-surface-row px-5 py-6 sm:px-6 lg:rounded-br-2xl lg:border-l lg:border-t-0">
           <Heading icon={ReceiptText} tone="stone" title="Récapitulatif" />
           <div className="mt-4">
             {members.map((member, index) =>
@@ -396,7 +381,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   label={`Revenus ${memberLabel(dataset, member.id)}`}
                   detail={shareOf(member.id)}
                   amount={summary.incomes[member.id] ?? 0}
-                  dot={MEMBER_DOTS[index % MEMBER_DOTS.length]}
+                  dot={MEMBER_COLORS[index % MEMBER_COLORS.length]}
                 />
               ) : (
                 <RecapLine
@@ -404,7 +389,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   label={`Revenus ${memberLabel(dataset, member.id)}`}
                   detail={shareOf(member.id) ?? 'Versés sur son compte : à saisir'}
                   amount={summary.incomes[member.id] ?? 0}
-                  dot={MEMBER_DOTS[index % MEMBER_DOTS.length]}
+                  dot={MEMBER_COLORS[index % MEMBER_COLORS.length]}
                   input={
                     <MoneyInput
                       key={`${month}-${member.id}-${summary.incomes[member.id] ?? 0}`}
@@ -432,8 +417,8 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
             className={cx(
               'mt-4 flex items-baseline justify-between rounded-xl px-4 py-3',
               positive
-                ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200'
-                : 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200',
+                ? 'bg-positive-soft text-positive-ink-deep'
+                : 'bg-warning-soft text-warning-ink-deeper',
             )}
           >
             <span className="text-sm font-medium">Reste du mois</span>

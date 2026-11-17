@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { parseEuros } from '@/core/shared/money';
 import type { Cents } from '@/core/shared/model';
 import { cx } from './cx';
-import { MUTED_TEXT } from './textColors';
 
 type MoneyInputProps = {
   cents: Cents;
@@ -53,13 +52,11 @@ const MoneyInput = ({ cents, onCommit, label, className, allowNegative = false }
           }
         }}
         className={cx(
-          'h-9 w-full rounded-lg border bg-white pl-2.5 pr-6 text-right text-sm tabular-nums text-stone-900 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:bg-stone-900 dark:text-stone-100',
-          invalid ? 'border-red-400' : 'border-stone-200 focus:border-brand-500 dark:border-stone-700',
+          'h-9 w-full rounded-lg border bg-surface-field pl-2.5 pr-6 text-right text-sm tabular-nums text-ink focus:outline-hidden focus:ring-2 focus:ring-accent-bright/20',
+          invalid ? 'border-negative-line-strong' : 'border-line-field focus:border-accent-bright',
         )}
       />
-      <span
-        className={cx('pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs', MUTED_TEXT)}
-      >
+      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-ink-muted">
         €
       </span>
     </div>

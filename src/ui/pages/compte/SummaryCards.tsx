@@ -17,8 +17,8 @@ const SummaryCard = ({ label, value, caption, valueClassName }: SummaryCardProps
   </Card>
 );
 
-const INFLOW_TONE = 'text-emerald-600 dark:text-emerald-400';
-const OUTFLOW_TONE = 'text-red-600 dark:text-red-400';
+const INFLOW_TONE = 'text-positive';
+const OUTFLOW_TONE = 'text-negative';
 
 type SummaryCardsProps = {
   account: Account;
@@ -44,7 +44,7 @@ const CurrentPeriodCards = ({ account, transactions, from, to }: PeriodProps) =>
         label="Solde actuel"
         value={<Amount cents={position.current} />}
         caption="opérations vérifiées sur ton relevé"
-        valueClassName="text-brand-600 dark:text-brand-300"
+        valueClassName="text-accent-ink"
       />
       <SummaryCard
         label="À venir"

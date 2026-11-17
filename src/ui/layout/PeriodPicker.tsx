@@ -48,7 +48,7 @@ const PeriodPicker = ({ mode }: PeriodPickerProps) => {
       />
       <label className="relative">
         <span className="sr-only">Choisir la période</span>
-        <span className="block min-w-[120px] rounded-lg px-2 py-1 text-center text-sm font-semibold text-stone-900 hover:bg-stone-100 dark:text-stone-50 dark:hover:bg-stone-800">
+        <span className="block min-w-[120px] rounded-lg px-2 py-1 text-center text-sm font-semibold text-ink-strong hover:bg-surface-muted">
           {label}
         </span>
         <input

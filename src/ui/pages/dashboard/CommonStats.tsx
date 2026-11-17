@@ -80,7 +80,7 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
         icon={PiggyBank}
         value={<Amount cents={summary.savingsTotal} />}
         hint={transferred ? 'Virée sur les comptes d’épargne' : 'À virer en fin de mois'}
-        accent="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+        accent="text-positive-ink bg-positive-soft"
       />
       <StatCard
         label="Reste du mois"
@@ -91,21 +91,21 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
             Disponible <Amount cents={summary.available} rounded /> − dépenses
           </>
         }
-        accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
+        accent="text-warning-ink bg-warning-soft"
       />
       <StatCard
         label="Épargne commune"
         icon={Landmark}
         value={<Amount cents={savingsValue} rounded />}
         hint="Valeur des comptes d’épargne du commun"
-        accent="text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-300"
+        accent="text-insight-ink bg-insight-soft"
       />
       <StatCard
         label="Virements de fin de mois"
         icon={ArrowLeftRight}
         value={
           pending.length === 0 ? (
-            <span className="text-emerald-600 dark:text-emerald-400">Tout est réglé</span>
+            <span className="text-positive">Tout est réglé</span>
           ) : (
             `${pending.length} à faire`
           )
@@ -121,7 +121,7 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
                 )
                 .join(' · ')
         }
-        accent="text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-300"
+        accent="text-plaisir-ink bg-plaisir-soft"
       />
     </div>
   );

@@ -34,7 +34,7 @@ const JointAccountCard = ({ account, position }: JointAccountCardProps) => {
     <Card
       title={account.name}
       subtitle="Compte commun : affiché à part de ton patrimoine personnel"
-      action={<Users className="h-4 w-4 text-stone-400" aria-hidden />}
+      action={<Users className="h-4 w-4 text-ink-faint" aria-hidden />}
     >
       <div className="grid gap-4 sm:grid-cols-3">
         <div>

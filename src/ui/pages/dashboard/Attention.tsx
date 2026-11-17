@@ -14,11 +14,11 @@ const Item = ({ to, icon: Icon, tone, children, onClick }: ItemProps) => (
   <Link
     to={to}
     onClick={onClick}
-    className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-medium shadow-card ring-1 ring-stone-200/80 transition hover:ring-brand-300 dark:bg-[#1c1c1b] dark:ring-stone-800 dark:hover:ring-brand-500/50"
+    className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-sm font-medium shadow-card ring-1 ring-line-card transition hover:ring-accent-line-soft"
   >
     <Icon className={`h-4 w-4 ${tone}`} aria-hidden />
-    <span className="text-stone-800 dark:text-stone-100">{children}</span>
-    <ArrowRight className="h-3.5 w-3.5 text-stone-400" aria-hidden />
+    <span className="text-ink-emphasis">{children}</span>
+    <ArrowRight className="h-3.5 w-3.5 text-ink-faint" aria-hidden />
   </Link>
 );
 
@@ -35,17 +35,12 @@ const Attention = ({ dataset, lines }: AttentionProps) => {
   return (
     <div className="flex flex-wrap gap-2" aria-label="À traiter">
       {pending.count > 0 && pending.accountId && (
-        <Item to={toClassifyPath(pending.accountId)} icon={Tags} tone="text-sky-600 dark:text-sky-400">
+        <Item to={toClassifyPath(pending.accountId)} icon={Tags} tone="text-info">
           {`${pending.count} opération${pending.count > 1 ? 's' : ''} à classer`}
         </Item>
       )}
       {over > 0 && (
-        <Item
-          to="/budget"
-          icon={CircleAlert}
-          tone="text-red-600 dark:text-red-400"
-          onClick={() => setMonth(currentMonth)}
-        >
+        <Item to="/budget" icon={CircleAlert} tone="text-negative" onClick={() => setMonth(currentMonth)}>
           {`${over} catégorie${over > 1 ? 's' : ''} dépassée${over > 1 ? 's' : ''} ce mois-ci`}
         </Item>
       )}

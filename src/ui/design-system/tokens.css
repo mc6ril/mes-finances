@@ -1,0 +1,294 @@
+/*
+  Tokens du design system : toute couleur et toute taille de texte de l’application en vient.
+  Les composants n’utilisent que ces noms (text-ink, bg-surface, border-line…), jamais la palette
+  brute ni une valeur en dur. Chaque token porte un rôle ; sa valeur sombre est redéfinie sous .dark,
+  ce qui évite les paires « clair dark:sombre » dans les composants.
+*/
+
+@theme {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+
+  /* Typographie : tailles hors de l’échelle Tailwind */
+  --text-caption: 11px;
+  --text-figure: 22px;
+  --text-display: 28px;
+
+  /* Palette de la marque */
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9eaff;
+  --color-brand-200: #bcdaff;
+  --color-brand-300: #8ec3ff;
+  --color-brand-400: #59a2ff;
+  --color-brand-500: #337ffc;
+  --color-brand-600: #1d5ff1;
+  --color-brand-700: #1549de;
+  --color-brand-800: #183db4;
+  --color-brand-900: #1a378d;
+
+  /* Texte secondaire en mode clair : stone-500 n’atteint que 4,42:1 sur le fond de page (#f6f6f3),
+     sous le minimum WCAG AA de 4,5:1. Celui-ci donne 4,9:1 (5,3:1 sur une carte blanche). */
+  --color-stone-550: oklch(53% 0.013 58);
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.05);
+
+  /* Fond de page */
+  --color-page: #f6f6f3;
+
+  /* Textes neutres */
+  --color-ink-max: var(--color-stone-900);
+  --color-ink-strong: var(--color-stone-900);
+  --color-ink: var(--color-stone-900);
+  --color-ink-emphasis: var(--color-stone-800);
+  --color-ink-emphasis-soft: var(--color-stone-800);
+  --color-ink-body: var(--color-stone-700);
+  --color-ink-body-soft: var(--color-stone-700);
+  --color-ink-secondary: var(--color-stone-600);
+  --color-ink-secondary-soft: var(--color-stone-600);
+  --color-ink-secondary-fixed: var(--color-stone-600);
+  /* Texte secondaire : 4,9:1 sur le fond de page en clair, 7,3:1 en sombre (WCAG AA : 4,5:1). */
+  --color-ink-muted: var(--color-stone-550);
+  --color-ink-subtle-strong: var(--color-stone-500);
+  --color-ink-subtle: var(--color-stone-500);
+  --color-ink-subtle-fixed: var(--color-stone-500);
+  /* Liste « ajouter… » en pointillés : grisée en clair, texte normal en sombre. */
+  --color-ink-prompt: var(--color-stone-500);
+  --color-ink-faint: var(--color-stone-400);
+  --color-ink-faint-dim: var(--color-stone-400);
+  --color-ink-ghost: var(--color-stone-300);
+  --color-ink-ghost-fixed: var(--color-stone-300);
+
+  /* Contraste sur fond coloré */
+  --color-inverse: var(--color-white);
+
+  /* Accent (marque) */
+  --color-accent-ink: var(--color-brand-600);
+  --color-accent-ink-strong: var(--color-brand-700);
+  --color-accent-ink-medium: var(--color-brand-700);
+  --color-accent: var(--color-brand-600);
+  --color-accent-hover: var(--color-brand-700);
+  --color-accent-bright: var(--color-brand-500);
+  --color-accent-soft: var(--color-brand-50);
+  --color-accent-soft-strong: var(--color-brand-50);
+  --color-accent-gradient-from: var(--color-brand-600);
+  --color-accent-gradient-to: var(--color-brand-800);
+  --color-accent-line: var(--color-brand-400);
+  --color-accent-line-soft: var(--color-brand-300);
+
+  /* Positif : gains, succès */
+  --color-positive: var(--color-emerald-600);
+  --color-positive-ink: var(--color-emerald-600);
+  --color-positive-ink-strong: var(--color-emerald-700);
+  --color-positive-ink-deep: var(--color-emerald-800);
+  --color-positive-fixed: var(--color-emerald-600);
+  --color-positive-bright: var(--color-emerald-500);
+  --color-positive-soft: var(--color-emerald-50);
+  --color-positive-soft-faint: color-mix(in oklab, var(--color-emerald-50) 60%, transparent);
+  --color-positive-soft-fixed: var(--color-emerald-50);
+  --color-positive-surface: var(--color-emerald-50);
+  --color-positive-line: var(--color-emerald-200);
+  --color-positive-line-soft: var(--color-emerald-200);
+
+  /* Négatif : pertes, erreurs */
+  --color-negative: var(--color-red-600);
+  --color-negative-ink-strong: var(--color-red-700);
+  --color-negative-ink-deep: var(--color-red-800);
+  --color-negative-soft: var(--color-red-50);
+  --color-negative-surface: var(--color-red-50);
+  --color-negative-banner: var(--color-red-50);
+  --color-negative-solid: var(--color-red-600);
+  --color-negative-solid-hover: var(--color-red-700);
+  --color-negative-bright: var(--color-red-500);
+  --color-negative-line: var(--color-red-200);
+  --color-negative-line-strong: var(--color-red-400);
+
+  /* Attention */
+  --color-warning: var(--color-amber-600);
+  --color-warning-ink: var(--color-amber-600);
+  --color-warning-ink-strong: var(--color-amber-700);
+  --color-warning-ink-deep: var(--color-amber-800);
+  --color-warning-ink-deeper: var(--color-amber-800);
+  --color-warning-ink-deepest: var(--color-amber-900);
+  --color-warning-bright: var(--color-amber-500);
+  --color-warning-soft: var(--color-amber-50);
+  --color-warning-soft-strong: var(--color-amber-50);
+  --color-warning-soft-hover: var(--color-amber-50);
+  --color-warning-soft-faint: color-mix(in oklab, var(--color-amber-50) 60%, transparent);
+  --color-warning-line: var(--color-amber-200);
+  --color-warning-line-strong: var(--color-amber-200);
+
+  /* Information */
+  --color-info: var(--color-sky-600);
+  --color-info-ink: var(--color-sky-600);
+  --color-info-ink-strong: var(--color-sky-700);
+  --color-info-ink-deep: var(--color-sky-800);
+  --color-info-bright: var(--color-sky-500);
+  --color-info-soft: var(--color-sky-50);
+  --color-info-surface: var(--color-sky-50);
+  --color-info-banner: var(--color-sky-50);
+  --color-info-line: var(--color-sky-200);
+
+  /* Dépenses personnelles */
+  --color-plaisir-ink: var(--color-pink-600);
+  --color-plaisir-soft: var(--color-pink-50);
+  --color-plaisir-bright: var(--color-pink-500);
+
+  /* Patrimoine et évolution */
+  --color-insight-ink: var(--color-violet-600);
+  --color-insight-soft: var(--color-violet-50);
+
+  /* Surfaces */
+  --color-surface: var(--color-white);
+  --color-sidebar: var(--color-white);
+  --color-sidebar-translucent: color-mix(in oklab, var(--color-white) 70%, transparent);
+  --color-surface-raised: var(--color-white);
+  --color-surface-field: var(--color-white);
+  --color-surface-thumb: var(--color-white);
+  --color-surface-tooltip: color-mix(in oklab, var(--color-white) 95%, transparent);
+  --color-surface-muted: var(--color-stone-100);
+  --color-surface-muted-soft: var(--color-stone-100);
+  --color-surface-sunken: var(--color-stone-50);
+  --color-surface-sunken-strong: var(--color-stone-50);
+  --color-surface-sunken-deep: var(--color-stone-50);
+  --color-surface-hover: var(--color-stone-50);
+  --color-surface-row: color-mix(in oklab, var(--color-stone-50) 70%, transparent);
+  --color-scrim: color-mix(in oklab, var(--color-stone-950) 40%, transparent);
+  --color-progress-marker: color-mix(in oklab, var(--color-stone-900) 60%, transparent);
+  --color-tooltip: var(--color-stone-900);
+
+  /* Traits : bordures, séparateurs, contours */
+  --color-line-strong: var(--color-stone-200);
+  --color-line-heavy: var(--color-stone-300);
+  --color-line: var(--color-stone-100);
+  --color-line-soft: var(--color-stone-100);
+  --color-line-card: color-mix(in oklab, var(--color-stone-200) 80%, transparent);
+  --color-line-header: color-mix(in oklab, var(--color-stone-200) 70%, transparent);
+  --color-line-faint: color-mix(in oklab, var(--color-stone-200) 70%, transparent);
+  --color-line-field: var(--color-stone-200);
+
+  /* Bordure par défaut (compatibilité Tailwind 3, voir index.css) */
+  --color-line-default: var(--color-gray-200);
+
+  /* Survol des lignes de tableau (.table-base) */
+  --color-surface-row-hover: color-mix(in oklab, var(--color-stone-50) 70%, transparent);
+  --color-surface-row-hover-solid: var(--color-stone-50);
+}
+
+/* Mode sombre : seules les valeurs qui changent. */
+.dark {
+  --color-page: #121211;
+
+  /* Textes neutres */
+  --color-ink-max: var(--color-white);
+  --color-ink-strong: var(--color-stone-50);
+  --color-ink: var(--color-stone-100);
+  --color-ink-emphasis: var(--color-stone-100);
+  --color-ink-emphasis-soft: var(--color-stone-200);
+  --color-ink-body: var(--color-stone-200);
+  --color-ink-body-soft: var(--color-stone-300);
+  --color-ink-secondary: var(--color-stone-300);
+  --color-ink-secondary-soft: var(--color-stone-400);
+  --color-ink-muted: var(--color-stone-400);
+  --color-ink-subtle-strong: var(--color-stone-300);
+  --color-ink-subtle: var(--color-stone-400);
+  --color-ink-prompt: var(--color-stone-100);
+  --color-ink-faint-dim: var(--color-stone-500);
+  --color-ink-ghost: var(--color-stone-600);
+
+  /* Accent (marque) */
+  --color-accent-ink: var(--color-brand-300);
+  --color-accent-ink-strong: var(--color-brand-200);
+  --color-accent-ink-medium: var(--color-brand-300);
+  --color-accent-soft: color-mix(in oklab, var(--color-brand-500) 10%, transparent);
+  --color-accent-soft-strong: color-mix(in oklab, var(--color-brand-500) 15%, transparent);
+  --color-accent-gradient-from: var(--color-brand-800);
+  --color-accent-gradient-to: var(--color-brand-900);
+  --color-accent-line-soft: color-mix(in oklab, var(--color-brand-500) 50%, transparent);
+
+  /* Positif : gains, succès */
+  --color-positive: var(--color-emerald-400);
+  --color-positive-ink: var(--color-emerald-300);
+  --color-positive-ink-strong: var(--color-emerald-300);
+  --color-positive-ink-deep: var(--color-emerald-200);
+  --color-positive-soft: color-mix(in oklab, var(--color-emerald-500) 10%, transparent);
+  --color-positive-soft-faint: color-mix(in oklab, var(--color-emerald-500) 5%, transparent);
+  --color-positive-surface: color-mix(in oklab, var(--color-emerald-950) 60%, transparent);
+  --color-positive-line: var(--color-emerald-900);
+  --color-positive-line-soft: color-mix(in oklab, var(--color-emerald-500) 30%, transparent);
+
+  /* Négatif : pertes, erreurs */
+  --color-negative: var(--color-red-400);
+  --color-negative-ink-strong: var(--color-red-300);
+  --color-negative-ink-deep: var(--color-red-200);
+  --color-negative-soft: color-mix(in oklab, var(--color-red-500) 10%, transparent);
+  --color-negative-surface: color-mix(in oklab, var(--color-red-950) 60%, transparent);
+  --color-negative-banner: var(--color-red-950);
+  --color-negative-line: var(--color-red-900);
+
+  /* Attention */
+  --color-warning: var(--color-amber-400);
+  --color-warning-ink: var(--color-amber-300);
+  --color-warning-ink-strong: var(--color-amber-400);
+  --color-warning-ink-deep: var(--color-amber-300);
+  --color-warning-ink-deeper: var(--color-amber-200);
+  --color-warning-ink-deepest: var(--color-amber-200);
+  --color-warning-soft: color-mix(in oklab, var(--color-amber-500) 10%, transparent);
+  --color-warning-soft-strong: color-mix(in oklab, var(--color-amber-500) 15%, transparent);
+  --color-warning-soft-hover: color-mix(in oklab, var(--color-amber-500) 5%, transparent);
+  --color-warning-soft-faint: color-mix(in oklab, var(--color-amber-500) 5%, transparent);
+  --color-warning-line: color-mix(in oklab, var(--color-amber-500) 20%, transparent);
+  --color-warning-line-strong: color-mix(in oklab, var(--color-amber-500) 30%, transparent);
+
+  /* Information */
+  --color-info: var(--color-sky-400);
+  --color-info-ink: var(--color-sky-300);
+  --color-info-ink-strong: var(--color-sky-300);
+  --color-info-ink-deep: var(--color-sky-200);
+  --color-info-soft: color-mix(in oklab, var(--color-sky-500) 10%, transparent);
+  --color-info-surface: color-mix(in oklab, var(--color-sky-950) 60%, transparent);
+  --color-info-banner: var(--color-sky-950);
+  --color-info-line: var(--color-sky-900);
+
+  /* Dépenses personnelles */
+  --color-plaisir-ink: var(--color-pink-300);
+  --color-plaisir-soft: color-mix(in oklab, var(--color-pink-500) 10%, transparent);
+
+  /* Patrimoine et évolution */
+  --color-insight-ink: var(--color-violet-300);
+  --color-insight-soft: color-mix(in oklab, var(--color-violet-500) 10%, transparent);
+
+  /* Surfaces */
+  --color-surface: #1c1c1b;
+  --color-sidebar: #161615;
+  --color-sidebar-translucent: #161615;
+  --color-surface-raised: var(--color-stone-800);
+  --color-surface-field: var(--color-stone-900);
+  --color-surface-thumb: var(--color-stone-600);
+  --color-surface-tooltip: color-mix(in oklab, var(--color-stone-900) 95%, transparent);
+  --color-surface-muted: var(--color-stone-800);
+  --color-surface-muted-soft: color-mix(in oklab, var(--color-stone-800) 70%, transparent);
+  --color-surface-sunken: color-mix(in oklab, var(--color-stone-800) 40%, transparent);
+  --color-surface-sunken-strong: color-mix(in oklab, var(--color-stone-800) 50%, transparent);
+  --color-surface-sunken-deep: var(--color-stone-900);
+  --color-surface-hover: var(--color-stone-700);
+  --color-surface-row: color-mix(in oklab, var(--color-stone-900) 40%, transparent);
+  --color-progress-marker: color-mix(in oklab, var(--color-white) 70%, transparent);
+  --color-tooltip: var(--color-stone-700);
+
+  /* Traits : bordures, séparateurs, contours */
+  --color-line-strong: var(--color-stone-800);
+  --color-line-heavy: var(--color-stone-600);
+  --color-line: var(--color-stone-800);
+  --color-line-soft: color-mix(in oklab, var(--color-stone-800) 70%, transparent);
+  --color-line-card: var(--color-stone-800);
+  --color-line-header: var(--color-stone-800);
+  --color-line-faint: color-mix(in oklab, var(--color-stone-700) 70%, transparent);
+  --color-line-field: var(--color-stone-700);
+
+  --color-surface-row-hover: color-mix(in oklab, var(--color-stone-800) 30%, transparent);
+  --color-surface-row-hover-solid: var(--color-stone-800);
+}
+
+/* Flèche des listes déroulantes (.select-chevron) : une image ne lit pas les variables CSS. */
+:root {
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}

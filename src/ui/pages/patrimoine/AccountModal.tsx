@@ -199,7 +199,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-5 rounded-xl border border-stone-100 p-4 dark:border-stone-800">
+      <div className="mt-5 rounded-xl border border-line p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <Text variant="strong">Ajouter</Text>
           <Segmented
@@ -239,7 +239,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
             ? 'Une valorisation fixe la valeur réelle du placement à cette date ; les versements ultérieurs s’y ajoutent.'
             : 'Les virements depuis le compte courant sont déjà comptés comme versements : ne les ressaisis pas ici.'}
         </Text>
-        {error && <Text className="mt-2 text-red-600 dark:text-red-400">{error}</Text>}
+        {error && <Text className="mt-2 text-negative">{error}</Text>}
         <div className="mt-3 flex justify-end">
           <Button variant="primary" onClick={() => void save()}>
             Enregistrer
@@ -258,7 +258,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
             ).
           </Text>
         ) : (
-          <ul className="divide-y divide-stone-100 dark:divide-stone-800">
+          <ul className="divide-y divide-line">
             {history.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
@@ -310,7 +310,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
 type SummaryProps = { label: string; value: React.ReactNode };
 
 const Summary = ({ label, value }: SummaryProps) => (
-  <div className="rounded-xl bg-stone-50 p-3 dark:bg-stone-800/50">
+  <div className="rounded-xl bg-surface-sunken-strong p-3">
     <Text variant="label">{label}</Text>
     <div className="mt-1 text-base font-semibold">{value}</div>
   </div>

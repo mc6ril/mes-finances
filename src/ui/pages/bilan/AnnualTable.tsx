@@ -30,7 +30,7 @@ const AnnualTable = ({ summary, year, today, kind }: AnnualTableProps) => (
       <table className="table-base min-w-[1100px] text-xs">
         <thead>
           <tr>
-            <th className="sticky left-0 bg-white dark:bg-[#1c1c1b]">Catégorie</th>
+            <th className="sticky left-0 bg-surface">Catégorie</th>
             {monthsOfYear(year).map((key) => (
               <th key={key} className="text-right capitalize">
                 {monthShortLabel(key)}
@@ -42,20 +42,17 @@ const AnnualTable = ({ summary, year, today, kind }: AnnualTableProps) => (
         <tbody>
           {pivotByGroup(summary.pivot).map(({ group, rows }) => [
             <tr key={`${group}-title`}>
-              <td
-                colSpan={14}
-                className="bg-stone-50 font-semibold text-stone-600 dark:bg-stone-800/40 dark:text-stone-300"
-              >
+              <td colSpan={14} className="bg-surface-sunken font-semibold text-ink-secondary">
                 <span className="sticky left-3">{groupLabel(group, kind)}</span>
               </td>
             </tr>,
             ...rows.map((row) => (
               <tr key={row.categoryId}>
-                <td className="sticky left-0 bg-white font-medium dark:bg-[#1c1c1b]">{row.name}</td>
+                <td className="sticky left-0 bg-surface font-medium">{row.name}</td>
                 {row.months.map((value, index) => (
                   <td key={index} className="text-right tabular-nums">
                     {value === 0 ? (
-                      <span className="text-stone-300 dark:text-stone-600">·</span>
+                      <span className="text-ink-ghost">·</span>
                     ) : (
                       <Amount cents={value} rounded />
                     )}
@@ -68,7 +65,7 @@ const AnnualTable = ({ summary, year, today, kind }: AnnualTableProps) => (
             )),
           ])}
           <tr>
-            <td className="sticky left-0 bg-white font-semibold dark:bg-[#1c1c1b]">Total dépenses</td>
+            <td className="sticky left-0 bg-surface font-semibold">Total dépenses</td>
             {summary.months.map((entry) => (
               <td key={entry.month} className="text-right font-semibold">
                 <Amount cents={entry.totals.depenses} rounded />

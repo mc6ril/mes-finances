@@ -24,8 +24,6 @@ import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
 import CommonMonthCard from './commun/CommonMonthCard';
 import SettlementCard from './commun/SettlementCard';
 import AnnualBudgetCard from './AnnualBudgetCard';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
-import { cx } from '@/ui/design-system/cx';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',
@@ -68,7 +66,7 @@ const Trend = ({ line }: TrendProps) => {
       </Text>
     );
   }
-  return <Amount cents={line.actual - line.previousActual} signed className={cx('text-xs', MUTED_TEXT)} />;
+  return <Amount cents={line.actual - line.previousActual} signed className="text-xs text-ink-muted" />;
 };
 
 type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: string };
@@ -90,7 +88,7 @@ const GroupTable = ({ group, lines, month }: GroupTableProps) => {
       padded={false}
       action={
         <Text variant="small">
-          Réel <Amount cents={actual} className="font-semibold text-stone-900 dark:text-stone-50" /> / prévu{' '}
+          Réel <Amount cents={actual} className="font-semibold text-ink-strong" /> / prévu{' '}
           <Amount cents={planned} />
         </Text>
       }
@@ -185,13 +183,13 @@ const Summary = ({ lines, provision, annualSpent }: SummaryProps) => {
       <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">
         <BudgetFigure
           label="Revenus"
-          actual={<Amount cents={income} signed className="text-emerald-600 dark:text-emerald-400" />}
+          actual={<Amount cents={income} signed className="text-positive" />}
           budget={<Amount cents={plannedIncome} />}
           progress={{ value: ratioOf(income, plannedIncome), tone: 'good' }}
         />
         <BudgetFigure
           label="Dépenses"
-          actual={<Amount cents={-spending} className="text-red-600 dark:text-red-400" />}
+          actual={<Amount cents={-spending} className="text-negative" />}
           budget={<Amount cents={plannedSpending} />}
           progress={{
             value: ratioOf(spending, plannedSpending),
@@ -200,7 +198,7 @@ const Summary = ({ lines, provision, annualSpent }: SummaryProps) => {
         />
         <BudgetFigure
           label="Épargne"
-          actual={<Amount cents={-saving} className="text-brand-600 dark:text-brand-300" />}
+          actual={<Amount cents={-saving} className="text-accent-ink" />}
           budget={<Amount cents={plannedSaving} />}
           progress={{ value: ratioOf(saving, plannedSaving), tone: 'brand' }}
         />

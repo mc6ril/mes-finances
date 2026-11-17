@@ -32,7 +32,7 @@ const JoinInvitation = ({ token }: JoinProps) => {
         {(state.status === 'ready' || state.status === 'joining') && (
           <div className="flex flex-col gap-4">
             <div className="flex items-start gap-3">
-              <Users className="mt-0.5 h-5 w-5 shrink-0 text-brand-600" aria-hidden />
+              <Users className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden />
               <Text>
                 On t’invite à suivre l’espace commun{' '}
                 <strong className="font-semibold">« {state.invitation.workspaceName} »</strong>. Vous pourrez

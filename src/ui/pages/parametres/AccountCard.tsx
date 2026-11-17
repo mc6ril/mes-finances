@@ -20,7 +20,7 @@ const AccountCard = () => {
 
   return (
     <Card title="Mon compte">
-      <div className="divide-y divide-stone-100 dark:divide-stone-800">
+      <div className="divide-y divide-line">
         <SettingRow label={userLabel(user)} hint={user.email ?? undefined}>
           {methods && <Badge>{methods}</Badge>}
         </SettingRow>

@@ -18,23 +18,23 @@ import { useInlineName } from './useInlineName';
 const GROUP_STYLES: Record<CategoryGroup, { icon: LucideIcon; accent: string; dot: string }> = {
   revenu: {
     icon: Banknote,
-    accent: 'bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-300',
-    dot: 'bg-sky-500',
+    accent: 'bg-info-soft text-info-ink',
+    dot: 'bg-info-bright',
   },
   fixe: {
     icon: Receipt,
-    accent: 'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300',
-    dot: 'bg-brand-500',
+    accent: 'bg-accent-soft text-accent-ink',
+    dot: 'bg-accent-bright',
   },
   epargne: {
     icon: PiggyBank,
-    accent: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300',
-    dot: 'bg-emerald-500',
+    accent: 'bg-positive-soft text-positive-ink',
+    dot: 'bg-positive-bright',
   },
   plaisir: {
     icon: ShoppingBag,
-    accent: 'bg-pink-50 text-pink-600 dark:bg-pink-500/10 dark:text-pink-300',
-    dot: 'bg-pink-500',
+    accent: 'bg-plaisir-soft text-plaisir-ink',
+    dot: 'bg-plaisir-bright',
   },
 };
 
@@ -57,14 +57,14 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
     <li
       className={cx(
         'group flex items-center gap-x-3 py-2.5',
-        category.archived && '-mx-2 rounded-lg bg-stone-50 px-2 dark:bg-stone-800/40',
+        category.archived && '-mx-2 rounded-lg bg-surface-sunken px-2',
       )}
     >
       <div className="flex min-w-0 flex-1 items-center gap-1">
         <span
           className={cx(
             'h-2 w-2 shrink-0 rounded-full',
-            category.archived ? 'bg-stone-300 dark:bg-stone-600' : GROUP_STYLES[category.group].dot,
+            category.archived ? 'bg-line-heavy' : GROUP_STYLES[category.group].dot,
           )}
           aria-hidden
         />
@@ -84,8 +84,8 @@ const CategoryRow = ({ category }: CategoryRowProps) => {
             }
           }}
           className={cx(
-            'h-9 min-w-0 flex-1 truncate rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-stone-900 transition-colors hover:border-stone-200 focus:border-brand-500 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 disabled:cursor-default disabled:hover:border-transparent dark:text-stone-100 dark:disabled:hover:border-transparent dark:hover:border-stone-700 dark:focus:bg-stone-900',
-            category.archived && 'italic text-stone-500 dark:text-stone-400',
+            'h-9 min-w-0 flex-1 truncate rounded-lg border border-transparent bg-transparent px-2.5 text-sm font-medium text-ink transition-colors hover:border-line-field focus:border-accent-bright focus:bg-surface-field focus:outline-hidden focus:ring-2 focus:ring-accent-bright/20 disabled:cursor-default disabled:hover:border-transparent',
+            category.archived && 'italic text-ink-subtle',
           )}
         />
         {category.archived && <Badge tone="neutral">Archivée</Badge>}
@@ -131,7 +131,7 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
 
   return (
     <section>
-      <div className="flex items-center gap-2.5 border-b border-stone-100 pb-2.5 dark:border-stone-800">
+      <div className="flex items-center gap-2.5 border-b border-line pb-2.5">
         <span
           className={cx('flex h-7 w-7 items-center justify-center rounded-lg', GROUP_STYLES[group].accent)}
         >
@@ -139,7 +139,7 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
         </span>
         <Text variant="strong">{groupLabel(group, settings.kind)}</Text>
       </div>
-      <ul className="divide-y divide-stone-100 dark:divide-stone-800/70">
+      <ul className="divide-y divide-line-soft">
         {active.map((category) => (
           <CategoryRow key={`${category.id}-${category.name}`} category={category} />
         ))}
@@ -152,7 +152,7 @@ const CategoryGroupSection = ({ group, categories }: CategoryGroupSectionProps) 
         <button
           type="button"
           onClick={() => setShowArchived((current) => !current)}
-          className="mt-1 text-xs font-medium text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-100"
+          className="mt-1 text-xs font-medium text-ink-subtle hover:text-ink-emphasis"
         >
           {showArchived ? 'Masquer' : 'Afficher'} {archived.length} catégorie{archived.length > 1 ? 's' : ''}{' '}
           archivée{archived.length > 1 ? 's' : ''}
@@ -187,7 +187,7 @@ const CategoriesCard = () => {
           <CategoryGroupSection key={group} group={group} categories={dataset.categories} />
         ))}
       </div>
-      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-xl bg-stone-50 p-3 dark:bg-stone-800/40">
+      <div className="mt-6 flex flex-wrap items-center gap-2 rounded-xl bg-surface-sunken p-3">
         <div className="min-w-48 flex-1">
           <Input
             value={newName}

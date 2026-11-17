@@ -62,11 +62,9 @@ const InviteModal = ({ workspace, onClose }: InviteModalProps) => {
         {error && <Notice tone="error">{errorMessage(error)}</Notice>}
         {invitation && (
           <>
-            <div className="flex items-start gap-2 rounded-xl bg-stone-50 px-3 py-2.5 ring-1 ring-stone-200 dark:bg-stone-900 dark:ring-stone-800">
-              <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-stone-400" aria-hidden />
-              <code className="min-w-0 flex-1 break-all text-xs text-stone-700 dark:text-stone-300">
-                {link}
-              </code>
+            <div className="flex items-start gap-2 rounded-xl bg-surface-sunken-deep px-3 py-2.5 ring-1 ring-line-strong">
+              <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
+              <code className="min-w-0 flex-1 break-all text-xs text-ink-body-soft">{link}</code>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button icon={Copy} onClick={() => void copy()}>

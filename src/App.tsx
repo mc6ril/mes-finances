@@ -27,7 +27,7 @@ import { usePreloadPages } from '@/hooks/usePreloadPages';
 
 const FullScreenLoader = () => (
   <div className="flex min-h-screen items-center justify-center">
-    <Loader2 className="h-6 w-6 animate-spin text-brand-600" aria-label="Chargement" />
+    <Loader2 className="h-6 w-6 animate-spin text-accent" aria-label="Chargement" />
   </div>
 );
 
@@ -36,7 +36,7 @@ type FullScreenErrorProps = { title: string; message: string; action?: ReactNode
 const FullScreenError = ({ title, message, action }: FullScreenErrorProps) => (
   <div className="flex min-h-screen items-center justify-center p-6">
     <div className="flex max-w-md flex-col items-center gap-3 text-center">
-      <TriangleAlert className="h-8 w-8 text-amber-500" aria-hidden />
+      <TriangleAlert className="h-8 w-8 text-warning-bright" aria-hidden />
       <Title level={2}>{title}</Title>
       <Text variant="muted">{message}</Text>
       {action}

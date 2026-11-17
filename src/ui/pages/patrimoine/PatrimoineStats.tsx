@@ -23,7 +23,7 @@ const PatrimoineStats = ({ snapshot, change }: PatrimoineStatsProps) => (
       icon={Landmark}
       value={<Amount cents={snapshot.personalTotal - snapshot.contributions} signed colored rounded />}
       hint="Intérêts + plus-values − frais"
-      accent="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+      accent="text-positive-ink bg-positive-soft"
     />
     <StatCard
       label="Évolution sur la période"
@@ -34,7 +34,7 @@ const PatrimoineStats = ({ snapshot, change }: PatrimoineStatsProps) => (
           dont argent ajouté ou retiré <Amount cents={change.verse} signed rounded />
         </>
       }
-      accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
+      accent="text-warning-ink bg-warning-soft"
     />
   </div>
 );

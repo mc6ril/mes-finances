@@ -15,9 +15,9 @@ const AccountMenu = () => {
   }
   const label = userLabel(user);
   return (
-    <div className="flex items-center gap-2.5 border-t border-stone-200/80 px-2 pt-4 dark:border-stone-800">
+    <div className="flex items-center gap-2.5 border-t border-line-card px-2 pt-4">
       <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold uppercase text-brand-700 dark:bg-brand-500/15 dark:text-brand-200"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-soft-strong text-xs font-semibold uppercase text-accent-ink-strong"
         aria-hidden
       >
         {label.charAt(0)}

@@ -74,7 +74,7 @@ const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
             compte commun, puis reviens ici.
           </Text>
         ) : (
-          <ul className="flex flex-col divide-y divide-stone-100 dark:divide-stone-800">
+          <ul className="flex flex-col divide-y divide-line">
             {candidates.map((transaction) => (
               <li key={transaction.id} className="flex items-center gap-3 py-2">
                 <Checkbox
@@ -245,7 +245,7 @@ const SettlementLines = ({
           return (
             <li key={group.key} className="flex flex-col gap-0.5">
               <span className="flex justify-between gap-2">
-                <span className="text-stone-600 dark:text-stone-300">{group.label}</span>
+                <span className="text-ink-secondary">{group.label}</span>
                 <Amount cents={total} signed={!(owes && group.key === 'contribution')} />
               </span>
               {group.detailed &&
@@ -264,7 +264,7 @@ const SettlementLines = ({
                           aria-label={`Supprimer l’ajustement ${line.label}`}
                           title="Supprimer l’ajustement"
                           onClick={() => onRemoveAdjustment(line)}
-                          className="shrink-0 rounded-sm text-stone-400 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:text-red-400"
+                          className="shrink-0 rounded-sm text-ink-faint hover:text-negative focus-visible:outline-2 focus-visible:outline-accent-bright"
                         >
                           <Trash2 className="h-3 w-3" aria-hidden />
                         </button>
@@ -278,7 +278,7 @@ const SettlementLines = ({
         })}
       {carriedOver !== 0 && (
         <li className="flex justify-between gap-2">
-          <span className="text-stone-600 dark:text-stone-300">Reste des mois précédents</span>
+          <span className="text-ink-secondary">Reste des mois précédents</span>
           <Amount cents={sign * carriedOver} signed />
         </li>
       )}
@@ -309,7 +309,7 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
   const defaultDate = today < lastDay ? today : lastDay;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-stone-200 p-4 dark:border-stone-800">
+    <div className="flex flex-col gap-3 rounded-xl border border-line-strong p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
           <Text variant="strong">{name}</Text>
@@ -329,8 +329,8 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
         />
         {done.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-1 text-stone-600 dark:text-stone-300">
-              <Check className="h-3.5 w-3.5 text-emerald-500" aria-hidden />
+            <span className="flex items-center gap-1 text-ink-secondary">
+              <Check className="h-3.5 w-3.5 text-positive-bright" aria-hidden />
               Réglé le {formatDateFr(item.date)}
             </span>
             <span className="flex items-center gap-1">
@@ -346,7 +346,7 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           </li>
         ))}
       </ul>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3 dark:border-stone-800">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
         <div>
           <Text variant="label">{direction}</Text>
           <Text variant="strong" className="mt-0.5 text-lg">
@@ -363,7 +363,7 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
+          className="inline-flex items-center gap-1.5 self-start text-xs text-ink-subtle-fixed hover:text-ink-emphasis-soft"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden />
           Ajouter une dépense payée par {name}
@@ -371,7 +371,7 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
         <button
           type="button"
           onClick={() => setAdjusting(true)}
-          className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
+          className="inline-flex items-center gap-1.5 self-start text-xs text-ink-subtle-fixed hover:text-ink-emphasis-soft"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden />
           Ajouter un ajustement hors compte
