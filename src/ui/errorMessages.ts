@@ -1,5 +1,5 @@
-import { MIN_BACKUP_PASSWORD_LENGTH } from '@/core/sauvegarde/encryptedBackup';
 import { MIN_PASSWORD_LENGTH } from '@/core/auth/validation';
+import { MIN_BACKUP_PASSWORD_LENGTH } from '@/core/sauvegarde/encryptedBackup';
 import type { AppError, AppErrorCode } from '@/core/shared/errors';
 
 const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {

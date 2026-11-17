@@ -3,8 +3,8 @@ import {
   defaultFilters,
   filterTransactions,
   TO_CLASSIFY,
-  toClassifyRange,
   type TransactionFilters,
+  toClassifyRange,
 } from '@/core/comptes/filters';
 import { aTransaction } from '../fixtures';
 

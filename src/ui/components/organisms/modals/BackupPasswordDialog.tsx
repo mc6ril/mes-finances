@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { type FormEvent, useState } from 'react';
 import { MIN_BACKUP_PASSWORD_LENGTH, validateBackupPassword } from '@/core/sauvegarde/encryptedBackup';
-import { errorMessage } from '@/ui/errorMessages';
 import Button from '@/ui/components/atoms/Button';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { PasswordInput } from '@/ui/components/atoms/form/PasswordInput';
-import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import { errorMessage } from '@/ui/errorMessages';
 
 type BackupPasswordDialogProps = {
   /** `create` : choisir le mot de passe d'un export ; `unlock` : ouvrir une sauvegarde protégée. */

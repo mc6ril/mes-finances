@@ -1,7 +1,9 @@
 import {
   collection,
+  type DocumentData,
   deleteDoc,
   doc,
+  type Firestore,
   getDoc,
   getDocs,
   query,
@@ -11,14 +13,12 @@ import {
   updateDoc,
   where,
   writeBatch,
-  type DocumentData,
-  type Firestore,
 } from 'firebase/firestore';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
+import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import type { SharingGatewayInterface } from '@/core/partage/interface';
 import type { Invitation, NewInvitation } from '@/core/partage/model';
 import { fail, ok, type Result } from '@/core/shared/errors';
-import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
-import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 
 /** Création et acceptation n'aboutissent qu'une fois confirmées par le serveur. */
 const CONFIRMATION_TIMEOUT_MS = 10000;

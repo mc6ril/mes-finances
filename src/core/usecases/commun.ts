@@ -10,7 +10,7 @@ import type {
   Settlement,
   Transaction,
 } from '../shared/model';
-import { loadedDataset, type FinanceDeps } from './shared';
+import { type FinanceDeps, loadedDataset } from './shared';
 
 export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const saveCommonMonth = (entry: CommonMonth): Promise<Result<void>> =>

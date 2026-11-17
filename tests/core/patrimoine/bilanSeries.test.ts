@@ -1,8 +1,8 @@
 import {
   PATRIMOINE_START_KEY,
+  type PatrimoineEvolution,
   patrimoinePoints,
   trackedMonths,
-  type PatrimoineEvolution,
 } from '@/core/patrimoine/patrimoine';
 
 const anEvolution = (overrides: Partial<PatrimoineEvolution> = {}): PatrimoineEvolution => ({

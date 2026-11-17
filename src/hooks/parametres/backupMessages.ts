@@ -1,6 +1,6 @@
 import type { RestoreRequest } from '@/core/sauvegarde/backupContent';
 import type { BackupHistory } from '@/core/sauvegarde/interface';
-import { restoreTargets, type RestoreContext, type RestoreTarget } from '@/core/sauvegarde/restorePlan';
+import { type RestoreContext, type RestoreTarget, restoreTargets } from '@/core/sauvegarde/restorePlan';
 import type { SettingsMergeSummary } from '@/core/sauvegarde/settingsMerge';
 import { formatDateFr } from '@/core/shared/format';
 

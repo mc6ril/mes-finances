@@ -1,6 +1,6 @@
 import { accountBalanceAt, isCounted, isInternalMove } from '../comptes/balances';
-import { daysBetween, monthEnd, monthKeyOf, monthsOfYear } from '../shared/dates';
 import { isMirrored } from '../comptes/mirror';
+import { daysBetween, monthEnd, monthKeyOf, monthsOfYear } from '../shared/dates';
 import type {
   Account,
   AccountGroup,
@@ -272,7 +272,7 @@ export const patrimoineSeries = (
 
 const pointDate = (month: MonthKey, today: IsoDate | undefined): IsoDate => {
   const end = monthEnd(month);
-  if (today && today.startsWith(month) && today < end) {
+  if (today?.startsWith(month) && today < end) {
     return today;
   }
   return end;

@@ -1,12 +1,12 @@
 import { Wand2 } from 'lucide-react';
-import { useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
 import { monthLabel } from '@/core/shared/format';
 import type { Cents, MonthKey } from '@/core/shared/model';
+import { useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import Amount from '@/ui/components/atoms/Amount';
 import Button from '@/ui/components/atoms/Button';
-import Card from '@/ui/components/molecules/cards/Card';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
 
 type PrefillBudgetCardProps = { month: MonthKey; planned: Record<string, Cents> };
 

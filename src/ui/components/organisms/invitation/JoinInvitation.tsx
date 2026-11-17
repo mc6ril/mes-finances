@@ -1,13 +1,13 @@
-import { useCallback } from 'react';
 import { Users } from 'lucide-react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useJoinInvitation } from '@/hooks/useSharing';
 import Button from '@/ui/components/atoms/Button';
+import Text from '@/ui/components/atoms/Text';
 import Card from '@/ui/components/molecules/cards/Card';
 import Notice from '@/ui/components/molecules/feedback/Notice';
-import Text from '@/ui/components/atoms/Text';
-import { errorMessage } from '@/ui/errorMessages';
 import PageHeader from '@/ui/components/molecules/PageHeader';
+import { errorMessage } from '@/ui/errorMessages';
 
 type JoinProps = { token: string };
 

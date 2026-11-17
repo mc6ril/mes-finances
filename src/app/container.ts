@@ -1,23 +1,23 @@
 import { createFirebaseAuthGateway } from '@/adapters/auth/firebaseAuth';
-import { firebaseApp } from '@/adapters/firebase/firebaseApp';
+import { WebCryptoBackupCipher } from '@/adapters/crypto/WebCryptoBackupCipher';
 import { BrowserFileSaver } from '@/adapters/files/BrowserFileSaver';
 import { BrowserTextFileReader } from '@/adapters/files/BrowserTextFileReader';
-import { WebCryptoBackupCipher } from '@/adapters/crypto/WebCryptoBackupCipher';
+import { firebaseApp } from '@/adapters/firebase/firebaseApp';
 import { closeBrowserFirestore, openBrowserFirestore } from '@/adapters/firestore/browserFirestore';
-import { watchBrowserNetwork } from '@/adapters/firestore/sync/browserNetwork';
 import { FirestoreBackend } from '@/adapters/firestore/FirestoreBackend';
+import { watchBrowserNetwork } from '@/adapters/firestore/sync/browserNetwork';
 import { randomId } from '@/adapters/ids/randomIdGenerator';
 import { randomToken } from '@/adapters/ids/randomToken';
 import { PapaCsvParser } from '@/adapters/parsing/PapaCsvParser';
 import { clearBrowserData } from '@/adapters/storage/localData';
 import { browserPendingInvitation } from '@/adapters/storage/pendingInvitation';
-import { createFileUseCases, type FileUseCases } from '@/core/usecases/files';
-import { createFinanceUseCases, type FinanceUseCases } from '@/core/usecases/finance';
-import { createAuthUseCases, type AuthUseCases } from '@/core/usecases/auth';
-import { createSharingUseCases, type SharingUseCases } from '@/core/usecases/sharing';
 import { AuthSession } from '@/core/store/AuthSession';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import type { SyncGatewayInterface, UserDataBackendInterface } from '@/core/sync/interface';
+import { type AuthUseCases, createAuthUseCases } from '@/core/usecases/auth';
+import { createFileUseCases, type FileUseCases } from '@/core/usecases/files';
+import { createFinanceUseCases, type FinanceUseCases } from '@/core/usecases/finance';
+import { createSharingUseCases, type SharingUseCases } from '@/core/usecases/sharing';
 
 export type Container = {
   store: FinanceStore;

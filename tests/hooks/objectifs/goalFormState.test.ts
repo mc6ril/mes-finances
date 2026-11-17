@@ -1,11 +1,11 @@
+import { type GoalForm, goalFormFrom } from '@/core/patrimoine/goalForm';
 import { goalFormReducer } from '@/hooks/objectifs/goalFormState';
-import { goalFormFrom, type GoalForm } from '@/core/patrimoine/goalForm';
 
 const start: GoalForm = { ...goalFormFrom(null, '2026-11-01'), startAmount: '50' };
 
 /** Valeur des comptes liés : 1 234,50 € pour le livret, rien sinon. */
-const valueOf = (linked: string[]) => (linked.includes('livret') ? 123450 : null);
-const reduce = goalFormReducer(valueOf);
+const linkedValueOf = (linked: string[]) => (linked.includes('livret') ? 123450 : null);
+const reduce = goalFormReducer(linkedValueOf);
 
 describe('état du formulaire d’un objectif', () => {
   it('modifie les champs saisis', () => {

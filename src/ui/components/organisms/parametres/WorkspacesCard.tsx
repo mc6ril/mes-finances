@@ -1,17 +1,17 @@
 import { Check, LogOut, Pencil, Plus, Trash2, UserMinus, UserPlus, Users } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { canDelete, canInvite, type Workspace, workspaceRenameCommit } from '@/core/espaces/workspaces';
+import type { WorkspaceKind } from '@/core/shared/model';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import type { WorkspaceKind } from '@/core/shared/model';
-import { canDelete, canInvite, workspaceRenameCommit, type Workspace } from '@/core/espaces/workspaces';
 import { useSharingUseCases } from '@/hooks/useSharing';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
-import Card from '@/ui/components/molecules/cards/Card';
 import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
-import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
+import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import InviteModal from '@/ui/components/organisms/modals/InviteModal';
 
 type SharingAction = { kind: 'invite' | 'revoke' | 'leave'; workspace: Workspace };

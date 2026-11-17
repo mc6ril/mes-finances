@@ -1,11 +1,11 @@
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
 import type { ThemePreference, WorkspaceKind } from '@/core/shared/model';
 import { DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import Card from '@/ui/components/molecules/cards/Card';
+import PreferenceRow from '@/ui/components/molecules/form/PreferenceRow';
 import Segmented from '@/ui/components/molecules/Segmented';
 import HouseholdSettings from './HouseholdSettings';
-import PreferenceRow from '@/ui/components/molecules/form/PreferenceRow';
 
 const ThemePicker = () => {
   const { settings } = useDataset();

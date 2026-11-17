@@ -3,10 +3,10 @@ import { useDashboard } from '@/hooks/dashboard/useDashboard';
 import PageHeader from '@/ui/components/molecules/PageHeader';
 import BalanceChart from '@/ui/components/organisms/charts/BalanceChart';
 import SpendingPie from '@/ui/components/organisms/charts/SpendingPie';
-import CommonStats from '@/ui/components/organisms/dashboard/CommonStats';
-import PersonalStats from '@/ui/components/organisms/dashboard/PersonalStats';
-import GettingStarted from '@/ui/components/organisms/dashboard/GettingStarted';
 import Attention from '@/ui/components/organisms/dashboard/Attention';
+import CommonStats from '@/ui/components/organisms/dashboard/CommonStats';
+import GettingStarted from '@/ui/components/organisms/dashboard/GettingStarted';
+import PersonalStats from '@/ui/components/organisms/dashboard/PersonalStats';
 
 const DashboardPage = () => {
   const { dataset, month, overview, figures, slices, content, balancePoints, isCommon, hasTransactions } =

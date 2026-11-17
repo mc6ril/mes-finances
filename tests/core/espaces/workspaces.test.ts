@@ -10,9 +10,9 @@ import {
   renamedWorkspaces,
   resolveActiveId,
   sortWorkspaces,
+  type Workspace,
   workspaceFileSlug,
   workspaceNameError,
-  type Workspace,
 } from '@/core/espaces/workspaces';
 
 const MAIN = mainWorkspace('uid-001');

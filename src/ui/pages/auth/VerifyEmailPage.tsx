@@ -2,9 +2,9 @@ import { MailCheck, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthAction, useAuthUseCases, useCurrentUser } from '@/hooks/useAuth';
 import Button from '@/ui/components/atoms/Button';
-import Notice from '@/ui/components/molecules/feedback/Notice';
-import { AuthTextButton } from '@/ui/components/molecules/auth/AuthTextButton';
 import Text from '@/ui/components/atoms/Text';
+import { AuthTextButton } from '@/ui/components/molecules/auth/AuthTextButton';
+import Notice from '@/ui/components/molecules/feedback/Notice';
 import AuthLayout from '@/ui/components/templates/AuthLayout';
 
 /** Affiché tant qu'un compte par e-mail n'a pas confirmé son adresse. */

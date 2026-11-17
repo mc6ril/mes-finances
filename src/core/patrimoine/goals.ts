@@ -85,7 +85,7 @@ type ScenarioInput = {
 export const MAX_PROJECTION_MONTHS = 600;
 const SERIES_MONTHS = 120;
 
-const monthlyRateOf = (annualRate: number): number => Math.pow(1 + annualRate, 1 / 12) - 1;
+const monthlyRateOf = (annualRate: number): number => (1 + annualRate) ** (1 / 12) - 1;
 
 export const projectionScenarios = ({
   current,

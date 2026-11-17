@@ -2,10 +2,10 @@ import { useLayoutEffect, useSyncExternalStore } from 'react';
 import {
   applyTheme,
   chartThemeOf,
+  type ResolvedTheme,
   resolveTheme,
   subscribeToScheme,
   systemPrefersDark,
-  type ResolvedTheme,
 } from '@/ui/theme';
 import { useFinanceState } from './useFinance';
 

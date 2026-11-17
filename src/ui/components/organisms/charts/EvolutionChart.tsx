@@ -1,13 +1,13 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useChartTheme } from '@/hooks/useTheme';
 import type { EvolutionPoint, PatrimoineRange } from '@/core/patrimoine/overview';
 import { capitalize, monthLabel, monthShortLabel } from '@/core/shared/format';
-import Card from '@/ui/components/molecules/cards/Card';
-import Segmented from '@/ui/components/molecules/Segmented';
+import { useChartTheme } from '@/hooks/useTheme';
 import Text from '@/ui/components/atoms/Text';
-import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
+import Card from '@/ui/components/molecules/cards/Card';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import Legend from '@/ui/components/molecules/charts/Legend';
+import Segmented from '@/ui/components/molecules/Segmented';
 
 const RANGE_OPTIONS: { value: PatrimoineRange; label: string }[] = [
   { value: '1', label: '1 mois' },

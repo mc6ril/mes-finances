@@ -3,9 +3,9 @@ import { DEFAULT_SORT } from '@/core/comptes/sort';
 import {
   allSelected,
   initialLedgerState,
+  type LedgerState,
   ledgerReducer,
   selectedRows,
-  type LedgerState,
 } from '@/hooks/compte/ledgerState';
 import { aTransaction } from '../../core/fixtures';
 

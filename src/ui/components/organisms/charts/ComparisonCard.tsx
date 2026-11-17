@@ -1,9 +1,9 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { useChartTheme } from '@/hooks/useTheme';
 import type { ComparisonEntry } from '@/core/patrimoine/overview';
+import { useChartTheme } from '@/hooks/useTheme';
 import Card from '@/ui/components/molecules/cards/Card';
-import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 
 export type ColoredComparison = ComparisonEntry & { color: string };
 

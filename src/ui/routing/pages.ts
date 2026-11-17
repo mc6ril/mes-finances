@@ -1,5 +1,5 @@
 import { INVITATION_PATH } from '@/hooks/useSharing';
-import { lazyPage, type LazyPage } from '@/ui/routing/lazyPage';
+import { type LazyPage, lazyPage } from '@/ui/routing/lazyPage';
 
 /** Pages de l'application, chargées à la demande : l'écran de connexion n'embarque ni elles ni recharts. */
 export const pages = {

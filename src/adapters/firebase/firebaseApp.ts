@@ -1,4 +1,4 @@
-import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { type FirebaseApp, initializeApp } from 'firebase/app';
 import { readFirebaseConfig } from './firebaseConfig';
 
 let app: FirebaseApp | null | undefined;

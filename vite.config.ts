@@ -1,7 +1,7 @@
-import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 const { version } = JSON.parse(
   readFileSync(fileURLToPath(new URL('./package.json', import.meta.url)), 'utf8'),

@@ -1,11 +1,11 @@
 import { ChevronRight } from 'lucide-react';
+import type { AccountPosition } from '@/core/patrimoine/patrimoine';
 import { formatDateFr } from '@/core/shared/format';
 import type { Account } from '@/core/shared/model';
-import type { AccountPosition } from '@/core/patrimoine/patrimoine';
-import { ACCOUNT_KIND_LABELS } from '@/ui/constants';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
 import Text from '@/ui/components/atoms/Text';
+import { ACCOUNT_KIND_LABELS } from '@/ui/constants';
 
 type SavingsAccountCardProps = {
   account: Account;

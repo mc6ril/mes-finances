@@ -1,4 +1,5 @@
 import {
+  type Auth,
   applyActionCode,
   confirmPasswordReset,
   createUserWithEmailAndPassword,
@@ -14,14 +15,13 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  type User,
   updateProfile,
   verifyPasswordResetCode,
-  type Auth,
-  type User,
 } from 'firebase/auth';
-import type { AuthProviderId, AuthUser, Reauthentication, SignUpCredentials } from '@/core/auth/model';
-import { fail, ok, type AppErrorCode, type Result } from '@/core/shared/errors';
 import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
+import type { AuthProviderId, AuthUser, Reauthentication, SignUpCredentials } from '@/core/auth/model';
+import { type AppErrorCode, fail, ok, type Result } from '@/core/shared/errors';
 
 const ERROR_CODES: Record<string, AppErrorCode> = {
   'auth/invalid-credential': 'auth-invalid-credentials',

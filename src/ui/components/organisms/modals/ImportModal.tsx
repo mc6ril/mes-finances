@@ -1,19 +1,19 @@
 import { FileUp, TriangleAlert } from 'lucide-react';
 import { useMemo } from 'react';
-import { useDataset } from '@/hooks/useFinance';
-import { useCsvImport } from '@/hooks/compte/useCsvImport';
 import type { ColumnMapping } from '@/core/comptes/csvImport';
+import { categoriesForType } from '@/core/comptes/transactionDraft';
 import { formatDateFr } from '@/core/shared/format';
-import { errorMessage } from '@/ui/errorMessages';
+import { useCsvImport } from '@/hooks/compte/useCsvImport';
+import { useDataset } from '@/hooks/useFinance';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { Select } from '@/ui/components/atoms/form/Select';
-import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
-import { categoriesForType } from '@/core/comptes/transactionDraft';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import { errorMessage } from '@/ui/errorMessages';
 
 const MAPPING_FIELDS: { key: keyof ColumnMapping; label: string; required: boolean }[] = [
   { key: 'date', label: 'Date', required: true },

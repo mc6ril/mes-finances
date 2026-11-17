@@ -1,5 +1,5 @@
-import { BarChart3, CalendarRange, Goal, LayoutDashboard, PiggyBank, Settings, Wallet } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { BarChart3, CalendarRange, Goal, LayoutDashboard, PiggyBank, Settings, Wallet } from 'lucide-react';
 
 export type NavItem = {
   path: string;

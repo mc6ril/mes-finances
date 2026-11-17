@@ -1,7 +1,7 @@
-import { goalDraftFrom, goalFormFrom, linkedStartValue, type GoalForm } from '@/core/patrimoine/goalForm';
+import { type GoalForm, goalDraftFrom, goalFormFrom, linkedStartValue } from '@/core/patrimoine/goalForm';
 import { linkedValueAt } from '@/core/patrimoine/goalTracking';
 import type { Goal } from '@/core/shared/model';
-import { anAccount, aMovement } from '../fixtures';
+import { aMovement, anAccount } from '../fixtures';
 
 const goal: Goal = {
   id: 'g1',

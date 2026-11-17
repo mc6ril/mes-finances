@@ -1,9 +1,9 @@
 import { savingsAccountOfCategory, savingsCategoryOfAccount } from '../budget/budget';
 import { newAccountDraft } from '../comptes/accounts';
-import { fail, type Result } from '../shared/errors';
 import { todayIso } from '../shared/dates';
+import { fail, type Result } from '../shared/errors';
 import type { Account, AccountKind, Category, Cents, Goal } from '../shared/model';
-import { withId, type Draft, type FinanceDeps } from './shared';
+import { type Draft, type FinanceDeps, withId } from './shared';
 
 export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const saveAccount = async (draft: Draft<Account>): Promise<Result<void>> => {

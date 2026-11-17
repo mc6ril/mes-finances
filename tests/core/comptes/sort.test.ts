@@ -1,4 +1,4 @@
-import { DEFAULT_SORT, nextSort, sortTransactions, type SortState } from '@/core/comptes/sort';
+import { DEFAULT_SORT, nextSort, type SortState, sortTransactions } from '@/core/comptes/sort';
 import { aTransaction } from '../fixtures';
 
 const names = new Map([

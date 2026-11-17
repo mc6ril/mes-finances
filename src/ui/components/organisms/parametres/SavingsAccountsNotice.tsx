@@ -1,9 +1,9 @@
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
-import { useDataset } from '@/hooks/useFinance';
 import { isSavingsAccount } from '@/core/comptes/accounts';
-import Card from '@/ui/components/molecules/cards/Card';
+import { useDataset } from '@/hooks/useFinance';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
 
 /** Les comptes d'épargne se créent et se modifient dans Épargne et patrimoine, avec leurs mouvements. */
 const SavingsAccountsNotice = () => {

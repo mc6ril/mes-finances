@@ -1,6 +1,7 @@
+import type { AccountDataInterface, AuthGatewayInterface } from '../auth/interface';
 import {
-  needsEmailVerification,
   type AuthUser,
+  needsEmailVerification,
   type Reauthentication,
   type SignInForm,
   type SignUpForm,
@@ -13,7 +14,6 @@ import {
   validateSignUp,
 } from '../auth/validation';
 import { fail, ok, type Result } from '../shared/errors';
-import type { AccountDataInterface, AuthGatewayInterface } from '../auth/interface';
 import type { SyncGatewayInterface } from '../sync/interface';
 import { SIGN_OUT_FLUSH_MS } from '../sync/model';
 

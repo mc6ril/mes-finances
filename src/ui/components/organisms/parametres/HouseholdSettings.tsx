@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { defaultMemberName, memberName, SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
 import { formatRate, rateInput } from '@/core/shared/format';
-import { parsePercent } from '@/core/shared/money';
 import type { Household, HouseholdMember } from '@/core/shared/model';
+import { parsePercent } from '@/core/shared/money';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
 import { Input } from '@/ui/components/atoms/form/Input';
-import Segmented from '@/ui/components/molecules/Segmented';
 import SettingRow from '@/ui/components/molecules/form/PreferenceRow';
+import Segmented from '@/ui/components/molecules/Segmented';
 import { cx } from '@/ui/design-system/cx';
 
 type NameInputProps = { member: HouseholdMember; index: number; onSave: (name: string) => void };

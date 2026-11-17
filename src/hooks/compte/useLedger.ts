@@ -1,17 +1,16 @@
 import { useCallback, useMemo, useReducer } from 'react';
 import { filterTransactions, type TransactionFilters } from '@/core/comptes/filters';
 import { firstRuleSuggestion } from '@/core/comptes/learnedRules';
-import { sortTransactions, type SortKey } from '@/core/comptes/sort';
+import { type SortKey, sortTransactions } from '@/core/comptes/sort';
+import type { CategoryChange } from '@/core/comptes/transactionDraft';
 import type { Account, Dataset, Transaction } from '@/core/shared/model';
 import {
   allSelected,
+  type EditingState,
   initialLedgerState,
   ledgerReducer,
   selectedRows,
-  type EditingState,
 } from './ledgerState';
-
-import type { CategoryChange } from '@/core/comptes/transactionDraft';
 
 export type { CategoryChange };
 

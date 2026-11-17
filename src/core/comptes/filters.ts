@@ -1,6 +1,6 @@
 import { monthEnd, monthStart } from '../shared/dates';
-import { parseEuros } from '../shared/money';
 import type { Account, IsoDate, MonthKey, Transaction } from '../shared/model';
+import { parseEuros } from '../shared/money';
 import { isVerified, signedEffectOn } from './balances';
 
 /** Filtre de statut de la page Opérations ('' = tous). */

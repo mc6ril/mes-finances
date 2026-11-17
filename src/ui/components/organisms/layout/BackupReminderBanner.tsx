@@ -1,8 +1,8 @@
 import { Archive } from 'lucide-react';
-import { useDataset } from '@/hooks/useFinance';
-import { useBackupHistory } from '@/hooks/useBackupHistory';
-import { usePeriod } from '@/hooks/usePeriod';
 import { backupReminder } from '@/core/sauvegarde/reminder';
+import { useBackupHistory } from '@/hooks/useBackupHistory';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 
 /** Rappel discret quand la dernière sauvegarde complète date de plus de 30 jours (ou n'existe pas). */
 const BackupReminderBanner = () => {

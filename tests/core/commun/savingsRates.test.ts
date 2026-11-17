@@ -1,3 +1,5 @@
+import { envelopeOverride, incomeShare } from '@/core/commun/commonMonth';
+import type { CommonMonthSummary } from '@/core/commun/household';
 import {
   addSavingsRate,
   DEFAULT_SAVINGS_RATE,
@@ -7,8 +9,6 @@ import {
   savingsRename,
   setSavingsRate,
 } from '@/core/commun/savingsRates';
-import { envelopeOverride, incomeShare } from '@/core/commun/commonMonth';
-import type { CommonMonthSummary } from '@/core/commun/household';
 import type { SavingsRate } from '@/core/shared/model';
 
 const rates: SavingsRate[] = [

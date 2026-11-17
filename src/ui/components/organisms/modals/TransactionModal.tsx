@@ -1,23 +1,23 @@
 import { memberLabel, membersOf } from '@/core/commun/household';
-import { imputationChoices, type ImputationChoice } from '@/core/commun/imputation';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
-import { PAYMENT_METHODS } from '@/ui/constants';
+import { type ImputationChoice, imputationChoices } from '@/core/commun/imputation';
 import { isInternalMoveType } from '@/core/comptes/balances';
 import { STATUS_LABELS } from '@/core/comptes/csvImport';
-import { categoryChoices, typeChoiceOf, type TypeChoice } from '@/core/comptes/transactionDraft';
+import { categoryChoices, type TypeChoice, typeChoiceOf } from '@/core/comptes/transactionDraft';
 import type { Transaction, TransactionStatus } from '@/core/shared/model';
-import { errorMessage } from '@/ui/errorMessages';
+import type { TransactionFormState } from '@/hooks/compte/transactionForm';
+import { useTransactionForm } from '@/hooks/compte/useTransactionForm';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
 import { Textarea } from '@/ui/components/atoms/form/Textarea';
-import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
-import type { TransactionFormState } from '@/hooks/compte/transactionForm';
-import { useTransactionForm } from '@/hooks/compte/useTransactionForm';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import { PAYMENT_METHODS } from '@/ui/constants';
+import { errorMessage } from '@/ui/errorMessages';
 
 type TransactionModalProps = {
   transaction: Transaction | null;

@@ -1,5 +1,5 @@
-import { AuthSession } from '@/core/store/AuthSession';
 import { fail } from '@/core/shared/errors';
+import { AuthSession } from '@/core/store/AuthSession';
 import { bindUserData } from '@/core/usecases/dataSession';
 import { aUser, fakeAuthGateway } from '../usecases/fakeAuthGateway';
 import { fakeBackend } from './fakeSync';

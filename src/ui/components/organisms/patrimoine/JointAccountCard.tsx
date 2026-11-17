@@ -1,15 +1,15 @@
 import { Users } from 'lucide-react';
 import { useState } from 'react';
+import { type AccountPosition, personalValueOf } from '@/core/patrimoine/patrimoine';
+import type { Account } from '@/core/shared/model';
+import { parsePercent } from '@/core/shared/money';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import { parsePercent } from '@/core/shared/money';
-import { personalValueOf, type AccountPosition } from '@/core/patrimoine/patrimoine';
-import type { Account } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
-import Card from '@/ui/components/molecules/cards/Card';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { Input } from '@/ui/components/atoms/form/Input';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
+import { Field } from '@/ui/components/molecules/form/Field';
 
 type JointAccountCardProps = { account: Account; position: AccountPosition };
 

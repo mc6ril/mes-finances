@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import { fileURLToPath, URL } from 'node:url';
+import { defineConfig } from 'vitest/config';
 
 /** Tests qui exigent l'émulateur Firestore (règles, adapter) : npm run test:emulator. */
 export default defineConfig({

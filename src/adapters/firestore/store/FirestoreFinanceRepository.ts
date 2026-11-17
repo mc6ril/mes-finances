@@ -1,23 +1,26 @@
 import {
   collection,
+  type DocumentReference,
   deleteField,
   doc,
   FieldPath,
+  type Firestore,
   getDocs,
   onSnapshot,
-  writeBatch,
-  type DocumentReference,
-  type Firestore,
   type WriteBatch,
+  writeBatch,
 } from 'firebase/firestore';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
+import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { COLLECTION_NAMES, itemKey } from '@/core/shared/collections';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import type { AuditEntry, CollectionName, Dataset, Settings } from '@/core/shared/model';
 import type { CollectionItem, DatasetListener, FinanceRepositoryInterface } from '@/core/store/interface';
-import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 import {
   byteSize,
   fromShards,
+  type ItemMap,
+  type Layout,
   plain,
   planLayout,
   planShardCount,
@@ -27,10 +30,7 @@ import {
   shardIndex,
   shardsOf,
   toShards,
-  type ItemMap,
-  type Layout,
 } from './sharding';
-import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 
 export type RepositoryOptions = {
   /** Taille visée par paquet (redécoupage). */

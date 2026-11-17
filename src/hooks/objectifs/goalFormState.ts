@@ -1,6 +1,6 @@
 import type { GoalForm, PlannedLineForm } from '@/core/patrimoine/goalForm';
-import { centsToInput } from '@/core/shared/money';
 import type { Cents } from '@/core/shared/model';
+import { centsToInput } from '@/core/shared/money';
 
 /** Valeur des comptes liés à une date de départ ; null s'il n'y a rien à calculer. */
 export type LinkedValueOf = (linked: string[], startDate: string) => Cents | null;
@@ -17,14 +17,14 @@ export type GoalFormAction =
 const NEW_PLANNED_LINE: PlannedLineForm = { id: '', label: '', amount: '' };
 
 export const goalFormReducer =
-  (valueOf: LinkedValueOf) =>
+  (linkedValueOf: LinkedValueOf) =>
   (form: GoalForm, action: GoalFormAction): GoalForm => {
     switch (action.type) {
       case 'update':
         return { ...form, ...action.patch };
       case 'updateStart': {
         const next = { ...form, ...action.patch };
-        const value = valueOf(next.linked, next.startDate);
+        const value = linkedValueOf(next.linked, next.startDate);
         return value === null ? next : { ...next, startAmount: centsToInput(value, { compact: true }) };
       }
       case 'addPlanned':

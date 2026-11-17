@@ -1,6 +1,6 @@
 import { fail, ok, type Result } from '@/core/shared/errors';
-import { IDLE_SYNC, type SyncStatus } from '@/core/sync/model';
 import type { SyncGatewayInterface, UserDataBackendInterface } from '@/core/sync/interface';
+import { IDLE_SYNC, type SyncStatus } from '@/core/sync/model';
 
 /** Faux suivi d'envoi : `pending` simule des écritures qui ne partent pas (hors ligne). */
 export const fakeSync = (pending = false): SyncGatewayInterface & { flushes: number[] } => {

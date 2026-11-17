@@ -1,8 +1,8 @@
-import { FinanceStore } from '@/core/store/FinanceStore';
-import { fail, ok, type Result } from '@/core/shared/errors';
-import type { FinanceRepositoryInterface } from '@/core/store/interface';
 import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import type { Workspace } from '@/core/espaces/workspaces';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import { FinanceStore } from '@/core/store/FinanceStore';
+import type { FinanceRepositoryInterface } from '@/core/store/interface';
 import { aTransaction } from '../core/fixtures';
 import { MemoryDatabase, MemoryWorkspaceRegistry, TEST_MAIN } from '../support/memoryAdapters';
 

@@ -1,11 +1,11 @@
+import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
 import {
-  needsEmailVerification,
   type AuthUser,
+  needsEmailVerification,
   type Reauthentication,
   type SignUpCredentials,
 } from '@/core/auth/model';
-import { fail, ok, type AppError, type Failure, type Result } from '@/core/shared/errors';
-import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
+import { type AppError, type Failure, fail, ok, type Result } from '@/core/shared/errors';
 
 export type AuthStatus = 'checking' | 'signed-in' | 'unverified' | 'signed-out' | 'unavailable';
 

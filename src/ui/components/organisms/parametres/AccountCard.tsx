@@ -6,8 +6,8 @@ import { useReport } from '@/hooks/useReport';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
 import Card from '@/ui/components/molecules/cards/Card';
-import DeleteAccountModal from '@/ui/components/organisms/modals/DeleteAccountModal';
 import SettingRow from '@/ui/components/molecules/form/PreferenceRow';
+import DeleteAccountModal from '@/ui/components/organisms/modals/DeleteAccountModal';
 
 const PROVIDER_LABELS = { password: 'E-mail et mot de passe', google: 'Google' } as const;
 

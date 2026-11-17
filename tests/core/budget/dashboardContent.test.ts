@@ -1,6 +1,6 @@
 import { dashboardContent } from '@/core/budget/overview';
 import { createInitialDataset } from '@/core/shared/seed';
-import { aTransaction, anAccount } from '../fixtures';
+import { anAccount, aTransaction } from '../fixtures';
 
 const blank = () => createInitialDataset('2026-11-08', () => 'id');
 

@@ -1,6 +1,6 @@
 import { addMonths, daysBetween, monthEnd, monthKeyOf } from '../shared/dates';
 import type { Account, AuditEntry, Cents, Goal, IsoDate, MonthKey } from '../shared/model';
-import { accountPosition, personalValueOf, type PatrimoineContext } from './patrimoine';
+import { accountPosition, type PatrimoineContext, personalValueOf } from './patrimoine';
 
 export type LinkedValue = { value: Cents; contributions: Cents; performance: Cents };
 

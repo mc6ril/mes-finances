@@ -1,6 +1,6 @@
 import { parseFlexibleDate } from '../shared/dates';
-import { parseEuros } from '../shared/money';
 import type { Account, AccountGroup, AccountKind, IsoDate } from '../shared/model';
+import { parseEuros } from '../shared/money';
 
 const GROUP_BY_KIND: Record<AccountKind, AccountGroup> = {
   courant: 'courant',

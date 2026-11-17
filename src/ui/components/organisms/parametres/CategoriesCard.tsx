@@ -1,20 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
 import { Archive, ArchiveRestore, Banknote, PiggyBank, Plus, Receipt, ShoppingBag } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
 import { categoriesOfGroup, hasBudgetPeriod, newCategoryDraft } from '@/core/budget/categories';
 import type { BudgetPeriod, Category, CategoryGroup } from '@/core/shared/model';
-import { GROUP_LABELS, groupLabel } from '@/ui/constants';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useInlineName } from '@/hooks/useInlineName';
+import { useReport } from '@/hooks/useReport';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
-import Card from '@/ui/components/molecules/cards/Card';
-import { cx } from '@/ui/design-system/cx';
 import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
-import Segmented from '@/ui/components/molecules/Segmented';
 import Text from '@/ui/components/atoms/Text';
-import { useInlineName } from '@/hooks/useInlineName';
+import Card from '@/ui/components/molecules/cards/Card';
+import Segmented from '@/ui/components/molecules/Segmented';
+import { GROUP_LABELS, groupLabel } from '@/ui/constants';
+import { cx } from '@/ui/design-system/cx';
 
 const GROUP_STYLES: Record<CategoryGroup, { icon: LucideIcon; accent: string; dot: string }> = {
   revenu: {

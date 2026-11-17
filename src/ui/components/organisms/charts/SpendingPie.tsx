@@ -7,9 +7,9 @@ import { useChartTheme } from '@/hooks/useTheme';
 import Amount from '@/ui/components/atoms/Amount';
 import Text from '@/ui/components/atoms/Text';
 import Card from '@/ui/components/molecules/cards/Card';
-import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
-import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import { sliceColor } from '@/ui/components/molecules/charts/axis';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
+import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 
 type SpendingPieProps = { slices: SpendingSlice[]; month: MonthKey };
 

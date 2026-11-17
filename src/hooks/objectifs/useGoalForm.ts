@@ -16,15 +16,15 @@ export const useGoalForm = (goal: Goal | null, onSaved: () => void) => {
   const report = useReport();
   const { today } = usePeriod();
   const context = useMemo(() => patrimoineContext(dataset), [dataset]);
-  const valueOf = useCallback<LinkedValueOf>(
+  const linkedValueOf = useCallback<LinkedValueOf>(
     (linked, startDate) => linkedStartValue(linked, startDate, dataset.accounts, context),
     [dataset.accounts, context],
   );
-  const reducer = useMemo(() => goalFormReducer(valueOf), [valueOf]);
+  const reducer = useMemo(() => goalFormReducer(linkedValueOf), [linkedValueOf]);
   const [form, dispatch] = useReducer(reducer, null, () => goalFormFrom(goal, today));
   const [error, setError] = useState<string | null>(null);
   /** Valeur des comptes liés à la date de départ : montant de départ proposé. */
-  const suggested = valueOf(form.linked, form.startDate);
+  const suggested = linkedValueOf(form.linked, form.startDate);
 
   const save = async () => {
     const draft = goalDraftFrom(form, suggested);

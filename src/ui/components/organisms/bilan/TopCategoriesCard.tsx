@@ -1,9 +1,9 @@
 import { categoryShare, type YearSummary } from '@/core/budget/annual';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { groupLabel } from '@/ui/constants';
 import Amount from '@/ui/components/atoms/Amount';
-import Card from '@/ui/components/molecules/cards/Card';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
+import { groupLabel } from '@/ui/constants';
 
 const TOP_COUNT = 8;
 

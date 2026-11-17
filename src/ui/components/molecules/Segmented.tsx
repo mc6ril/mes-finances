@@ -12,6 +12,7 @@ type SegmentedProps<T extends string> = {
 const Segmented = <T extends string>({ value, options, onChange, label }: SegmentedProps<T>) => (
   <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg bg-surface-muted p-0.5">
     {options.map((option) => (
+      // biome-ignore lint/a11y/useSemanticElements: boutons au rôle radio, motif ARIA valide pour un sélecteur segmenté.
       <button
         key={option.value}
         type="button"

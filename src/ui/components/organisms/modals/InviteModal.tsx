@@ -8,9 +8,9 @@ import { useReport } from '@/hooks/useReport';
 import { invitationLink, useWorkspaceInvitation } from '@/hooks/useSharing';
 import { useToast } from '@/hooks/useToast';
 import Button from '@/ui/components/atoms/Button';
-import { Modal } from '@/ui/components/molecules/overlays/Modal';
-import Notice from '@/ui/components/molecules/feedback/Notice';
 import Text from '@/ui/components/atoms/Text';
+import Notice from '@/ui/components/molecules/feedback/Notice';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import { errorMessage } from '@/ui/errorMessages';
 
 type InviteModalProps = { workspace: Workspace; onClose: () => void };

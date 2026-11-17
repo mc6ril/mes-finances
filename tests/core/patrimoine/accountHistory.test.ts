@@ -5,7 +5,7 @@ import {
   validateSavingsEntry,
 } from '@/core/patrimoine/accountHistory';
 import { accountPosition } from '@/core/patrimoine/patrimoine';
-import { anAccount, aMovement, aTransaction, aValuation } from '../fixtures';
+import { aMovement, anAccount, aTransaction, aValuation } from '../fixtures';
 
 const courant = anAccount({ id: 'courant', name: 'Compte courant' });
 const livret = anAccount({ id: 'livret', name: 'Livret A', kind: 'livret', group: 'securise' });

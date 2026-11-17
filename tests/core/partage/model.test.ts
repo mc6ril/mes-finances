@@ -1,4 +1,4 @@
-import { invitationExpiry, invitationStatus, type Invitation } from '@/core/partage/model';
+import { type Invitation, invitationExpiry, invitationStatus } from '@/core/partage/model';
 
 const invitation = (patch: Partial<Invitation> = {}): Invitation => ({
   token: 'k3Jd9xQ2mZ7vN4pL8sT1wY6bR0cF5hGa',

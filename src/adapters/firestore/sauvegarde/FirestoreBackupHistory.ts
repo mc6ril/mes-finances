@@ -1,8 +1,8 @@
-import { doc, getDoc, setDoc, type Firestore } from 'firebase/firestore';
-import type { BackupHistory, BackupHistoryInterface } from '@/core/sauvegarde/interface';
-import { ok, type Result } from '@/core/shared/errors';
+import { doc, type Firestore, getDoc, setDoc } from 'firebase/firestore';
 import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import type { BackupHistory, BackupHistoryInterface } from '@/core/sauvegarde/interface';
+import { ok, type Result } from '@/core/shared/errors';
 
 const stringOrNull = (value: unknown): string | null => (typeof value === 'string' ? value : null);
 

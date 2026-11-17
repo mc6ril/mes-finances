@@ -1,5 +1,5 @@
-import { matchesStatus, needsCategory, toClassify } from '@/core/comptes/filters';
 import { statusLabel } from '@/core/comptes/csvImport';
+import { matchesStatus, needsCategory, toClassify } from '@/core/comptes/filters';
 import { anAccount, aTransaction } from '../fixtures';
 
 const planned = aTransaction({ status: 'prevu' });

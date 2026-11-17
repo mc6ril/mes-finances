@@ -35,6 +35,7 @@ export const Input = ({
     autoComplete={autoComplete}
     inputMode={inputMode}
     aria-label={label}
+    // biome-ignore lint/a11y/noAutofocus: le focus automatique est choisi par l'écran appelant.
     autoFocus={autoFocus}
     onBlur={onBlur}
     onKeyDown={onKeyDown ? (event) => onKeyDown(event.key) : undefined}

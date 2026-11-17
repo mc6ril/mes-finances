@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { budgetUsage, monthBudgetSummary, spendingStatus, type BudgetLine } from '@/core/budget/budget';
+import { type BudgetLine, budgetUsage, monthBudgetSummary, spendingStatus } from '@/core/budget/budget';
 import type { Cents } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
-import Card from '@/ui/components/molecules/cards/Card';
 import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
 import { STATUS_TONE } from './budgetStatus';
 
 type BudgetFigureProps = {

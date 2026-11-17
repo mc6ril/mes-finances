@@ -3,9 +3,9 @@ import { cashflowSummary, livePosition, periodPhase } from '@/core/comptes/balan
 import { formatDateFr } from '@/core/shared/format';
 import type { Account, IsoDate, Transaction } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
+import Text from '@/ui/components/atoms/Text';
 import Card from '@/ui/components/molecules/cards/Card';
 import { cx } from '@/ui/design-system/cx';
-import Text from '@/ui/components/atoms/Text';
 
 type SummaryCardProps = { label: string; value: ReactNode; caption?: ReactNode; valueClassName?: string };
 

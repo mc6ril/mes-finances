@@ -1,7 +1,6 @@
 import { savingsCategoryFor } from '../budget/budget';
-import type { AppErrorCode } from '../shared/errors';
 import { parseFlexibleDate } from '../shared/dates';
-import { parseEuros } from '../shared/money';
+import type { AppErrorCode } from '../shared/errors';
 import type {
   Account,
   Category,
@@ -12,6 +11,7 @@ import type {
   TransactionStatus,
   TransactionType,
 } from '../shared/model';
+import { parseEuros } from '../shared/money';
 import { isInternalMoveType } from './balances';
 
 /** Saisie d'une opération telle que le formulaire la tient (textes bruts). */
@@ -139,7 +139,8 @@ export type TransactionFormField = 'date' | 'label' | 'amount' | 'counterpartAcc
 export type TransactionFormErrors = Partial<Record<TransactionFormField, AppErrorCode>>;
 
 export type DraftResult =
-  { ok: true; value: TransactionDraft } | { ok: false; errors: TransactionFormErrors };
+  | { ok: true; value: TransactionDraft }
+  | { ok: false; errors: TransactionFormErrors };
 
 export type DraftContext = { members: HouseholdMember[]; accounts: Account[]; categories: Category[] };
 

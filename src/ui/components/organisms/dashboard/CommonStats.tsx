@@ -8,9 +8,9 @@ import {
   Wallet,
   WalletCards,
 } from 'lucide-react';
+import type { MonthOverview } from '@/core/budget/overview';
 import { commonMonthOf, commonMonthSummary, memberLabel, membersOf } from '@/core/commun/household';
 import { pendingSettlements } from '@/core/commun/settlement';
-import type { MonthOverview } from '@/core/budget/overview';
 import { formatEuros, formatEurosRounded, formatRate } from '@/core/shared/format';
 import type { Dataset, MonthKey } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';

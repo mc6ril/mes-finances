@@ -1,7 +1,7 @@
-import { FinanceStore } from '@/core/store/FinanceStore';
-import { MemoryDatabase, MemoryWorkspaceRegistry, TEST_MAIN } from '../support/memoryAdapters';
 import { createInitialDataset } from '@/core/shared/seed';
+import { FinanceStore } from '@/core/store/FinanceStore';
 import { aTransaction } from '../core/fixtures';
+import { MemoryDatabase, MemoryWorkspaceRegistry, TEST_MAIN } from '../support/memoryAdapters';
 
 describe('bascule automatique à l’ouverture', () => {
   it('enregistre les opérations prévues échues comme réalisées', async () => {

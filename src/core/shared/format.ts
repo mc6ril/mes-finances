@@ -1,5 +1,5 @@
-import type { Cents, IsoDate, MonthKey } from './model';
 import { parseMonthKey } from './dates';
+import type { Cents, IsoDate, MonthKey } from './model';
 
 const preciseFormatter = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
 const roundFormatter = new Intl.NumberFormat('fr-FR', {

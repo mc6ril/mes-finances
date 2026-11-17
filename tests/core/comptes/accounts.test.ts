@@ -1,9 +1,9 @@
 import {
-  validateSavingsAccount,
   activeSavingsAccounts,
   groupOfKind,
   isSavingsAccount,
   newAccountDraft,
+  validateSavingsAccount,
   withKind,
 } from '@/core/comptes/accounts';
 import { anAccount } from '../fixtures';

@@ -13,9 +13,9 @@ import { useGoalView } from '@/hooks/objectifs/useGoalView';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
-import Card from '@/ui/components/molecules/cards/Card';
 import ProgressBar from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
 import GoalChart from '@/ui/components/organisms/charts/GoalChart';
 
 const rateLabel = (rate: number): string => {

@@ -1,9 +1,9 @@
-import { PiggyBank, ShieldCheck, UsersRound, type LucideIcon } from 'lucide-react';
+import { type LucideIcon, PiggyBank, ShieldCheck, UsersRound } from 'lucide-react';
 import type { ReactNode } from 'react';
+import Brand from '@/ui/components/atoms/Brand';
 import Text from '@/ui/components/atoms/Text';
 import Title from '@/ui/components/atoms/Title';
 import { APP_VERSION } from '@/ui/constants';
-import Brand from '@/ui/components/atoms/Brand';
 
 const HIGHLIGHTS: { icon: LucideIcon; title: string; text: string }[] = [
   { icon: UsersRound, title: 'À deux', text: 'Chacun son compte, un suivi commun partagé.' },

@@ -1,11 +1,11 @@
 import {
+  type BudgetLine,
   budgetLines,
   budgetUsage,
   hasSpendingLimit,
   monthBudgetSummary,
   SPENDING_ALERT_THRESHOLD,
   spendingStatus,
-  type BudgetLine,
 } from '@/core/budget/budget';
 import { budgetGroupsFor } from '@/core/budget/overview';
 import type { CategoryGroup } from '@/core/shared/model';

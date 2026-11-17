@@ -1,4 +1,4 @@
-import { fail, type AppErrorCode, type Failure } from '@/core/shared/errors';
+import { type AppErrorCode, type Failure, fail } from '@/core/shared/errors';
 
 const CODES: Record<string, AppErrorCode> = {
   'permission-denied': 'sync-permission-denied',

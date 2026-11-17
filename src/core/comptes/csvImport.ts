@@ -1,5 +1,5 @@
-import type { AppErrorCode } from '../shared/errors';
 import { daysBetween, parseFlexibleDate } from '../shared/dates';
+import type { AppErrorCode } from '../shared/errors';
 import { formatDateFr } from '../shared/format';
 import type {
   Account,

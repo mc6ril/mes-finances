@@ -1,16 +1,16 @@
 import { CheckCircle2, Circle } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router';
 import type { DashboardContent } from '@/core/budget/overview';
 import { parseEuros } from '@/core/shared/money';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import Button from '@/ui/components/atoms/Button';
-import Card from '@/ui/components/molecules/cards/Card';
 import { Input } from '@/ui/components/atoms/form/Input';
 import Text from '@/ui/components/atoms/Text';
-import { settingsPath } from '@/ui/routing/navigation';
+import Card from '@/ui/components/molecules/cards/Card';
 import { cx } from '@/ui/design-system/cx';
+import { settingsPath } from '@/ui/routing/navigation';
 
 const LINK = 'shrink-0 text-sm font-medium text-accent-ink hover:underline';
 

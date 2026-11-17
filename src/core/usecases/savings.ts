@@ -1,7 +1,7 @@
 import type { Result } from '../shared/errors';
 import { formatEuros } from '../shared/format';
 import type { SavingsMovement, Valuation } from '../shared/model';
-import { withId, type Draft, type FinanceDeps } from './shared';
+import { type Draft, type FinanceDeps, withId } from './shared';
 
 export const createSavingsUseCases = ({ gateway, newId }: FinanceDeps) => {
   const saveMovement = async (draft: Draft<SavingsMovement>): Promise<Result<void>> => {

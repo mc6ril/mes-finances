@@ -1,10 +1,9 @@
+import { newAccountDraft } from '@/core/comptes/accounts';
 import { fail } from '@/core/shared/errors';
 import type { Dataset, MonthBudget } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
-import { newAccountDraft } from '@/core/comptes/accounts';
-import { anAccount } from '../fixtures';
 import { createFinanceUseCases } from '@/core/usecases/finance';
-import { aTransaction } from '../fixtures';
+import { anAccount, aTransaction } from '../fixtures';
 import { fakeGateway, fixedClock, sequentialIds } from './fakeGateway';
 
 const NOW = '2026-11-08T10:00:00.000Z';

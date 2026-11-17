@@ -1,6 +1,6 @@
 import { yearSummary } from '@/core/budget/annual';
 import { patrimoineEvolution } from '@/core/patrimoine/patrimoine';
-import { anAccount, aMovement, aTransaction, plaisirCategories } from '../fixtures';
+import { aMovement, anAccount, aTransaction, plaisirCategories } from '../fixtures';
 
 describe('yearSummary et mouvements d’épargne', () => {
   const movements = [

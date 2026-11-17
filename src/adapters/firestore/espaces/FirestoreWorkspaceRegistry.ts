@@ -2,18 +2,20 @@ import {
   collection,
   deleteDoc,
   doc,
+  type Firestore,
   getDocs,
   onSnapshot,
+  type Query,
+  type QueryDocumentSnapshot,
   query,
   serverTimestamp,
   setDoc,
   updateDoc,
   where,
   writeBatch,
-  type Firestore,
-  type Query,
-  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
+import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import {
   mainWorkspace,
@@ -23,8 +25,6 @@ import {
 } from '@/core/espaces/workspaces';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
-import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 
 /** Mémoire de l'appareil pour l'espace affiché (localStorage dans le navigateur). */
 export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -41,9 +41,9 @@ const CREATE_ALL_WAIT_MS = 15000;
 
 const TIMED_OUT = Symbol('timeout');
 
-const settledWithin = (write: Promise<void>, timeoutMs: number): Promise<void | typeof TIMED_OUT> =>
+const settledWithin = (write: Promise<void>, timeoutMs: number): Promise<undefined | typeof TIMED_OUT> =>
   Promise.race([
-    write,
+    write.then(() => undefined),
     new Promise<typeof TIMED_OUT>((resolve) => setTimeout(() => resolve(TIMED_OUT), timeoutMs)),
   ]);
 

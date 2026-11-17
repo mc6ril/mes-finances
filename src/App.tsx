@@ -1,31 +1,31 @@
-import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { Loader2, TriangleAlert } from 'lucide-react';
+import { type ReactNode, Suspense, useCallback, useState } from 'react';
+import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import type { Container } from '@/app/container';
 import type { AuthActionLink } from '@/core/auth/actionLink';
-import FinanceProvider from '@/ui/providers/FinanceProvider';
-import PeriodProvider from '@/ui/providers/PeriodProvider';
-import BackupHistoryProvider from '@/ui/providers/BackupHistoryProvider';
-import ToastProvider from '@/ui/providers/ToastProvider';
-import { Suspense, useCallback, useState, type ReactNode } from 'react';
 import { useAuthState } from '@/hooks/useAuth';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
+import { usePreloadPages } from '@/hooks/usePreloadPages';
 import { INVITATION_PATH, usePendingInvitation } from '@/hooks/useSharing';
 import { useApplyTheme } from '@/hooks/useTheme';
 import Button from '@/ui/components/atoms/Button';
+import PageLoader from '@/ui/components/atoms/PageLoader';
 import Text from '@/ui/components/atoms/Text';
 import Title from '@/ui/components/atoms/Title';
-import { errorMessage } from '@/ui/errorMessages';
 import AppShell from '@/ui/components/templates/AppShell';
-import { AUTH_PATHS } from '@/ui/routing/authPaths';
+import { errorMessage } from '@/ui/errorMessages';
 import AuthActionPage from '@/ui/pages/auth/AuthActionPage';
 import ForgotPasswordPage from '@/ui/pages/auth/ForgotPasswordPage';
 import SignInPage from '@/ui/pages/auth/SignInPage';
 import SignUpPage from '@/ui/pages/auth/SignUpPage';
 import VerifyEmailPage from '@/ui/pages/auth/VerifyEmailPage';
-import RememberInvitation from '@/ui/routing/RememberInvitation';
-import PageLoader from '@/ui/components/atoms/PageLoader';
+import BackupHistoryProvider from '@/ui/providers/BackupHistoryProvider';
+import FinanceProvider from '@/ui/providers/FinanceProvider';
+import PeriodProvider from '@/ui/providers/PeriodProvider';
+import ToastProvider from '@/ui/providers/ToastProvider';
+import { AUTH_PATHS } from '@/ui/routing/authPaths';
 import { pages } from '@/ui/routing/pages';
-import { usePreloadPages } from '@/hooks/usePreloadPages';
+import RememberInvitation from '@/ui/routing/RememberInvitation';
 
 const FullScreenLoader = () => (
   <div className="flex min-h-screen items-center justify-center">

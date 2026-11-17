@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, getDocs, type Firestore } from 'firebase/firestore';
+import { collection, type Firestore, getDocs } from 'firebase/firestore';
 import { FirestoreAccountData } from '@/adapters/firestore/auth/FirestoreAccountData';
-import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
-import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
 import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
+import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { randomToken } from '@/adapters/ids/randomToken';
 import { FinanceStore } from '@/core/store/FinanceStore';
@@ -35,7 +35,12 @@ const device = (uid: string) => {
   let pending: string | null = null;
   const sharing = createSharingUseCases({
     sharing: new FirestoreSharing(db, uid, monitor),
-    pending: { remember: (token) => void (pending = token), take: () => pending },
+    pending: {
+      remember: (token) => {
+        pending = token;
+      },
+      take: () => pending,
+    },
     newToken: randomToken,
     now: () => new Date(),
   });

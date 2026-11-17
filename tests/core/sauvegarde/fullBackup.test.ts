@@ -1,7 +1,7 @@
+import type { Workspace } from '@/core/espaces/workspaces';
 import { createBackup } from '@/core/sauvegarde/backup';
 import { createFullBackup, readAnyBackup } from '@/core/sauvegarde/fullBackup';
 import { createInitialDataset } from '@/core/shared/seed';
-import type { Workspace } from '@/core/espaces/workspaces';
 import { TEST_MAIN } from '../../support/memoryAdapters';
 
 const dataset = createInitialDataset('2026-11-08', () => 'audit');

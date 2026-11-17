@@ -1,7 +1,7 @@
 import { annualActualInMonth, budgetLines, propagateBudgetLine } from '@/core/budget/budget';
 import { orderCategories } from '@/core/budget/categoryOrder';
-import type { MonthBudget } from '@/core/shared/model';
 import { patrimoineSeries } from '@/core/patrimoine/patrimoine';
+import type { MonthBudget } from '@/core/shared/model';
 import { aCategory, anAccount, aTransaction } from '../fixtures';
 
 const budgetOf = (month: string, restaurants: number): MonthBudget => ({

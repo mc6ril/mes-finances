@@ -1,17 +1,17 @@
 import { CalendarClock } from 'lucide-react';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { type AnnualLine, annualLines } from '@/core/budget/budget';
 import { yearBudgetOf, yearBudgetOriginOf } from '@/core/budget/overview';
-import { useReport } from '@/hooks/useReport';
-import { annualLines, type AnnualLine } from '@/core/budget/budget';
 import type { Cents, WorkspaceKind } from '@/core/shared/model';
-import { groupLabel } from '@/ui/constants';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
+import ProgressBar from '@/ui/components/atoms/ProgressBar';
+import Text from '@/ui/components/atoms/Text';
 import Card from '@/ui/components/molecules/cards/Card';
 import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
-import ProgressBar from '@/ui/components/atoms/ProgressBar';
-import Text from '@/ui/components/atoms/Text';
+import { groupLabel } from '@/ui/constants';
 import { STATUS_BADGE, STATUS_TONE } from './budgetStatus';
 
 type RemainingProps = { line: AnnualLine };

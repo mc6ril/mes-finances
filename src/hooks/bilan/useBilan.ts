@@ -1,16 +1,16 @@
 import { useCallback, useMemo } from 'react';
-import { useDataset } from '@/hooks/useFinance';
-import { usePeriod } from '@/hooks/usePeriod';
-import { patrimoineContext, plaisirBudgetFor } from '@/core/budget/overview';
 import { monthlyChartData, yearSummary } from '@/core/budget/annual';
-import { parseMonthKey } from '@/core/shared/dates';
-import type { MonthKey } from '@/core/shared/model';
+import { patrimoineContext, plaisirBudgetFor } from '@/core/budget/overview';
 import {
   patrimoineEvolution,
   patrimoinePoints,
   patrimoineSeries,
   trackedMonths,
 } from '@/core/patrimoine/patrimoine';
+import { parseMonthKey } from '@/core/shared/dates';
+import type { MonthKey } from '@/core/shared/model';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
 
 /** Données du bilan de l'année affichée : synthèse, évolution du patrimoine et points des graphiques. */
 export const useBilan = () => {

@@ -1,8 +1,8 @@
+import { isArray, isInteger, isObject, isString } from '@/core/shared/typeCheck';
 import { fail, ok, type Result } from '../shared/errors';
 import type { CollectionName, Dataset } from '../shared/model';
 import { SCHEMA_VERSION } from '../shared/model';
 import { migrateDataset } from './migrate';
-import { isArray, isInteger, isObject, isString } from '@/core/shared/typeCheck';
 
 export const BACKUP_APP_ID = 'mes-finances';
 

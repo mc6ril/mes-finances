@@ -1,18 +1,18 @@
 import { Archive, ArchiveRestore, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
 import { isSavingsAccount } from '@/core/comptes/accounts';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import type { Account } from '@/core/shared/model';
+import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useInlineName } from '@/hooks/useInlineName';
+import { useReport } from '@/hooks/useReport';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
-import Card from '@/ui/components/molecules/cards/Card';
 import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
-import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 import Text from '@/ui/components/atoms/Text';
-import { useInlineName } from '@/hooks/useInlineName';
+import Card from '@/ui/components/molecules/cards/Card';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 
 type AccountRowProps = { account: Account; isMain: boolean };
 

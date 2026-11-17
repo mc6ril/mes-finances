@@ -1,11 +1,11 @@
+import type { ImportReviewRow } from '@/core/comptes/csvImport';
 import {
+  type CsvImportState,
   columnCount,
   csvImportReducer,
   includedRows,
   initialCsvImportState,
-  type CsvImportState,
 } from '@/hooks/compte/csvImportState';
-import type { ImportReviewRow } from '@/core/comptes/csvImport';
 
 const table = [
   ['Date', 'Libellé', 'Montant'],

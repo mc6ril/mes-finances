@@ -14,10 +14,10 @@ import type { BalanceChartPoint } from '@/core/comptes/balances';
 import { formatDateFr } from '@/core/shared/format';
 import { useChartTheme } from '@/hooks/useTheme';
 import Card from '@/ui/components/molecules/cards/Card';
-import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
-import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import Legend from '@/ui/components/molecules/charts/Legend';
+import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 
 type BalanceChartProps = { points: BalanceChartPoint[]; hasTransactions: boolean; isCommon: boolean };
 
