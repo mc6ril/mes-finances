@@ -6,6 +6,8 @@ import { useReport } from '@/hooks/useReport';
 import { Checkbox, Input } from '@/ui/design-system/Field';
 import Segmented from '@/ui/design-system/Segmented';
 import SettingRow from './SettingRow';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { cx } from '@/ui/design-system/cx';
 
 const percentText = (rate: number): string => String(Math.round(rate * 1000) / 10).replace('.', ',');
 
@@ -135,7 +137,12 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
             label="Part versée au commun"
             className="pr-8 text-right"
           />
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-stone-400">
+          <span
+            className={cx(
+              'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm',
+              MUTED_TEXT,
+            )}
+          >
             %
           </span>
         </span>

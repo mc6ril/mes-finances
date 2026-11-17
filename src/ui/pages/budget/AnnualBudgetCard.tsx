@@ -12,6 +12,8 @@ import EmptyState from '@/ui/design-system/EmptyState';
 import MoneyInput from '@/ui/design-system/MoneyInput';
 import ProgressBar, { type ProgressTone } from '@/ui/design-system/ProgressBar';
 import Text from '@/ui/design-system/Text';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { cx } from '@/ui/design-system/cx';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',
@@ -138,10 +140,7 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
                     />
                   </td>
                   <td className="text-right">
-                    <Amount
-                      cents={line.monthlyProvision}
-                      className="text-xs text-stone-500 dark:text-stone-400"
-                    />
+                    <Amount cents={line.monthlyProvision} className={cx('text-xs', MUTED_TEXT)} />
                   </td>
                 </tr>
               ))}

@@ -80,7 +80,9 @@ const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
                   label={`Rattacher ${transaction.label}`}
                   onChange={(checked) => toggle(transaction.id, checked)}
                 />
-                <span className="w-24 shrink-0 text-sm text-stone-500">{formatDateFr(transaction.date)}</span>
+                <Text variant="muted" as="span" className="w-24 shrink-0">
+                  {formatDateFr(transaction.date)}
+                </Text>
                 <span className="min-w-0 flex-1 truncate text-sm">{transaction.label}</span>
                 <Amount cents={transaction.amount} signed />
               </li>
@@ -179,13 +181,15 @@ const SettlementLines = ({
               </span>
               {group.detailed &&
                 group.lines.map((line, index) => (
-                  <span
+                  <Text
                     key={line.transactionId ?? index}
-                    className="flex justify-between gap-2 pl-3 text-xs text-stone-400"
+                    variant="small"
+                    as="span"
+                    className="flex justify-between gap-2 pl-3"
                   >
                     <span className="min-w-0 truncate">{line.label}</span>
                     <Amount cents={sign * line.amount} signed />
-                  </span>
+                  </Text>
                 ))}
             </li>
           );

@@ -46,6 +46,7 @@ import AccountModal from './AccountModal';
 import SavingsAccountForm from './SavingsAccountForm';
 import EmptyState from '@/ui/design-system/EmptyState';
 import { isSavingsAccount } from '@/core/comptes/accounts';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
 
 type Range = '1' | '3' | '6' | '12' | 'annee';
 
@@ -87,19 +88,19 @@ const AccountCard = ({ account, position, color, onOpen }: AccountCardProps) => 
       <Amount cents={position.value} />
     </div>
     <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-      <dt className="text-stone-500 dark:text-stone-400">Versé net</dt>
+      <dt className={MUTED_TEXT}>Versé net</dt>
       <dd className="text-right tabular-nums">
         <Amount cents={position.contributions} />
       </dd>
-      <dt className="text-stone-500 dark:text-stone-400">Intérêts</dt>
+      <dt className={MUTED_TEXT}>Intérêts</dt>
       <dd className="text-right">
         <Amount cents={position.interests} />
       </dd>
-      <dt className="text-stone-500 dark:text-stone-400">Frais</dt>
+      <dt className={MUTED_TEXT}>Frais</dt>
       <dd className="text-right">
         <Amount cents={-position.fees} />
       </dd>
-      <dt className="text-stone-500 dark:text-stone-400">Plus/moins-value</dt>
+      <dt className={MUTED_TEXT}>Plus/moins-value</dt>
       <dd className="text-right">
         <Amount cents={position.marketGain} signed colored />
       </dd>

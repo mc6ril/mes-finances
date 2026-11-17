@@ -10,6 +10,8 @@ import Card from '@/ui/design-system/Card';
 import { Input } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';
 import { settingsPath } from '@/ui/layout/navigation';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { cx } from '@/ui/design-system/cx';
 
 const LINK = 'shrink-0 text-sm font-medium text-brand-600 hover:underline dark:text-brand-300';
 
@@ -45,7 +47,12 @@ const OpeningBalanceForm = () => {
           label="Solde du compte courant aujourd’hui"
           className="pr-7 text-right"
         />
-        <span className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-sm text-stone-400">
+        <span
+          className={cx(
+            'pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-sm',
+            MUTED_TEXT,
+          )}
+        >
           €
         </span>
       </div>

@@ -259,7 +259,9 @@ const TransactionModal = ({
           </Field>
           {form.status === 'realise' && (
             <Checkbox checked={form.verified} onChange={(verified) => update({ verified })}>
-              <span className="text-xs text-stone-500 dark:text-stone-400">Vérifiée sur mon relevé</span>
+              <Text variant="small" as="span">
+                Vérifiée sur mon relevé
+              </Text>
             </Checkbox>
           )}
         </div>
