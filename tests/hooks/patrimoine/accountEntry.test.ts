@@ -25,11 +25,11 @@ describe('saisie dans un compte d’épargne', () => {
     expect(state).toMatchObject({ amount: '12,50', date: '2026-03-10', formKind: 'movement' });
   });
 
-  it('signale une saisie invalide, puis efface l’erreur à la saisie suivante réussie', () => {
+  it('signale une saisie invalide, puis l’efface dès qu’une saisie est valide', () => {
     const invalid = accountEntryReducer(initialAccountEntry(livret, '2026-03-10'), { type: 'invalid' });
     expect(invalid.error).toBe('Renseigne une date et un montant positif.');
-    const saved = accountEntryReducer(invalid, { type: 'saved' });
-    expect(saved.error).toBeNull();
+    expect(accountEntryReducer(invalid, { type: 'validated' }).error).toBeNull();
+    expect(accountEntryReducer(invalid, { type: 'saved' }).error).toBeNull();
   });
 
   it('après un enregistrement, vide montant et commentaire mais garde date, nature et type de saisie', () => {

@@ -3,9 +3,8 @@ import { useState } from 'react';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
-import { newAccountDraft, SAVINGS_KINDS, withKind } from '@/core/comptes/accounts';
-import { parseFlexibleDate } from '@/core/shared/dates';
-import { centsToInput, parseEuros } from '@/core/shared/money';
+import { newAccountDraft, SAVINGS_KINDS, validateSavingsAccount, withKind } from '@/core/comptes/accounts';
+import { centsToInput } from '@/core/shared/money';
 import type { Account, AccountKind } from '@/core/shared/model';
 import { ACCOUNT_KIND_LABELS } from '@/ui/constants';
 import Button from '@/ui/components/atoms/Button';
@@ -32,16 +31,12 @@ const SavingsAccountForm = ({ account, onClose, onArchived }: SavingsAccountForm
   const [error, setError] = useState<string | null>(null);
 
   const save = async () => {
-    const openingDate = parseFlexibleDate(date);
-    const openingBalance = balance.trim() === '' ? 0 : parseEuros(balance);
-    if (!name.trim() || !openingDate || openingBalance === null || openingBalance < 0) {
+    const fields = validateSavingsAccount({ name, balance, date });
+    if (!fields) {
       setError('Renseigne un nom, une date et un solde positif (ou vide).');
       return;
     }
-    const fields = { name: name.trim(), kind, openingBalance, openingDate };
-    const draft = account
-      ? { ...withKind(account, kind), name: fields.name, openingBalance, openingDate }
-      : newAccountDraft(fields);
+    const draft = account ? { ...withKind(account, kind), ...fields } : newAccountDraft({ ...fields, kind });
     if (await report(finance.saveAccount(draft), account ? 'Compte enregistré' : 'Compte ajouté')) {
       onClose();
     }
