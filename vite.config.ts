@@ -15,11 +15,24 @@ export default defineConfig({
   },
   server: { host: '127.0.0.1', port: 5173 },
   build: {
-    chunkSizeWarningLimit: 1200,
+    // Juste au-dessus du chunk Firebase (≈ 660 Ko, incompressible) : signale toute croissance anormale.
+    chunkSizeWarningLimit: 700,
     rolldownOptions: {
       output: {
-        // Firebase (Auth + Firestore) à part : gros, et mis à jour moins souvent que l'application.
-        codeSplitting: { groups: [{ name: 'firebase', test: /node_modules[\\/](@firebase|firebase)[\\/]/ }] },
+        codeSplitting: {
+          // À priorité égale, le premier groupe l'emporte. Chaque groupe emporte aussi les dépendances
+          // de ses modules : React doit être capturé avant recharts, sinon l'entrée importerait recharts.
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|react-is|scheduler)[\\/]/ },
+            // Firebase (Auth + Firestore) à part : gros, et mis à jour moins souvent que l'application.
+            { name: 'firebase', test: /node_modules[\\/](@firebase|firebase)[\\/]/ },
+            // recharts et ses dépendances (propres à lui) : chargés seulement par les pages à graphiques.
+            {
+              name: 'recharts',
+              test: /node_modules[\\/](recharts|victory-vendor|d3-[^\\/]+|internmap|@reduxjs|react-redux|redux|redux-thunk|reselect|immer|es-toolkit|decimal\.js-light|eventemitter3|tiny-invariant|use-sync-external-store|clsx)[\\/]/,
+            },
+          ],
+        },
       },
     },
   },

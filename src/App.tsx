@@ -5,7 +5,7 @@ import FinanceProvider from '@/ui/providers/FinanceProvider';
 import PeriodProvider from '@/ui/providers/PeriodProvider';
 import BackupHistoryProvider from '@/ui/providers/BackupHistoryProvider';
 import ToastProvider from '@/ui/providers/ToastProvider';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { useAuthState } from '@/hooks/useAuth';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { INVITATION_PATH, usePendingInvitation } from '@/hooks/useSharing';
@@ -20,15 +20,10 @@ import ForgotPasswordPage from '@/ui/pages/auth/ForgotPasswordPage';
 import SignInPage from '@/ui/pages/auth/SignInPage';
 import SignUpPage from '@/ui/pages/auth/SignUpPage';
 import VerifyEmailPage from '@/ui/pages/auth/VerifyEmailPage';
-import BilanPage from '@/ui/pages/bilan/BilanPage';
-import BudgetPage from '@/ui/pages/budget/BudgetPage';
-import InvitationPage from '@/ui/pages/invitation/InvitationPage';
 import RememberInvitation from '@/ui/pages/invitation/RememberInvitation';
-import ComptePage from '@/ui/pages/compte/ComptePage';
-import DashboardPage from '@/ui/pages/dashboard/DashboardPage';
-import ObjectifsPage from '@/ui/pages/objectifs/ObjectifsPage';
-import ParametresPage from '@/ui/pages/parametres/ParametresPage';
-import PatrimoinePage from '@/ui/pages/patrimoine/PatrimoinePage';
+import PageLoader from '@/ui/layout/PageLoader';
+import { pages } from '@/ui/routing/pages';
+import { usePreloadPages } from '@/hooks/usePreloadPages';
 
 const FullScreenLoader = () => (
   <div className="flex min-h-screen items-center justify-center">
@@ -64,6 +59,7 @@ const Gate = () => {
   const store = useFinanceStore();
   const navigate = useNavigate();
   usePendingInvitation(navigate);
+  usePreloadPages(state.status !== 'loading' && state.status !== 'error' && Boolean(state.dataset));
   if (state.status === 'error') {
     return (
       <FullScreenError
@@ -83,18 +79,20 @@ const Gate = () => {
   return (
     <BackupHistoryProvider>
       <AppShell>
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/budget" element={<BudgetPage />} />
-          <Route path="/compte" element={<ComptePage />} />
-          <Route path="/patrimoine" element={<PatrimoinePage />} />
-          <Route path="/bilan" element={<BilanPage />} />
-          <Route path="/objectifs" element={<ObjectifsPage />} />
-          <Route path="/parametres" element={<ParametresPage />} />
-          <Route path="/parametres/:tab" element={<ParametresPage />} />
-          <Route path={`${INVITATION_PATH}/:token`} element={<InvitationPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<pages.dashboard.Page />} />
+            <Route path="/budget" element={<pages.budget.Page />} />
+            <Route path="/compte" element={<pages.compte.Page />} />
+            <Route path="/patrimoine" element={<pages.patrimoine.Page />} />
+            <Route path="/bilan" element={<pages.bilan.Page />} />
+            <Route path="/objectifs" element={<pages.objectifs.Page />} />
+            <Route path="/parametres" element={<pages.parametres.Page />} />
+            <Route path="/parametres/:tab" element={<pages.parametres.Page />} />
+            <Route path={`${INVITATION_PATH}/:token`} element={<pages.invitation.Page />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </AppShell>
     </BackupHistoryProvider>
   );
