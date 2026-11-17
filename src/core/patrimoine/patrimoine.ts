@@ -1,5 +1,5 @@
 import { accountBalanceAt, isCounted, isInternalMove } from '../comptes/balances';
-import { daysBetween, monthEnd, monthKeyOf } from '../shared/dates';
+import { daysBetween, monthEnd, monthKeyOf, monthsOfYear } from '../shared/dates';
 import { isMirrored } from '../comptes/mirror';
 import type {
   Account,
@@ -324,4 +324,36 @@ export const monthsSinceTracking = (accounts: Account[], months: MonthKey[]): Mo
     return months;
   }
   return months.filter((month) => month >= monthKeyOf(start));
+};
+
+/** Mois de l'année dont le bilan trace le patrimoine : jusqu'au mois en cours, depuis le début du suivi. */
+export const trackedMonths = (
+  year: number,
+  today: IsoDate,
+  evolution: PatrimoineEvolution | null,
+): MonthKey[] => {
+  if (!evolution) {
+    return [];
+  }
+  const first = monthKeyOf(evolution.from);
+  return monthsOfYear(year).filter(
+    (key) => key <= monthKeyOf(today) && (!evolution.isPartialYear || key >= first),
+  );
+};
+
+/** Clé du point de départ (1er janvier ou début du suivi) dans la courbe du bilan. */
+export const PATRIMOINE_START_KEY = 'debut';
+
+export type PatrimoinePoint = { key: string; patrimoine: Cents };
+
+/** Courbe du bilan : le point de départ de l'évolution, puis chaque fin de mois. */
+export const patrimoinePoints = (
+  evolution: PatrimoineEvolution | null,
+  series: { month: MonthKey; personalTotal: Cents }[],
+): PatrimoinePoint[] => {
+  const months = series.map((point) => ({ key: point.month, patrimoine: point.personalTotal }));
+  if (!evolution) {
+    return months;
+  }
+  return [{ key: PATRIMOINE_START_KEY, patrimoine: evolution.startValue }, ...months];
 };
