@@ -43,17 +43,19 @@ export const ALLOCATION_GROUPS: readonly AccountGroup[] = ['courant', 'securise'
 
 export type AllocationEntry = { group: AccountGroup; value: Cents; percent: number };
 
-/** Répartition du patrimoine personnel (hors commun) : groupes positifs et leur part arrondie. */
+/**
+ * Répartition du patrimoine personnel (hors commun) : groupes positifs et leur part arrondie.
+ * Les parts se calculent sur les seuls groupes affichés : un compte courant à découvert ne les
+ * fait pas dépasser 100 %.
+ */
 export const allocation = (byGroup: Record<AccountGroup, Cents>): AllocationEntry[] => {
-  const total = Math.max(
-    1,
-    ALLOCATION_GROUPS.reduce((sum, group) => sum + byGroup[group], 0),
-  );
-  return ALLOCATION_GROUPS.map((group) => ({
+  const shown = ALLOCATION_GROUPS.filter((group) => byGroup[group] > 0);
+  const total = shown.reduce((sum, group) => sum + byGroup[group], 0);
+  return shown.map((group) => ({
     group,
     value: byGroup[group],
     percent: Math.round((byGroup[group] / total) * 100),
-  })).filter((entry) => entry.value > 0);
+  }));
 };
 
 export type AccountsSplit = {

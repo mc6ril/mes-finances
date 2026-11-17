@@ -68,10 +68,18 @@ describe('répartition du patrimoine', () => {
     expect(groups).toEqual(['investissement']);
   });
 
-  it('ne divise jamais par zéro (total nul ou négatif ramené à 1 centime, comme avant)', () => {
+  it('ne renvoie rien quand aucun groupe n’est positif', () => {
     expect(allocation({ courant: 0, securise: 0, investissement: 0 })).toEqual([]);
+    expect(allocation({ courant: -100, securise: 0, investissement: 0 })).toEqual([]);
+  });
+
+  it('calcule les parts sur les seuls groupes affichés : un compte à découvert ne les fausse pas', () => {
     expect(allocation({ courant: -100, securise: 0, investissement: 100 })).toEqual([
-      { group: 'investissement', value: 100, percent: 10000 },
+      { group: 'investissement', value: 100, percent: 100 },
+    ]);
+    expect(allocation({ courant: -5000, securise: 10000, investissement: 10000 })).toEqual([
+      { group: 'securise', value: 10000, percent: 50 },
+      { group: 'investissement', value: 10000, percent: 50 },
     ]);
   });
 });
