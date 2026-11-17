@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
+import { defaultMemberName, memberName, SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
 import { formatRate, rateInput } from '@/core/shared/format';
 import { parsePercent } from '@/core/shared/money';
 import type { Household, HouseholdMember } from '@/core/shared/model';
@@ -20,8 +20,8 @@ const NameInput = ({ member, index, onSave }: NameInputProps) => {
       value={name}
       onChange={setName}
       onBlur={() => name.trim() !== member.name && onSave(name.trim())}
-      placeholder={`Personne ${index + 1}`}
-      label={`Prénom de la personne ${index + 1}`}
+      placeholder={defaultMemberName(index)}
+      label={`Prénom du membre ${index + 1}`}
     />
   );
 };
@@ -87,8 +87,8 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
         hint="Cochez chaque personne payée sur le compte commun (les deux, une seule ou aucune). En fin de mois, le commun lui reverse ce qui dépasse sa part ; les autres versent leur part depuis leur compte."
       >
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          {household.members.map((member, index) => {
-            const name = member.name.trim() || `Personne ${index + 1}`;
+          {household.members.map((member) => {
+            const name = memberName(household.members, member.id);
             return (
               <Checkbox
                 key={member.id}
@@ -114,9 +114,9 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
           }
           options={[
             { value: SAVINGS_FROM_COMMON, label: 'Compte commun' },
-            ...household.members.map((member, index) => ({
+            ...household.members.map((member) => ({
               value: member.id,
-              label: member.name.trim() || `Personne ${index + 1}`,
+              label: memberName(household.members, member.id),
             })),
           ]}
         />

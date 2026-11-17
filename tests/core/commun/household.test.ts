@@ -463,7 +463,7 @@ describe('nom affiché d’un membre', () => {
   });
 
   it('lit les membres du foyer de l’espace', () => {
-    const dataset = createInitialDataset();
+    const dataset = createInitialDataset('2026-10-01', () => 'id');
     const household = { ...DEFAULT_HOUSEHOLD, members };
     const commun = { ...dataset, settings: { ...dataset.settings, household } };
     expect(memberLabel(commun, 'a')).toBe('Alex');
