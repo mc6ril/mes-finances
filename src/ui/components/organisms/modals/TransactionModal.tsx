@@ -1,13 +1,13 @@
 import { memberLabel, membersOf } from '@/core/commun/household';
 import { imputationChoices, type ImputationChoice } from '@/core/commun/imputation';
-import { useState } from 'react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import { PAYMENT_METHODS } from '@/ui/constants';
 import { isInternalMoveType } from '@/core/comptes/balances';
 import { STATUS_LABELS } from '@/core/comptes/csvImport';
-import { savingsCategoryFor } from '@/core/budget/budget';
-import type { Transaction, TransactionStatus, TransactionType } from '@/core/shared/model';
+import { categoryChoices, typeChoiceOf, type TypeChoice } from '@/core/comptes/transactionDraft';
+import type { Transaction, TransactionStatus } from '@/core/shared/model';
+import { errorMessage } from '@/ui/errorMessages';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
 import { Field } from '@/ui/components/molecules/form/Field';
@@ -16,13 +16,8 @@ import { Select } from '@/ui/components/atoms/form/Select';
 import { Textarea } from '@/ui/components/atoms/form/Textarea';
 import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
-import {
-  categoriesForType,
-  initialForm,
-  validateForm,
-  type FormErrors,
-  type TransactionFormState,
-} from '@/hooks/compte/transactionForm';
+import type { TransactionFormState } from '@/hooks/compte/transactionForm';
+import { useTransactionForm } from '@/hooks/compte/useTransactionForm';
 
 type TransactionModalProps = {
   transaction: Transaction | null;
@@ -35,8 +30,6 @@ type TransactionModalProps = {
   /** Opération existante modifiée : état avant et après (règles d'import apprises). */
   onSaved?: (before: Transaction, after: Transaction) => void;
 };
-
-type TypeChoice = TransactionType | 'remboursement';
 
 const TYPE_CHOICES: { value: TypeChoice; label: string }[] = [
   { value: 'depense', label: 'Dépense' },
@@ -110,12 +103,22 @@ const TransactionModal = ({
   const dataset = useDataset();
   const finance = useFinanceUseCases();
   const report = useReport();
-  const [form, setForm] = useState<TransactionFormState>(() => ({
-    ...initialForm(transaction ?? template, defaultDate, dataset.settings.mainAccountId),
-    ...preset,
-  }));
-  const [errors, setErrors] = useState<FormErrors>({});
-  const update = (patch: Partial<TransactionFormState>) => setForm((current) => ({ ...current, ...patch }));
+  const {
+    form,
+    errors,
+    update,
+    selectType,
+    submit: validate,
+  } = useTransactionForm({
+    dataset,
+    source: transaction ?? template,
+    defaultDate,
+    ...(preset ? { preset } : {}),
+  });
+  const fieldError = (field: keyof typeof errors) => {
+    const code = errors[field];
+    return code ? errorMessage({ code }) : undefined;
+  };
   const accounts = dataset.accounts.filter((account) => !account.archived);
   const isCommon = dataset.settings.kind === 'commun';
   const members = membersOf(dataset);
@@ -124,28 +127,22 @@ const TransactionModal = ({
   const accountOptions = accounts.map((account) => ({ value: account.id, label: account.name }));
   const categoryOptions = [
     { value: '', label: 'Sans catégorie' },
-    ...categoriesForType(dataset.categories, form.type).map((category) => ({
+    ...categoryChoices(dataset.categories, form.type, form.categoryId).map((category) => ({
       value: category.id,
-      label: category.name,
+      label: category.archived ? `${category.name} (archivée)` : category.name,
     })),
   ];
 
-  const choice: TypeChoice = form.type === 'depense' && form.isRefund ? 'remboursement' : form.type;
-  const accountName = (id: string) => dataset.accounts.find((account) => account.id === id)?.name;
+  const choice = typeChoiceOf(form);
 
   const submit = async () => {
-    // Virement ou investissement : la catégorie d'épargne suit le compte crédité.
-    const categoryId = isInternalMoveType(form.type)
-      ? (savingsCategoryFor(form.counterpartAccountId, accountName, dataset.categories) ?? '')
-      : form.categoryId;
-    const result = validateForm({ ...form, categoryId }, members);
-    setErrors(result.errors);
-    if (!result.draft) {
+    const draft = validate();
+    if (!draft) {
       return;
     }
-    if (await report(finance.saveTransaction(result.draft, transaction), 'Opération enregistrée')) {
+    if (await report(finance.saveTransaction(draft, transaction), 'Opération enregistrée')) {
       if (transaction) {
-        onSaved?.(transaction, { ...transaction, ...result.draft });
+        onSaved?.(transaction, { ...transaction, ...draft });
       }
       onClose();
     }
@@ -175,24 +172,15 @@ const TransactionModal = ({
         <Field label="Type" className="sm:col-span-2">
           <Select
             value={choice}
-            onChange={(value) => {
-              const refund = value === 'remboursement';
-              update({
-                type: refund ? 'depense' : (value as TransactionType),
-                isRefund: refund,
-                // Passer d'une dépense à son remboursement garde la catégorie.
-                categoryId: form.type === 'depense' && (refund || value === 'depense') ? form.categoryId : '',
-                imputation: '',
-              });
-            }}
+            onChange={(value) => selectType(value as TypeChoice)}
             options={TYPE_CHOICES}
           />
           <Text variant="caption">{TYPE_HINTS[choice]}</Text>
         </Field>
-        <Field label="Date" error={errors.date}>
+        <Field label="Date" error={fieldError('date')}>
           <Input type="date" value={form.date} onChange={(date) => update({ date })} />
         </Field>
-        <Field label="Montant (€)" error={errors.amount}>
+        <Field label="Montant (€)" error={fieldError('amount')}>
           <Input
             value={form.amount}
             onChange={(amount) => update({ amount })}
@@ -201,7 +189,7 @@ const TransactionModal = ({
             autoFocus
           />
         </Field>
-        <Field label="Libellé" error={errors.label} className="sm:col-span-2">
+        <Field label="Libellé" error={fieldError('label')} className="sm:col-span-2">
           <Input
             value={form.label}
             onChange={(label) => update({ label })}
@@ -225,7 +213,7 @@ const TransactionModal = ({
           />
         </Field>
         {isInternalMoveType(form.type) && (
-          <Field label="Compte crédité" error={errors.counterpartAccountId}>
+          <Field label="Compte crédité" error={fieldError('counterpartAccountId')}>
             <Select
               value={form.counterpartAccountId}
               onChange={(counterpartAccountId) => update({ counterpartAccountId })}
