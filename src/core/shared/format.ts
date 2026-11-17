@@ -22,6 +22,12 @@ export const formatSignedEuros = (cents: Cents): string => {
 
 export const formatPercent = (value: number): string => `${percentFormatter.format(value)} %`;
 
+/** Taux (0,125) écrit pour un champ de saisie, à une décimale près : « 12,5 ». */
+export const rateInput = (rate: number): string => String(Math.round(rate * 1000) / 10).replace('.', ',');
+
+/** Taux (0,125) affiché à une décimale près : « 12,5 % ». */
+export const formatRate = (rate: number): string => `${rateInput(rate)} %`;
+
 export const formatDateFr = (date: IsoDate): string =>
   `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}`;
 

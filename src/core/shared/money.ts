@@ -90,3 +90,27 @@ export const centsToInput = (
   const text = (cents / 100).toFixed(2).replace('.', ',');
   return compact ? text.replace(/,00$/, '') : text;
 };
+
+export type PercentInput = { ok: true; value: number | null } | { ok: false };
+
+type PercentBounds = { min?: number; max?: number; minExclusive?: boolean };
+
+/**
+ * Pourcentage saisi (« 12,5 », « 12.5 », « 12,5 % ») : vide → valeur non renseignée (null),
+ * sinon un nombre entre les bornes (0 à 100 par défaut, inclus), ou un refus.
+ */
+export const parsePercent = (
+  text: string,
+  { min = 0, max = 100, minExclusive = false }: PercentBounds = {},
+): PercentInput => {
+  const cleaned = text.replaceAll('%', '').trim();
+  if (cleaned === '') {
+    return { ok: true, value: null };
+  }
+  const value = Number(cleaned.replaceAll(',', '.'));
+  const aboveMin = minExclusive ? value > min : value >= min;
+  if (!Number.isFinite(value) || !aboveMin || value > max) {
+    return { ok: false };
+  }
+  return { ok: true, value };
+};

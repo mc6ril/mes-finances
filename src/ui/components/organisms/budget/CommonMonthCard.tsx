@@ -8,7 +8,8 @@ import {
   membersOf,
   savingsPayerOf,
 } from '@/core/commun/household';
-import { formatDateFr, formatEuros } from '@/core/shared/format';
+import { formatDateFr, formatEuros, formatRate, rateInput } from '@/core/shared/format';
+import { parsePercent } from '@/core/shared/money';
 import type { Cents, CommonMonth, MonthKey, SavingsRate } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -21,20 +22,20 @@ import Text from '@/ui/components/atoms/Text';
 import Title from '@/ui/components/atoms/Title';
 import { MEMBER_COLORS, NEUTRAL_MARK } from '@/ui/design-system/tokens';
 
-const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;
-
 type RatePercentProps = { rate: number; onCommit: (rate: number) => void; label: string };
 
 /** Pourcentage saisi en clair (« 10 » ou « 12,5 »), validé à la sortie du champ. */
 const RatePercent = ({ rate, onCommit, label }: RatePercentProps) => {
-  const initial = String(Math.round(rate * 1000) / 10).replace('.', ',');
+  const initial = rateInput(rate);
   const [text, setText] = useState(initial);
   const commit = () => {
-    const value = Number(text.replace(',', '.').trim());
-    if (!Number.isFinite(value) || value < 0 || value > 100) {
+    const parsed = parsePercent(text);
+    if (!parsed.ok) {
       setText(initial);
       return;
     }
+    // Champ vidé : 0 %, comme avant.
+    const value = parsed.value ?? 0;
     if (value / 100 !== rate) {
       onCommit(value / 100);
     }
@@ -188,7 +189,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
   const accountOf = (accountId: string) => dataset.accounts.find((account) => account.id === accountId);
   const shareOf = (memberId: string): string | undefined =>
     summary.totalIncome > 0
-      ? `${percent((summary.incomes[memberId] ?? 0) / summary.totalIncome)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`
+      ? `${formatRate((summary.incomes[memberId] ?? 0) / summary.totalIncome)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`
       : undefined;
   const positive = summary.balance >= 0;
   const payer = savingsPayerOf(dataset.settings.household);
@@ -209,7 +210,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               icon={Wallet}
               tone="brand"
               title="Enveloppe commune"
-              hint={`${percent(rate)} des revenus du mois (${formatEuros(summary.totalIncome)}), arrondi aux 50 € supérieurs.`}
+              hint={`${formatRate(rate)} des revenus du mois (${formatEuros(summary.totalIncome)}), arrondi aux 50 € supérieurs.`}
             />
             <Indented>
               <div className="flex flex-wrap items-center gap-3">
