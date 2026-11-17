@@ -15,6 +15,17 @@ describe('cx', () => {
     expect(cx('text-sm text-stone-900', 'text-brand-600')).toBe('text-sm text-brand-600');
   });
 
+  it('traite les tokens de couleur comme des couleurs', () => {
+    expect(cx('text-sm text-ink-muted', 'text-accent-ink')).toBe('text-sm text-accent-ink');
+    expect(cx('bg-surface border-line', 'bg-surface-muted')).toBe('border-line bg-surface-muted');
+  });
+
+  it('traite les tokens de taille de texte comme des tailles', () => {
+    expect(cx('text-caption text-ink-muted')).toBe('text-caption text-ink-muted');
+    expect(cx('text-sm text-ink', 'text-caption')).toBe('text-ink text-caption');
+    expect(cx('text-figure', 'text-display')).toBe('text-display');
+  });
+
   it('ignore les valeurs vides', () => {
     expect(cx('a', false, null, undefined, 'b')).toBe('a b');
   });

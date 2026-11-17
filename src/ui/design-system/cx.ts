@@ -1,4 +1,11 @@
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
+import { TEXT_SIZES } from './tokens';
+
+/**
+ * Sans cette extension, tailwind-merge prendrait text-caption pour une couleur de texte et
+ * l'écarterait face à text-ink-muted : les tailles déclarées dans tokens.css doivent lui être connues.
+ */
+const merge = extendTailwindMerge({ extend: { theme: { text: [...TEXT_SIZES] } } });
 
 /**
  * Assemble des classes Tailwind ; en cas de conflit (h-2 puis h-1.5), la dernière l'emporte.
@@ -6,4 +13,4 @@ import { twMerge } from 'tailwind-merge';
  * une classe passée en surcharge pouvait être ignorée.
  */
 export const cx = (...classes: (string | false | null | undefined)[]): string =>
-  twMerge(classes.filter(Boolean).join(' '));
+  merge(classes.filter(Boolean).join(' '));
