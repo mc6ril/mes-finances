@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { nameCommit } from '@/core/shared/names';
 
 /**
@@ -7,9 +7,13 @@ import { nameCommit } from '@/core/shared/names';
  */
 export const useInlineName = (current: string, onSave: (name: string) => void) => {
   const [name, setName] = useState(current);
+  // Échap appelle cancel() puis blur() dans le même évènement : commit() lit encore la saisie,
+  // la remise à l'ancien nom n'étant pas encore appliquée. Ce drapeau lui dit de l'ignorer.
+  const cancelled = useRef(false);
 
   const commit = useCallback(() => {
-    const next = nameCommit(current, name);
+    const next = nameCommit(current, name, { cancelled: cancelled.current });
+    cancelled.current = false;
     if (next.kind === 'reset') {
       setName(current);
     }
@@ -18,7 +22,10 @@ export const useInlineName = (current: string, onSave: (name: string) => void) =
     }
   }, [current, name, onSave]);
 
-  const cancel = useCallback(() => setName(current), [current]);
+  const cancel = useCallback(() => {
+    cancelled.current = true;
+    setName(current);
+  }, [current]);
 
   return { name, setName, commit, cancel };
 };

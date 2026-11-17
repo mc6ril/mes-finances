@@ -13,4 +13,12 @@ describe('nom modifié sur place', () => {
   it('revient à l’ancien nom quand le champ est vidé', () => {
     expect(nameCommit('Courses', '  ')).toEqual({ kind: 'reset' });
   });
+
+  it('revient à l’ancien nom quand la saisie est annulée (Échap), même si elle a changé', () => {
+    expect(nameCommit('Courses', 'Alimentation', { cancelled: true })).toEqual({ kind: 'reset' });
+    expect(nameCommit('Courses', 'Alimentation', { cancelled: false })).toEqual({
+      kind: 'save',
+      name: 'Alimentation',
+    });
+  });
 });
