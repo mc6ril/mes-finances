@@ -12,7 +12,6 @@ import Badge, { type BadgeTone } from '@/ui/design-system/Badge';
 import Button from '@/ui/design-system/Button';
 import { Checkbox } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
 
 const statusTone = (transaction: Transaction): BadgeTone => {
   if (transaction.status === 'prevu') {
@@ -109,7 +108,7 @@ const LedgerRow = memo(
       <td className="text-right font-medium">
         {isOutsideAccount(row) ? (
           <span title="Hors du compte : ne change pas le solde">
-            <Amount cents={row.amount} className={MUTED_TEXT} />
+            <Amount cents={row.amount} className="text-ink-muted" />
           </span>
         ) : (
           <Amount cents={signedEffectOn(accountId, row)} colored />

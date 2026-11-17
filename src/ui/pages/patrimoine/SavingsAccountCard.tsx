@@ -6,7 +6,6 @@ import { ACCOUNT_KIND_LABELS } from '@/ui/constants';
 import Amount from '@/ui/design-system/Amount';
 import Badge from '@/ui/design-system/Badge';
 import Text from '@/ui/design-system/Text';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
 
 type SavingsAccountCardProps = {
   account: Account;
@@ -36,19 +35,19 @@ const SavingsAccountCard = ({ account, position, color, onOpen }: SavingsAccount
       <Amount cents={position.value} />
     </div>
     <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-      <dt className={MUTED_TEXT}>Versé net</dt>
+      <dt className="text-ink-muted">Versé net</dt>
       <dd className="text-right tabular-nums">
         <Amount cents={position.contributions} />
       </dd>
-      <dt className={MUTED_TEXT}>Intérêts</dt>
+      <dt className="text-ink-muted">Intérêts</dt>
       <dd className="text-right">
         <Amount cents={position.interests} />
       </dd>
-      <dt className={MUTED_TEXT}>Frais</dt>
+      <dt className="text-ink-muted">Frais</dt>
       <dd className="text-right">
         <Amount cents={-position.fees} />
       </dd>
-      <dt className={MUTED_TEXT}>Plus/moins-value</dt>
+      <dt className="text-ink-muted">Plus/moins-value</dt>
       <dd className="text-right">
         <Amount cents={position.marketGain} signed colored />
       </dd>

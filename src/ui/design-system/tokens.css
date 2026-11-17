@@ -45,6 +45,7 @@
   --color-ink-secondary: var(--color-stone-600);
   --color-ink-secondary-soft: var(--color-stone-600);
   --color-ink-secondary-fixed: var(--color-stone-600);
+  /* Texte secondaire : 4,9:1 sur le fond de page en clair, 7,3:1 en sombre (WCAG AA : 4,5:1). */
   --color-ink-muted: var(--color-stone-550);
   --color-ink-subtle-strong: var(--color-stone-500);
   --color-ink-subtle: var(--color-stone-500);

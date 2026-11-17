@@ -10,7 +10,6 @@ import Card from '@/ui/design-system/Card';
 import { Input } from '@/ui/design-system/Field';
 import Text from '@/ui/design-system/Text';
 import { settingsPath } from '@/ui/layout/navigation';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
 import { cx } from '@/ui/design-system/cx';
 
 const LINK = 'shrink-0 text-sm font-medium text-accent-ink hover:underline';
@@ -50,7 +49,7 @@ const OpeningBalanceForm = () => {
         <span
           className={cx(
             'pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-sm',
-            MUTED_TEXT,
+            'text-ink-muted',
           )}
         >
           €

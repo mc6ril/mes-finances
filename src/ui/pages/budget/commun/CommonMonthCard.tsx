@@ -18,7 +18,6 @@ import { Input, Select } from '@/ui/design-system/Field';
 import MoneyInput from '@/ui/design-system/MoneyInput';
 import Text from '@/ui/design-system/Text';
 import Title from '@/ui/design-system/Title';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
 import { MEMBER_COLORS, NEUTRAL_MARK } from '@/ui/design-system/tokens';
 
 const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;
@@ -49,9 +48,7 @@ const RatePercent = ({ rate, onCommit, label }: RatePercentProps) => {
         inputMode="decimal"
         className="h-8 pr-7 text-right text-sm"
       />
-      <span
-        className={cx('pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs', MUTED_TEXT)}
-      >
+      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">
         %
       </span>
     </span>

@@ -33,8 +33,6 @@ import Text from '@/ui/design-system/Text';
 import ChartTooltip from '@/ui/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/charts/axis';
 import Legend from '@/ui/charts/Legend';
-import { MUTED_TEXT } from '@/ui/design-system/textColors';
-import { cx } from '@/ui/design-system/cx';
 
 const NO_RETURNS = [0];
 
@@ -92,7 +90,7 @@ const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
       </div>
       <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
         {(goal.plannedContributions ?? []).map((line) => (
-          <li key={line.id} className={cx('text-xs', MUTED_TEXT)}>
+          <li key={line.id} className="text-xs text-ink-muted">
             {line.label} <Amount cents={line.amount} rounded className="text-ink-body" />
           </li>
         ))}
