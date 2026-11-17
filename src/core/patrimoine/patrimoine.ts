@@ -48,13 +48,24 @@ const movementFlow = (movement: SavingsMovement): Flow => {
   return mapping[movement.kind];
 };
 
-const transactionFlow = (accountId: string, transaction: Transaction): Flow | null => {
+/**
+ * Effet d'une opération passée sur la valeur d'un compte d'épargne : virement reçu (montant inversé)
+ * ou opération du compte lui-même (virement sortant compris) ; null si elle ne le concerne pas.
+ */
+export const transactionEffectOn = (accountId: string, transaction: Transaction): Cents | null => {
   const incoming = transaction.counterpartAccountId === accountId && isInternalMove(transaction);
   const direct = transaction.accountId === accountId;
   if (!isCounted(transaction) || (!incoming && !direct)) {
     return null;
   }
-  const effect = incoming ? -transaction.amount : transaction.amount;
+  return incoming ? -transaction.amount : transaction.amount;
+};
+
+const transactionFlow = (accountId: string, transaction: Transaction): Flow | null => {
+  const effect = transactionEffectOn(accountId, transaction);
+  if (effect === null) {
+    return null;
+  }
   if (effect >= 0) {
     return { ...EMPTY_FLOW, date: transaction.date, deposit: effect };
   }

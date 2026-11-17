@@ -98,7 +98,9 @@ describe('historique d’un compte d’épargne', () => {
       accountId: 'disparu',
       counterpartAccountId: 'livret',
     });
-    expect(accountHistory(livret, data({ transactions: [transfer] }))[0]?.label).toBe('Épargne');
+    expect(accountHistory(livret, data({ transactions: [transfer] }))).toEqual([
+      expect.objectContaining({ label: 'Épargne' }),
+    ]);
   });
 
   it('trie du plus récent au plus ancien', () => {
