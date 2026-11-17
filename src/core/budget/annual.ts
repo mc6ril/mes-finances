@@ -1,6 +1,6 @@
 import { isCounted } from '../comptes/balances';
 import { categoryActuals, inMonth, monthTotals, type MonthTotals } from './budget';
-import { monthKeyOf, monthsOfYear } from '../shared/dates';
+import { monthKeyOf, monthsOfYear, parseMonthKey, yearOf } from '../shared/dates';
 import { isMirrored } from '../comptes/mirror';
 import type {
   Account,
@@ -213,3 +213,51 @@ const averageOf = (total: Cents, count: number): Cents => {
   }
   return Math.round(total / count);
 };
+
+const LAST_MONTH_INDEX = 11;
+
+/** Index (0 = janvier) du mois à montrer dans le tableau annuel : décembre pour une année passée. */
+export const visibleMonthIndex = (year: number, today: IsoDate): number => {
+  if (year < yearOf(today)) {
+    return LAST_MONTH_INDEX;
+  }
+  return parseMonthKey(monthKeyOf(today)).month - 1;
+};
+
+export type MonthlyChartPoint = {
+  month: MonthKey;
+  revenus: Cents;
+  depenses: Cents;
+  epargne: Cents;
+  plaisir: Cents;
+  /** Budget des dépenses personnelles du mois ; null pour un mois sans données (pas de point tracé). */
+  budget: Cents | null;
+};
+
+/** Points mensuels des graphiques du bilan (dépenses personnelles hors budgets annuels). */
+export const monthlyChartData = (
+  months: MonthSummary[],
+  budgetOf: (month: MonthKey) => Cents,
+): MonthlyChartPoint[] =>
+  months.map((entry) => ({
+    month: entry.month,
+    revenus: entry.totals.revenus,
+    depenses: entry.totals.depenses,
+    epargne: entry.totals.epargne,
+    plaisir: entry.totals.plaisirMensuel,
+    budget: entry.hasData ? budgetOf(entry.month) : null,
+  }));
+
+/** Part (en %) d'une catégorie rapportée à la première du classement ; jamais de division par zéro. */
+export const categoryShare = (total: Cents, topTotal: Cents | undefined): number =>
+  (total / Math.max(1, topTotal ?? 1)) * 100;
+
+const PIVOT_GROUPS: CategoryGroup[] = ['revenu', 'fixe', 'epargne', 'plaisir'];
+
+export type PivotSection = { group: CategoryGroup; rows: PivotRow[] };
+
+/** Lignes du tableau annuel regroupées (revenu, fixe, épargne, plaisir), sans groupe vide. */
+export const pivotByGroup = (pivot: PivotRow[]): PivotSection[] =>
+  PIVOT_GROUPS.map((group) => ({ group, rows: pivot.filter((row) => row.group === group) })).filter(
+    (section) => section.rows.length > 0,
+  );
