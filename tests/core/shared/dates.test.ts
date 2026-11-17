@@ -1,5 +1,6 @@
 import {
   addMonths,
+  clampToMonth,
   daysInMonth,
   isLeapYear,
   monthEnd,
@@ -78,5 +79,13 @@ describe('dates', () => {
     expect(weekRemainingDays('2026-11-05')).toBe(4);
     expect(weekRemainingDays('2026-11-29')).toBe(1);
     expect(weekRemainingDays('2026-11-30')).toBe(1);
+  });
+});
+
+describe('date ramenée dans le mois', () => {
+  it('garde aujourd’hui pendant le mois et prend le dernier jour d’un mois passé', () => {
+    expect(clampToMonth('2026-10-12', '2026-10')).toBe('2026-10-12');
+    expect(clampToMonth('2026-11-03', '2026-10')).toBe('2026-10-31');
+    expect(clampToMonth('2026-10-31', '2026-10')).toBe('2026-10-31');
   });
 });
