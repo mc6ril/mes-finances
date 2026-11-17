@@ -10,14 +10,14 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useBackupHistory } from '@/hooks/useBackupHistory';
-import BackupPasswordDialog from '@/ui/common/BackupPasswordDialog';
+import BackupPasswordDialog from '@/ui/components/organisms/modals/BackupPasswordDialog';
 import Button from '@/ui/components/atoms/Button';
 import Card from '@/ui/components/molecules/cards/Card';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import Text from '@/ui/components/atoms/Text';
-import { lastBackupText } from './backupMessages';
+import { lastBackupText } from '@/ui/pages/parametres/backupMessages';
 import FilePickerButton from '@/ui/components/molecules/form/FilePickerButton';
-import { useBackupActions } from './useBackupActions';
+import { useBackupActions } from '@/ui/pages/parametres/useBackupActions';
 
 type BackupRowProps = { icon: LucideIcon; title: string; description: string; children: ReactNode };
 

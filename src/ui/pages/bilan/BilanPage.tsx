@@ -1,13 +1,13 @@
 import { BarChart3 } from 'lucide-react';
 import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import AnnualTable from './AnnualTable';
-import BilanStats from './BilanStats';
-import IncomeExpenseChart from './IncomeExpenseChart';
-import PatrimoineChart from './PatrimoineChart';
-import PlaisirBudgetChart from './PlaisirBudgetChart';
-import SavingsChart from './SavingsChart';
-import TopCategoriesCard from './TopCategoriesCard';
+import AnnualTable from '@/ui/components/organisms/bilan/AnnualTable';
+import BilanStats from '@/ui/components/organisms/bilan/BilanStats';
+import IncomeExpenseChart from '@/ui/components/organisms/charts/IncomeExpenseChart';
+import PatrimoineChart from '@/ui/components/organisms/charts/PatrimoineChart';
+import PlaisirBudgetChart from '@/ui/components/organisms/charts/PlaisirBudgetChart';
+import SavingsChart from '@/ui/components/organisms/charts/SavingsChart';
+import TopCategoriesCard from '@/ui/components/organisms/bilan/TopCategoriesCard';
 import { useBilan } from './useBilan';
 
 const BilanPage = () => {

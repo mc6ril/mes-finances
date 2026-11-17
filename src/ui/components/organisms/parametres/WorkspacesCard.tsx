@@ -12,7 +12,7 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import Text from '@/ui/components/atoms/Text';
-import InviteModal from './InviteModal';
+import InviteModal from '@/ui/components/organisms/modals/InviteModal';
 
 type SharingAction = { kind: 'invite' | 'revoke' | 'leave'; workspace: Workspace };
 

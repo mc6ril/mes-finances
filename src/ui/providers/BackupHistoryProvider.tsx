@@ -5,7 +5,7 @@ import { todayIso } from '@/core/shared/dates';
 import { useFileUseCases, useFinanceState } from '@/hooks/useFinance';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/ui/errorMessages';
-import BackupPasswordDialog from '@/ui/common/BackupPasswordDialog';
+import BackupPasswordDialog from '@/ui/components/organisms/modals/BackupPasswordDialog';
 import { BackupHistoryContext } from './contexts';
 
 type BackupHistoryProviderProps = { children: ReactNode };

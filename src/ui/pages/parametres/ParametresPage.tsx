@@ -3,15 +3,15 @@ import { Navigate, useParams } from 'react-router';
 import Tabs from '@/ui/components/molecules/Tabs';
 import { SETTINGS_TABS, settingsPath, type SettingsTab } from '@/ui/routing/navigation';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import AccountCard from './AccountCard';
-import AccountsCard from './AccountsCard';
-import AuditCard from './AuditCard';
-import BackupCard from './BackupCard';
-import CategoriesCard from './CategoriesCard';
-import ImportRulesCard from './ImportRulesCard';
-import ProfileCard from './ProfileCard';
-import SavingsAccountsNotice from './SavingsAccountsNotice';
-import WorkspacesCard from './WorkspacesCard';
+import AccountCard from '@/ui/components/organisms/parametres/AccountCard';
+import AccountsCard from '@/ui/components/organisms/parametres/AccountsCard';
+import AuditCard from '@/ui/components/organisms/parametres/AuditCard';
+import BackupCard from '@/ui/components/organisms/parametres/BackupCard';
+import CategoriesCard from '@/ui/components/organisms/parametres/CategoriesCard';
+import ImportRulesCard from '@/ui/components/organisms/parametres/ImportRulesCard';
+import ProfileCard from '@/ui/components/organisms/parametres/ProfileCard';
+import SavingsAccountsNotice from '@/ui/components/organisms/parametres/SavingsAccountsNotice';
+import WorkspacesCard from '@/ui/components/organisms/parametres/WorkspacesCard';
 
 const TAB_CONTENT: Record<SettingsTab, () => ReactNode> = {
   espace: () => (

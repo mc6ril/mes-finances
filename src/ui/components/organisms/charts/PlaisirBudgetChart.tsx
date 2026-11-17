@@ -18,7 +18,7 @@ import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
 import Legend from '@/ui/components/molecules/charts/Legend';
 import { groupLabel } from '@/ui/constants';
 import Card from '@/ui/components/molecules/cards/Card';
-import { overBudgetOpacity } from './bilanLabels';
+import { overBudgetOpacity } from '@/ui/pages/bilan/bilanLabels';
 
 type PlaisirBudgetChartProps = {
   monthly: MonthlyChartPoint[];

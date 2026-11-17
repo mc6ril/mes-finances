@@ -11,14 +11,14 @@ import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import { errorMessage } from '@/ui/errorMessages';
 import BulkBar from './BulkBar';
-import ImportModal from './ImportModal';
+import ImportModal from '@/ui/components/organisms/modals/ImportModal';
 import LedgerFilters from './LedgerFilters';
 import LedgerTable from './LedgerTable';
 import LedgerToolbar from './LedgerToolbar';
 import RuleSuggestionBanner from './RuleSuggestionBanner';
 import SummaryCards from './SummaryCards';
-import TransactionModal from './TransactionModal';
-import { useLedger } from './useLedger';
+import TransactionModal from '@/ui/components/organisms/modals/TransactionModal';
+import { useLedger } from '@/ui/pages/compte/useLedger';
 
 type LedgerProps = { dataset: Dataset; account: Account; initialFilters: TransactionFilters };
 

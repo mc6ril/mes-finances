@@ -5,12 +5,12 @@ import { defaultFilters } from '@/core/comptes/filters';
 import { formatDateFr, monthLabel } from '@/core/shared/format';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
-import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
+import MonthNote, { MonthNoteButton } from '@/ui/components/organisms/commun/MonthNote';
 import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 import { Select } from '@/ui/components/atoms/form/Select';
 import Notice from '@/ui/components/molecules/feedback/Notice';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import Ledger from './Ledger';
+import Ledger from '@/ui/components/organisms/compte/Ledger';
 
 /** Page Opérations : compte affiché, note du mois et vue « à classer » (?categorie=aucune). */
 const ComptePage = () => {

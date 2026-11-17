@@ -5,7 +5,7 @@ import { formatDateFr, formatEuros, monthLabel } from '@/core/shared/format';
 import type { HouseholdMember, MonthKey, Settlement } from '@/core/shared/model';
 import type { SettlementLine } from '@/core/commun/household';
 import { monthEnd } from '@/core/shared/dates';
-import TransactionModal from '@/ui/pages/compte/TransactionModal';
+import TransactionModal from '@/ui/components/organisms/modals/TransactionModal';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
 import { Field } from '@/ui/components/molecules/form/Field';
 import { Input } from '@/ui/components/atoms/form/Input';

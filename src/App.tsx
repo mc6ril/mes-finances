@@ -20,7 +20,7 @@ import ForgotPasswordPage from '@/ui/pages/auth/ForgotPasswordPage';
 import SignInPage from '@/ui/pages/auth/SignInPage';
 import SignUpPage from '@/ui/pages/auth/SignUpPage';
 import VerifyEmailPage from '@/ui/pages/auth/VerifyEmailPage';
-import RememberInvitation from '@/ui/pages/invitation/RememberInvitation';
+import RememberInvitation from '@/ui/routing/RememberInvitation';
 import PageLoader from '@/ui/components/atoms/PageLoader';
 import { pages } from '@/ui/routing/pages';
 import { usePreloadPages } from '@/hooks/usePreloadPages';

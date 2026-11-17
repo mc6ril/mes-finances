@@ -6,7 +6,7 @@ import type { Category, Transaction } from '@/core/shared/model';
 import Button from '@/ui/components/atoms/Button';
 import { Select } from '@/ui/components/atoms/form/Select';
 import Text from '@/ui/components/atoms/Text';
-import type { CategoryChange } from './useLedger';
+import type { CategoryChange } from '@/ui/pages/compte/useLedger';
 
 type BulkBarProps = {
   selected: Transaction[];

@@ -46,9 +46,9 @@ import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import { axisProps, euroTick, sliceColor } from '@/ui/components/molecules/charts/axis';
 import Legend from '@/ui/components/molecules/charts/Legend';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import CommonStats from './CommonStats';
-import GettingStarted from './GettingStarted';
-import Attention from './Attention';
+import CommonStats from '@/ui/components/organisms/dashboard/CommonStats';
+import GettingStarted from '@/ui/components/organisms/dashboard/GettingStarted';
+import Attention from '@/ui/components/organisms/dashboard/Attention';
 
 const savedInMonth = (dataset: Dataset, month: MonthKey, fromTransactions: Cents): Cents =>
   fromTransactions + depositsInMonth(dataset.savingsMovements, dataset.transactions, month);

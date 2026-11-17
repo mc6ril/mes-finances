@@ -6,16 +6,16 @@ import { capitalize, formatDateFr, monthLabel } from '@/core/shared/format';
 import type { Account } from '@/core/shared/model';
 import Button from '@/ui/components/atoms/Button';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import AccountModal from './AccountModal';
-import AllocationCard from './AllocationCard';
-import ArchivedAccountsCard from './ArchivedAccountsCard';
-import ComparisonCard from './ComparisonCard';
-import EvolutionChart from './EvolutionChart';
-import GainsCard from './GainsCard';
-import JointAccountCard from './JointAccountCard';
-import PatrimoineStats from './PatrimoineStats';
-import SavingsAccountForm from './SavingsAccountForm';
-import SavingsAccountsSection from './SavingsAccountsSection';
+import AccountModal from '@/ui/components/organisms/modals/AccountModal';
+import AllocationCard from '@/ui/components/organisms/charts/AllocationCard';
+import ArchivedAccountsCard from '@/ui/components/organisms/patrimoine/ArchivedAccountsCard';
+import ComparisonCard from '@/ui/components/organisms/charts/ComparisonCard';
+import EvolutionChart from '@/ui/components/organisms/charts/EvolutionChart';
+import GainsCard from '@/ui/components/organisms/charts/GainsCard';
+import JointAccountCard from '@/ui/components/organisms/patrimoine/JointAccountCard';
+import PatrimoineStats from '@/ui/components/organisms/patrimoine/PatrimoineStats';
+import SavingsAccountForm from '@/ui/components/organisms/modals/SavingsAccountForm';
+import SavingsAccountsSection from '@/ui/components/organisms/patrimoine/SavingsAccountsSection';
 import { usePatrimoine } from './usePatrimoine';
 
 const PatrimoinePage = () => {

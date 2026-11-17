@@ -20,10 +20,10 @@ import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
-import CommonMonthCard from './commun/CommonMonthCard';
-import SettlementCard from './commun/SettlementCard';
-import AnnualBudgetCard from './AnnualBudgetCard';
+import MonthNote, { MonthNoteButton } from '@/ui/components/organisms/commun/MonthNote';
+import CommonMonthCard from '@/ui/components/organisms/budget/CommonMonthCard';
+import SettlementCard from '@/ui/components/organisms/budget/SettlementCard';
+import AnnualBudgetCard from '@/ui/components/organisms/budget/AnnualBudgetCard';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',
