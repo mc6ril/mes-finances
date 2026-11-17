@@ -424,6 +424,60 @@ describe('compte commun', () => {
     });
   });
 
+  it('ajoute un ajustement hors compte au mois du commun, sans créer d’opération', async () => {
+    const dataset: Dataset = {
+      ...commun(),
+      commonMonths: [{ month: '2026-10', envelope: 300000, savingsRates: null }],
+    };
+    const { useCases, calls } = setup(dataset);
+    await useCases.addAdjustment('2026-10', { memberId: 'm1', label: 'Abonnement', amount: -4108 });
+    expect(calls).toEqual([
+      {
+        kind: 'upsert',
+        collection: 'commonMonths',
+        items: [
+          {
+            month: '2026-10',
+            envelope: 300000,
+            savingsRates: null,
+            adjustments: [{ id: 'id-1', memberId: 'm1', label: 'Abonnement', amount: -4108 }],
+          },
+        ],
+        log: {
+          action: 'creation',
+          entity: 'Ajustement',
+          summary: expect.stringMatching(/^Alex · octobre 2026 : Abonnement \(-41,08\s€\)$/),
+        },
+      },
+    ]);
+  });
+
+  it('supprime un ajustement en gardant les autres', async () => {
+    const dataset: Dataset = {
+      ...commun(),
+      commonMonths: [
+        {
+          month: '2026-10',
+          envelope: null,
+          savingsRates: null,
+          adjustments: [
+            { id: 'a1', memberId: 'm1', label: 'Abonnement', amount: -4108 },
+            { id: 'a2', memberId: 'm2', label: 'Billetterie', amount: 15400 },
+          ],
+        },
+      ],
+    };
+    const { useCases, calls } = setup(dataset);
+    await useCases.removeAdjustment('2026-10', 'a1');
+    expect(calls).toEqual([
+      expect.objectContaining({
+        collection: 'commonMonths',
+        items: [expect.objectContaining({ adjustments: [expect.objectContaining({ id: 'a2' })] })],
+        log: expect.objectContaining({ action: 'suppression', entity: 'Ajustement' }),
+      }),
+    ]);
+  });
+
   it('annule un règlement sans toucher au virement', async () => {
     const { useCases, calls } = setup(commun());
     const settlement = {

@@ -2,7 +2,14 @@ import { commonMonthOf, commonMonthSummary, memberLabel, savingsPayerOf } from '
 import { monthEnd } from '../shared/dates';
 import { ok, type Result } from '../shared/errors';
 import { formatEuros, monthLabel } from '../shared/format';
-import type { CommonMonth, MonthKey, SavingsMovement, Settlement, Transaction } from '../shared/model';
+import type {
+  Adjustment,
+  CommonMonth,
+  MonthKey,
+  SavingsMovement,
+  Settlement,
+  Transaction,
+} from '../shared/model';
 import { loadedDataset, type FinanceDeps } from './shared';
 
 export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
@@ -61,6 +68,45 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
       entity: 'Règlement',
       summary: monthLabel(settlement.month),
     });
+
+  /** Ajoute au règlement du mois une dette entre un membre et le commun, réglée hors compte. */
+  const addAdjustment = async (month: MonthKey, draft: Omit<Adjustment, 'id'>): Promise<Result<void>> => {
+    const loaded = loadedDataset(gateway);
+    if (!loaded.ok) {
+      return loaded;
+    }
+    const entry = commonMonthOf(loaded.value, month);
+    return gateway.upsert(
+      'commonMonths',
+      [{ ...entry, adjustments: [...(entry.adjustments ?? []), { ...draft, id: newId() }] }],
+      {
+        action: 'creation',
+        entity: 'Ajustement',
+        summary: `${memberLabel(loaded.value, draft.memberId)} · ${monthLabel(month)} : ${draft.label} (${formatEuros(draft.amount)})`,
+      },
+    );
+  };
+
+  const removeAdjustment = async (month: MonthKey, adjustmentId: string): Promise<Result<void>> => {
+    const loaded = loadedDataset(gateway);
+    if (!loaded.ok) {
+      return loaded;
+    }
+    const entry = commonMonthOf(loaded.value, month);
+    const removed = entry.adjustments?.find((adjustment) => adjustment.id === adjustmentId);
+    if (!removed) {
+      return ok(undefined);
+    }
+    return gateway.upsert(
+      'commonMonths',
+      [{ ...entry, adjustments: entry.adjustments!.filter((adjustment) => adjustment.id !== adjustmentId) }],
+      {
+        action: 'suppression',
+        entity: 'Ajustement',
+        summary: `${memberLabel(loaded.value, removed.memberId)} · ${monthLabel(month)} : ${removed.label}`,
+      },
+    );
+  };
 
   /**
    * Épargne du mois faite. Virée depuis le compte commun : un virement vers chaque livret.
@@ -159,5 +205,13 @@ export const createCommonUseCases = ({ gateway, newId, now }: FinanceDeps) => {
     return saveCommonMonth({ ...entry, savingsTransfer: null });
   };
 
-  return { saveCommonMonth, linkSettlement, cancelSettlement, transferSavings, cancelSavingsTransfer };
+  return {
+    saveCommonMonth,
+    linkSettlement,
+    cancelSettlement,
+    addAdjustment,
+    removeAdjustment,
+    transferSavings,
+    cancelSavingsTransfer,
+  };
 };

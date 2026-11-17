@@ -198,11 +198,12 @@ export const commonMonthSummary = (dataset: Dataset, month: MonthKey): CommonMon
 };
 
 export type SettlementLine = {
-  kind: 'income' | 'contribution' | 'savings' | 'charge' | 'avance';
+  kind: 'income' | 'contribution' | 'savings' | 'charge' | 'avance' | 'adjustment';
   label: string;
   /** Positif : le commun doit au membre ; négatif : le membre doit au commun. */
   amount: Cents;
   transactionId?: string;
+  adjustmentId?: string;
 };
 
 export type MemberSettlement = {
@@ -251,6 +252,14 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
       amount: -transaction.amount,
       transactionId: transaction.id,
     })),
+    ...(commonMonthOf(dataset, month).adjustments ?? [])
+      .filter((adjustment) => adjustment.memberId === member.id)
+      .map((adjustment) => ({
+        kind: 'adjustment' as const,
+        label: adjustment.label,
+        amount: adjustment.amount,
+        adjustmentId: adjustment.id,
+      })),
   ];
 };
 
