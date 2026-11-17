@@ -1,4 +1,4 @@
-import { euroTick } from '@/ui/charts/axis';
+import { euroTick } from '@/ui/components/molecules/charts/axis';
 
 const plain = (cents: number): string => euroTick(cents).replace(/\s/g, ' ');
 

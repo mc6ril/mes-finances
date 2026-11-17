@@ -11,19 +11,19 @@ import { annualActualInMonth, groupTotal, provisionPerMonth } from '@/core/budge
 import { parseMonthKey } from '@/core/shared/dates';
 import { capitalize, monthLabel } from '@/core/shared/format';
 import type { CategoryGroup, Cents, MonthKey } from '@/core/shared/model';
-import Amount from '@/ui/design-system/Amount';
-import Badge from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
-import { Checkbox } from '@/ui/design-system/Field';
-import MoneyInput from '@/ui/design-system/MoneyInput';
-import ProgressBar, { type ProgressTone } from '@/ui/design-system/ProgressBar';
-import Text from '@/ui/design-system/Text';
-import PageHeader from '@/ui/layout/PageHeader';
-import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
-import CommonMonthCard from './commun/CommonMonthCard';
-import SettlementCard from './commun/SettlementCard';
-import AnnualBudgetCard from './AnnualBudgetCard';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
+import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
+import Text from '@/ui/components/atoms/Text';
+import PageHeader from '@/ui/components/molecules/PageHeader';
+import MonthNote, { MonthNoteButton } from '@/ui/components/organisms/commun/MonthNote';
+import CommonMonthCard from '@/ui/components/organisms/budget/CommonMonthCard';
+import SettlementCard from '@/ui/components/organisms/budget/SettlementCard';
+import AnnualBudgetCard from '@/ui/components/organisms/budget/AnnualBudgetCard';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',

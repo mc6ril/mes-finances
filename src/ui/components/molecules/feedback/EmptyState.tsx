@@ -1,0 +1,21 @@
+import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import Text from '@/ui/components/atoms/Text';
+import Title from '@/ui/components/atoms/Title';
+
+type EmptyStateProps = { icon: LucideIcon; title: string; description: string; action?: ReactNode };
+
+const EmptyState = ({ icon: Icon, title, description, action }: EmptyStateProps) => (
+  <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-field px-6 py-10 text-center">
+    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent-soft text-accent-ink">
+      <Icon className="h-5 w-5" aria-hidden />
+    </div>
+    <Title level={3}>{title}</Title>
+    <Text variant="muted" className="max-w-sm">
+      {description}
+    </Text>
+    {action}
+  </div>
+);
+
+export default EmptyState;

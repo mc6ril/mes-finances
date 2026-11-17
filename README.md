@@ -116,11 +116,18 @@ src/
     storage/            Effacement des données locales, lien d'invitation en attente
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
   app/                  Primary adapters : store, actions, sélecteurs, thème
+  hooks/                Hooks partagés (useFinance, usePeriod, useInlineName…)
+    <domaine>/          Hooks d'un écran et leur logique pure (useLedger + ledgerState, useBilan…)
   ui/
-    design-system/      Text, Title, Button, Card, Field, Modal…
-    layout/ charts/ pages/
-    routing/            Pages chargées à la demande, préchargement, reprise après redéploiement
-tests/                  Tests Vitest (core + adapters)
+    design-system/      Tokens uniquement : couleurs et typographie (tokens.css, tokens.ts), cx
+    components/
+      atoms/            Briques sans état métier : Text, Button, Badge, Amount ; form/ (Input, Select…)
+      molecules/        Assemblages d'atomes : PageHeader, Tabs ; form/ feedback/ cards/ overlays/ charts/ auth/
+      organisms/        Blocs complets, reliés au store : modals/ et charts/ par type, le reste par domaine
+      templates/        Gabarits de page : AppShell, AuthLayout
+    pages/              Uniquement les *Page.tsx : assemblage et paramètres d'URL
+    routing/            Pages chargées à la demande, navigation, chemins de connexion, reprise après redéploiement
+tests/                  Tests Vitest (core, adapters, logique des hooks)
 ```
 
 Règles : le core ne capture aucune erreur ; les adapters traduisent les erreurs techniques en `PortFailure` typées ; l'UI décide de l'affichage.
