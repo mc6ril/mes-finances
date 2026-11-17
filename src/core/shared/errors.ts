@@ -15,7 +15,6 @@ export const APP_ERROR_CODES = [
   'backup-wrong-password',
   'backup-password-too-short',
   'backup-encryption-failed',
-  'broker-not-recognized',
   'workspace-name-empty',
   'workspace-name-taken',
   'workspace-not-found',

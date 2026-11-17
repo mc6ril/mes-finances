@@ -241,43 +241,6 @@ describe('comptes, catégories et objectifs', () => {
   });
 });
 
-describe('épargne', () => {
-  const account = base().accounts[0]!;
-
-  it('importe un export de courtier étape par étape et compte les mouvements', async () => {
-    const { useCases, calls } = setup();
-    const result = await useCases.importBrokerExport({
-      account,
-      movements: [
-        { accountId: account.id, date: '2026-11-02', kind: 'versement', amount: 10000, comment: '' },
-      ],
-      openingPatch: { openingDate: '2026-06-15', openingBalance: 0 },
-      valuation: { accountId: account.id, date: '2026-11-08', value: 12000 },
-    });
-    expect(result).toEqual({ ok: true, value: 1 });
-    expect(calls.map((call) => call.kind === 'upsert' && call.collection)).toEqual([
-      'accounts',
-      'valuations',
-      'savingsMovements',
-    ]);
-    expect(calls[2]).toMatchObject({ items: [{ id: 'id-2' }] });
-  });
-
-  it('s’arrête à la première étape en échec', async () => {
-    const { useCases, calls } = setup(base(), fail('storage-full'));
-    const result = await useCases.importBrokerExport({
-      account,
-      movements: [
-        { accountId: account.id, date: '2026-11-02', kind: 'versement', amount: 10000, comment: '' },
-      ],
-      openingPatch: { openingDate: '2026-06-15', openingBalance: 0 },
-      valuation: null,
-    });
-    expect(result).toEqual({ ok: false, error: { code: 'storage-full' } });
-    expect(calls).toHaveLength(1);
-  });
-});
-
 describe('espace', () => {
   it('réinitialise l’espace avec une configuration vierge', async () => {
     const { useCases, calls } = setup();

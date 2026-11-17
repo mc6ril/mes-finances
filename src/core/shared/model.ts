@@ -74,6 +74,7 @@ export type SavingsMovement = {
   kind: SavingsMovementKind;
   amount: Cents;
   comment: string;
+  /** Identifiant chez un courtier (ancien import Trade Republic, retiré) : conservé dans les données existantes. */
   externalId?: string;
 };
 

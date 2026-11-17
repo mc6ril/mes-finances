@@ -2,17 +2,15 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { usePeriod } from '@/hooks/usePeriod';
 import { patrimoineContext } from '@/core/budget/overview';
 import { useChartTheme } from '@/hooks/useTheme';
 import { useReport } from '@/hooks/useReport';
 import { ACCOUNT_KIND_LABELS, MOVEMENT_LABELS } from '@/ui/constants';
-import { isCounted, isInternalMove } from '@/core/comptes/balances';
-import { monthEnd, parseFlexibleDate } from '@/core/shared/dates';
 import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
-import { parseEuros } from '@/core/shared/money';
-import type { Account, Cents, IsoDate, MonthKey, SavingsMovementKind } from '@/core/shared/model';
+import type { Account, IsoDate, MonthKey, SavingsMovementKind } from '@/core/shared/model';
 import { accountPosition } from '@/core/patrimoine/patrimoine';
+import { accountHistory, accountSeries, type HistoryEntry } from '@/core/patrimoine/accountHistory';
+import { useAccountEntry } from '@/hooks/patrimoine/useAccountEntry';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
@@ -27,122 +25,37 @@ import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import SavingsAccountForm from './SavingsAccountForm';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
 
-const MOVEMENT_SIGN: Record<SavingsMovementKind, 1 | -1> = {
-  versement: 1,
-  interets: 1,
-  retrait: -1,
-  frais: -1,
-};
-
-type HistoryEntry = {
-  id: string;
-  date: IsoDate;
-  label: string;
-  amount: Cents;
-  kind: 'movement' | 'valuation' | 'transfer';
-  onDelete: (() => void) | null;
-};
-
 type AccountModalProps = { account: Account; months: MonthKey[]; endDate: IsoDate; onClose: () => void };
 
-type FormKind = 'movement' | 'valuation';
+/** Libellé d'une ligne : nature du mouvement, valorisation, ou libellé de l'opération. */
+const entryLabel = (entry: HistoryEntry): string => {
+  if (entry.kind === 'movement') {
+    const { kind, comment } = entry.movement;
+    return `${MOVEMENT_LABELS[kind]}${comment ? ` · ${comment}` : ''}`;
+  }
+  return entry.kind === 'valuation' ? 'Valorisation' : entry.label;
+};
 
 const AccountModal = ({ account: initial, months, endDate, onClose }: AccountModalProps) => {
   const dataset = useDataset();
   const account = dataset.accounts.find((item) => item.id === initial.id) ?? initial;
   const [editing, setEditing] = useState(false);
-  const { today } = usePeriod();
   const finance = useFinanceUseCases();
   const report = useReport();
   const { series, ink } = useChartTheme();
-  const [formKind, setFormKind] = useState<FormKind>(
-    account.group === 'investissement' ? 'valuation' : 'movement',
-  );
-  const [date, setDate] = useState(today);
-  const [amount, setAmount] = useState('');
-  const [kind, setKind] = useState<SavingsMovementKind>('versement');
-  const [comment, setComment] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const form = useAccountEntry(account);
   const [confirm, setConfirm] = useState<HistoryEntry | null>(null);
-  const context = patrimoineContext(dataset);
+  const context = useMemo(() => patrimoineContext(dataset), [dataset]);
   const position = accountPosition(account, context, endDate);
-  const chart = useMemo(
-    () =>
-      months.map((month) => ({
-        month,
-        valeur: accountPosition(account, context, monthEnd(month)).value,
-        verse: accountPosition(account, context, monthEnd(month)).contributions,
-      })),
-    [account, context, months],
-  );
+  const chart = useMemo(() => accountSeries(account, context, months), [account, context, months]);
+  const history = useMemo(() => accountHistory(account, dataset), [account, dataset]);
 
-  const history: HistoryEntry[] = [
-    ...dataset.savingsMovements
-      .filter((movement) => movement.accountId === account.id)
-      .map((movement) => ({
-        id: movement.id,
-        date: movement.date,
-        label: `${MOVEMENT_LABELS[movement.kind]}${movement.comment ? ` · ${movement.comment}` : ''}`,
-        amount: MOVEMENT_SIGN[movement.kind] * movement.amount,
-        kind: 'movement' as const,
-        onDelete: () => void report(finance.deleteMovement(movement), 'Mouvement supprimé'),
-      })),
-    ...dataset.valuations
-      .filter((valuation) => valuation.accountId === account.id)
-      .map((valuation) => ({
-        id: valuation.id,
-        date: valuation.date,
-        label: 'Valorisation',
-        amount: valuation.value,
-        kind: 'valuation' as const,
-        onDelete: () => void report(finance.deleteValuation(valuation), 'Valorisation supprimée'),
-      })),
-    ...dataset.transactions
-      .filter(
-        (transaction) =>
-          isCounted(transaction) &&
-          isInternalMove(transaction) &&
-          transaction.counterpartAccountId === account.id,
-      )
-      .map((transaction) => ({
-        id: transaction.id,
-        date: transaction.date,
-        label: `${transaction.label} (depuis le compte courant)`,
-        amount: -transaction.amount,
-        kind: 'transfer' as const,
-        onDelete: null,
-      })),
-  ].sort((a, b) => b.date.localeCompare(a.date));
-
-  const save = async () => {
-    const parsedDate = parseFlexibleDate(date);
-    const cents = parseEuros(amount);
-    if (!parsedDate || cents === null || cents < 0) {
-      setError('Renseigne une date et un montant positif.');
-      return;
+  const remove = (target: HistoryEntry) => {
+    if (target.kind === 'movement') {
+      void report(finance.deleteMovement(target.movement), 'Mouvement supprimé');
     }
-    setError(null);
-    const saveEntry = {
-      valuation: () =>
-        report(
-          finance.saveValuation({ accountId: account.id, date: parsedDate, value: cents }),
-          'Valorisation enregistrée',
-        ),
-      movement: () =>
-        report(
-          finance.saveMovement({
-            accountId: account.id,
-            date: parsedDate,
-            kind,
-            amount: cents,
-            comment: comment.trim(),
-          }),
-          'Mouvement enregistré',
-        ),
-    };
-    if (await saveEntry[formKind]()) {
-      setAmount('');
-      setComment('');
+    if (target.kind === 'valuation') {
+      void report(finance.deleteValuation(target.valuation), 'Valorisation supprimée');
     }
   };
 
@@ -206,8 +119,8 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <Text variant="strong">Ajouter</Text>
           <Segmented
-            value={formKind}
-            onChange={setFormKind}
+            value={form.formKind}
+            onChange={(formKind) => form.change({ formKind })}
             label="Type de saisie"
             options={[
               { value: 'movement', label: 'Mouvement' },
@@ -217,34 +130,39 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
           <Field label="Date">
-            <Input type="date" value={date} onChange={setDate} />
+            <Input type="date" value={form.date} onChange={(date) => form.change({ date })} />
           </Field>
-          {formKind === 'movement' && (
+          {form.formKind === 'movement' && (
             <Field label="Nature">
               <Select
-                value={kind}
-                onChange={(value) => setKind(value as SavingsMovementKind)}
+                value={form.kind}
+                onChange={(value) => form.change({ kind: value as SavingsMovementKind })}
                 options={Object.entries(MOVEMENT_LABELS).map(([value, label]) => ({ value, label }))}
               />
             </Field>
           )}
-          <Field label={formKind === 'valuation' ? 'Valeur totale du compte (€)' : 'Montant (€)'}>
-            <Input value={amount} onChange={setAmount} inputMode="decimal" placeholder="0,00" />
+          <Field label={form.formKind === 'valuation' ? 'Valeur totale du compte (€)' : 'Montant (€)'}>
+            <Input
+              value={form.amount}
+              onChange={(amount) => form.change({ amount })}
+              inputMode="decimal"
+              placeholder="0,00"
+            />
           </Field>
-          {formKind === 'movement' && (
+          {form.formKind === 'movement' && (
             <Field label="Commentaire">
-              <Input value={comment} onChange={setComment} />
+              <Input value={form.comment} onChange={(comment) => form.change({ comment })} />
             </Field>
           )}
         </div>
         <Text variant="caption" className="mt-2">
-          {formKind === 'valuation'
+          {form.formKind === 'valuation'
             ? 'Une valorisation fixe la valeur réelle du placement à cette date ; les versements ultérieurs s’y ajoutent.'
             : 'Les virements depuis le compte courant sont déjà comptés comme versements : ne les ressaisis pas ici.'}
         </Text>
-        {error && <Text className="mt-2 text-negative">{error}</Text>}
+        {form.error && <Text className="mt-2 text-negative">{form.error}</Text>}
         <div className="mt-3 flex justify-end">
-          <Button variant="primary" onClick={() => void save()}>
+          <Button variant="primary" onClick={() => void form.save()}>
             Enregistrer
           </Button>
         </div>
@@ -262,27 +180,27 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
           </Text>
         ) : (
           <ul className="divide-y divide-line">
-            {history.map((entry) => (
-              <li key={entry.id} className="flex items-center justify-between gap-3 py-2">
+            {history.map((line) => (
+              <li key={line.id} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
-                  <Text className="truncate">{entry.label}</Text>
-                  <Text variant="caption">{formatDateFr(entry.date)}</Text>
+                  <Text className="truncate">{entryLabel(line)}</Text>
+                  <Text variant="caption">{formatDateFr(line.date)}</Text>
                 </div>
                 <div className="flex items-center gap-2">
-                  {entry.kind === 'valuation' ? (
+                  {line.kind === 'valuation' ? (
                     <Badge tone="info">
-                      <Amount cents={entry.amount} />
+                      <Amount cents={line.amount} />
                     </Badge>
                   ) : (
-                    <Amount cents={entry.amount} signed colored />
+                    <Amount cents={line.amount} signed colored />
                   )}
-                  {entry.onDelete && (
+                  {line.kind !== 'transfer' && (
                     <Button
                       variant="ghost"
                       size="sm"
                       icon={Trash2}
                       label="Supprimer"
-                      onClick={() => setConfirm(entry)}
+                      onClick={() => setConfirm(line)}
                     />
                   )}
                 </div>
@@ -297,11 +215,11 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
       {confirm && (
         <ConfirmDialog
           title="Supprimer cette ligne ?"
-          message={`${confirm.label} du ${formatDateFr(confirm.date)} sera supprimé.`}
+          message={`${entryLabel(confirm)} du ${formatDateFr(confirm.date)} sera supprimé.`}
           confirmLabel="Supprimer"
           onCancel={() => setConfirm(null)}
           onConfirm={() => {
-            confirm.onDelete?.();
+            remove(confirm);
             setConfirm(null);
           }}
         />

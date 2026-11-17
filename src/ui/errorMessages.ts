@@ -28,7 +28,6 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
     'Le chiffrement de la sauvegarde a échoué : aucun fichier n’a été enregistré.',
   'backup-not-complete': () =>
     'Seule une sauvegarde complète peut être restaurée. Le fichier d’un espace sert uniquement à importer des réglages.',
-  'broker-not-recognized': () => 'Ce fichier ne ressemble pas à un export de transactions Trade Republic.',
   'workspace-name-empty': () => 'Donne un nom à l’espace.',
   'workspace-name-taken': () => 'Un espace porte déjà ce nom.',
   'workspace-not-found': () => 'Espace introuvable.',

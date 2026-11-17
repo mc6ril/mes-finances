@@ -1,4 +1,3 @@
-import { parseBrokerExport, type BrokerExport } from '../patrimoine/brokerImport';
 import { transactionsToCsv } from '../comptes/csvImport';
 import { todayIso } from '../shared/dates';
 import { fail, ok, type Result } from '../shared/errors';
@@ -92,14 +91,6 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces, backups, ci
     return readAnyBackup(content.value);
   };
 
-  const readBrokerExport = async (file: UserFile): Promise<Result<BrokerExport>> => {
-    const rows = await readCsvRows(file);
-    if (!rows.ok) {
-      return rows;
-    }
-    return parseBrokerExport(rows.value);
-  };
-
   /** Exporte tous les espaces dans un fichier chiffré par le mot de passe (toujours obligatoire). */
   const saveFullBackup = async (activeId: string, password: string, now: Date): Promise<Result<number>> => {
     const weak = backupPasswordError(password);
@@ -146,7 +137,6 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces, backups, ci
   return {
     readCsvRows,
     readBackupFile,
-    readBrokerExport,
     saveFullBackup,
     backupHistory,
     hideBackupReminder,
