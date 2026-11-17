@@ -5,12 +5,18 @@ import type {
   Account,
   Category,
   Cents,
+  HouseholdMember,
+  ImportRule,
+  Imputation,
   IsoDate,
   Transaction,
   TransactionStatus,
   TransactionType,
 } from '../shared/model';
 import { centsToInput, parseEuros } from '../shared/money';
+import { categoryFromBankLabel } from './bankCategories';
+import { findImportRule, imputationFromRule } from './importRules';
+import { moveCategoryId, type TransactionDraft } from './transactionDraft';
 
 export const normalizeLabel = (label: string): string =>
   label
@@ -310,3 +316,94 @@ export const transactionsToCsv = (
     );
   return [header.join(';'), ...lines].join('\n');
 };
+
+/** Colonnes suffisantes pour lire un relevé : date, libellé et au moins une colonne de montant. */
+export const isMappingComplete = (mapping: ColumnMapping): boolean =>
+  mapping.date !== null &&
+  mapping.label !== null &&
+  (mapping.amount !== null || mapping.debit !== null || mapping.credit !== null);
+
+/** Ligne du relevé telle qu'on la vérifie avant l'import. */
+export type ImportReviewRow = {
+  draft: ImportDraft;
+  include: boolean;
+  duplicate: boolean;
+  cardTotal: boolean;
+  categoryId: string;
+  type: TransactionType;
+  imputation?: Imputation;
+  counterpartAccountId: string | null;
+  /** Mots de la règle d'import appliquée, s'il y en a une. */
+  rule: string | null;
+};
+
+export type ImportReviewContext = {
+  transactions: Transaction[];
+  categories: Category[];
+  accounts: Account[];
+  rules: ImportRule[];
+  members: HouseholdMember[];
+};
+
+/**
+ * Règles utilisables pour l'import d'un compte : une règle « vers ce compte » ne s'applique pas
+ * à son propre relevé (ce serait un virement d'un compte vers lui-même).
+ */
+export const rulesForAccount = (accountId: string, rules: ImportRule[]): ImportRule[] =>
+  rules.filter((rule) => (rule.counterpartAccountId ?? null) !== accountId);
+
+/**
+ * Lignes à vérifier. Priorité de la catégorie : la règle d'import (sa catégorie, sinon celle du
+ * compte d'épargne crédité), puis l'historique, puis la catégorie donnée par la banque.
+ * Doublons et totaux de carte à débit différé sont décochés d'office.
+ */
+export const reviewImport = (
+  drafts: ImportDraft[],
+  rows: string[][],
+  context: ImportReviewContext,
+): ImportReviewRow[] => {
+  const duplicates = new Set(findDuplicates(drafts, context.transactions));
+  const cardTotals = new Set(deferredCardTotals(drafts, rows));
+  return drafts.map((draft, index) => {
+    const rule = findImportRule(draft.label, rulesForAccount(draft.accountId, context.rules));
+    const guessed =
+      suggestCategory(draft.label, context.transactions) ??
+      categoryFromBankLabel(draft.categoryLabel, context.categories) ??
+      '';
+    const imputation = rule ? imputationFromRule(rule, context.members) : undefined;
+    return {
+      draft,
+      include: !duplicates.has(index) && !cardTotals.has(index),
+      duplicate: duplicates.has(index),
+      cardTotal: cardTotals.has(index),
+      type: rule?.type ?? draft.type,
+      categoryId: rule
+        ? (rule.categoryId ??
+          moveCategoryId(rule.counterpartAccountId ?? null, context.accounts, context.categories) ??
+          '')
+        : guessed,
+      ...(imputation ? { imputation } : {}),
+      counterpartAccountId: rule?.counterpartAccountId ?? null,
+      rule: rule?.match ?? null,
+    };
+  });
+};
+
+/** Opérations à enregistrer : les lignes cochées, marquées importées avec le nom du fichier. */
+export const importDraftsFrom = (rows: ImportReviewRow[], fileName: string): TransactionDraft[] =>
+  rows
+    .filter((row) => row.include)
+    .map((row) => ({
+      date: row.draft.date,
+      label: row.draft.label,
+      amount: row.draft.amount,
+      accountId: row.draft.accountId,
+      counterpartAccountId: row.counterpartAccountId,
+      categoryId: row.categoryId || null,
+      type: row.type,
+      status: row.draft.status,
+      ...(row.imputation ? { imputation: row.imputation } : {}),
+      paymentMethod: '',
+      comment: `Import ${fileName}`,
+      imported: true,
+    }));
