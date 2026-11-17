@@ -1,4 +1,10 @@
-import { groupOfKind, isSavingsAccount, newAccountDraft, withKind } from '@/core/comptes/accounts';
+import {
+  activeSavingsAccounts,
+  groupOfKind,
+  isSavingsAccount,
+  newAccountDraft,
+  withKind,
+} from '@/core/comptes/accounts';
 import { anAccount } from '../fixtures';
 
 describe('comptes', () => {
@@ -26,5 +32,18 @@ describe('comptes', () => {
     expect(
       newAccountDraft({ name: 'PEA', kind: 'bourse', openingBalance: 1000, openingDate: '2026-11-01' }),
     ).toMatchObject({ name: 'PEA', group: 'investissement', isJoint: false, archived: false });
+  });
+});
+
+describe('comptes d’épargne suivis', () => {
+  it('garde l’épargne et les placements non archivés, communs compris', () => {
+    const accounts = [
+      anAccount({ id: 'courant' }),
+      anAccount({ id: 'livret', kind: 'livret', group: 'securise' }),
+      anAccount({ id: 'pea', kind: 'pea', group: 'investissement' }),
+      anAccount({ id: 'immo', kind: 'commun-immo', group: 'securise', isJoint: true }),
+      anAccount({ id: 'ancien', kind: 'livret', group: 'securise', archived: true }),
+    ];
+    expect(activeSavingsAccounts(accounts).map((account) => account.id)).toEqual(['livret', 'pea', 'immo']);
   });
 });
