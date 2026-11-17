@@ -1,16 +1,9 @@
 import { Plus, X } from 'lucide-react';
-import { useState } from 'react';
-import { patrimoineContext } from '@/core/budget/overview';
-import { activeSavingsAccounts } from '@/core/comptes/accounts';
-import { linkedValueAt } from '@/core/patrimoine/goalTracking';
-import { parseFlexibleDate } from '@/core/shared/dates';
 import { formatEuros } from '@/core/shared/format';
-import { centsToInput, parseEuros } from '@/core/shared/money';
-import type { Cents, Goal } from '@/core/shared/model';
-import type { Draft } from '@/core/usecases/shared';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { usePeriod } from '@/hooks/usePeriod';
-import { useReport } from '@/hooks/useReport';
+import { centsToInput } from '@/core/shared/money';
+import type { GoalForm } from '@/core/patrimoine/goalForm';
+import type { Goal } from '@/core/shared/model';
+import { useGoalForm } from '@/hooks/objectifs/useGoalForm';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
 import { Field } from '@/ui/components/molecules/form/Field';
@@ -18,114 +11,15 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
 
-type GoalForm = {
-  name: string;
-  target: string;
-  targetDate: string;
-  initial: string;
-  monthly: string;
-  linked: string[];
-  withReturns: boolean;
-  startDate: string;
-  startAmount: string;
-  planned: { id: string; label: string; amount: string }[];
-};
-
-const eurosInput = (cents: Cents): string => centsToInput(cents, { compact: true });
-
 type GoalModalProps = { goal: Goal | null; onClose: () => void };
 
 const GoalModal = ({ goal, onClose }: GoalModalProps) => {
-  const dataset = useDataset();
-  const finance = useFinanceUseCases();
-  const report = useReport();
-  const { today } = usePeriod();
-  const [form, setForm] = useState<GoalForm>({
-    name: goal?.name ?? '',
-    target: goal ? eurosInput(goal.targetAmount) : '',
-    targetDate: goal?.targetDate ?? '',
-    initial: goal ? eurosInput(goal.initialAmount) : '',
-    monthly: goal ? eurosInput(goal.monthlyContribution) : '',
-    linked: goal?.linkedAccountIds ?? [],
-    withReturns: goal?.withReturns !== false,
-    startDate: goal?.startDate ?? today,
-    startAmount: goal ? eurosInput(goal.startAmount) : '',
-    planned: (goal?.plannedContributions ?? []).map((line) => ({ ...line, amount: eurosInput(line.amount) })),
-  });
-  const [error, setError] = useState<string | null>(null);
-
-  const linkedValueOn = (linked: string[], date: string): string | null => {
-    const parsed = parseFlexibleDate(date);
-    if (linked.length === 0 || !parsed) {
-      return null;
-    }
-    const { value } = linkedValueAt(linked, dataset.accounts, patrimoineContext(dataset), parsed);
-    return eurosInput(value);
-  };
-
-  const update = (patch: Partial<GoalForm>) => setForm((current) => ({ ...current, ...patch }));
-
-  /** La date de départ ou les comptes liés changent : on recalcule le montant de départ. */
+  const { form, dispatch, error, suggested, save, savingsAccounts } = useGoalForm(goal, onClose);
+  const update = (patch: Partial<GoalForm>) => dispatch({ type: 'update', patch });
   const updateStart = (patch: Pick<Partial<GoalForm>, 'linked' | 'startDate'>) =>
-    setForm((current) => {
-      const next = { ...current, ...patch };
-      const computed = linkedValueOn(next.linked, next.startDate);
-      return computed === null ? next : { ...next, startAmount: computed };
-    });
-
-  const save = async () => {
-    const target = parseEuros(form.target);
-    const date = parseFlexibleDate(form.targetDate);
-    const initial = parseEuros(form.initial || '0');
-    const monthly = parseEuros(form.monthly || '0');
-    const startDate = parseFlexibleDate(form.startDate);
-    const startAmount = parseEuros(
-      form.startAmount || linkedValueOn(form.linked, form.startDate) || form.initial || '0',
-    );
-    if (
-      !form.name.trim() ||
-      target === null ||
-      target <= 0 ||
-      !date ||
-      initial === null ||
-      monthly === null ||
-      !startDate ||
-      startAmount === null
-    ) {
-      setError('Renseigne un nom, un montant cible, une date cible, un départ et des montants valides.');
-      return;
-    }
-    if (startDate >= date) {
-      setError('La date de départ doit précéder la date cible.');
-      return;
-    }
-    const plannedContributions = form.planned
-      .filter((line) => line.label.trim() || line.amount.trim())
-      .map((line) => ({
-        id: line.id,
-        label: line.label.trim() || 'Apport',
-        amount: parseEuros(line.amount) ?? 0,
-      }))
-      .filter((line) => line.amount > 0);
-    const saved: Draft<Goal> = {
-      id: goal?.id,
-      name: form.name.trim(),
-      targetAmount: target,
-      targetDate: date,
-      initialAmount: initial,
-      monthlyContribution: monthly,
-      linkedAccountIds: form.linked,
-      withReturns: form.withReturns,
-      startDate,
-      startAmount,
-      plannedContributions,
-    };
-    if (await report(finance.saveGoal(saved), 'Objectif enregistré')) {
-      onClose();
-    }
-  };
-
-  const suggested = linkedValueOn(form.linked, form.startDate);
+    dispatch({ type: 'updateStart', patch });
+  /** Montant de départ proposé : la valeur des comptes liés à la date de départ. */
+  const suggestedText = suggested === null ? null : centsToInput(suggested, { compact: true });
 
   return (
     <Modal
@@ -165,7 +59,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
             Comptes liés (le montant constitué suit leur valeur)
           </Text>
           <div className="grid gap-2 sm:grid-cols-2">
-            {activeSavingsAccounts(dataset.accounts).map((account) => (
+            {savingsAccounts.map((account) => (
               <Checkbox
                 key={account.id}
                 checked={form.linked.includes(account.id)}
@@ -199,16 +93,14 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
         <Field
           label="Montant au départ (€)"
           hint={
-            suggested === null
-              ? undefined
-              : `Valeur des comptes liés ce jour-là : ${formatEuros(parseEuros(suggested) ?? 0)}`
+            suggested === null ? undefined : `Valeur des comptes liés ce jour-là : ${formatEuros(suggested)}`
           }
         >
           <Input
             value={form.startAmount}
             onChange={(startAmount) => update({ startAmount })}
             inputMode="decimal"
-            placeholder={suggested ?? (form.initial || '0')}
+            placeholder={suggestedText ?? (form.initial || '0')}
           />
         </Field>
         <div className="border-t border-line-strong pt-3 sm:col-span-2">
@@ -219,29 +111,17 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
           </Text>
           <ul className="mt-2 flex flex-col gap-2">
             {form.planned.map((line, index) => (
-              <li key={line.id} className="flex items-center gap-2">
+              <li key={line.id || `nouvel-apport-${index}`} className="flex items-center gap-2">
                 <Input
                   value={line.label}
-                  onChange={(label) =>
-                    update({
-                      planned: form.planned.map((item, position) =>
-                        position === index ? { ...item, label } : item,
-                      ),
-                    })
-                  }
+                  onChange={(label) => dispatch({ type: 'updatePlanned', index, patch: { label } })}
                   placeholder="Apport des parents"
                   label="Libellé de l’apport"
                 />
                 <div className="w-32 shrink-0">
                   <Input
                     value={line.amount}
-                    onChange={(amount) =>
-                      update({
-                        planned: form.planned.map((item, position) =>
-                          position === index ? { ...item, amount } : item,
-                        ),
-                      })
-                    }
+                    onChange={(amount) => dispatch({ type: 'updatePlanned', index, patch: { amount } })}
                     inputMode="decimal"
                     placeholder="0"
                     label="Montant de l’apport"
@@ -252,9 +132,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
                   variant="ghost"
                   icon={X}
                   label="Retirer cet apport"
-                  onClick={() =>
-                    update({ planned: form.planned.filter((_, position) => position !== index) })
-                  }
+                  onClick={() => dispatch({ type: 'removePlanned', index })}
                 />
               </li>
             ))}
@@ -264,11 +142,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
             variant="ghost"
             icon={Plus}
             className="mt-1"
-            onClick={() =>
-              update({
-                planned: [...form.planned, { id: `p-${Date.now().toString(36)}`, label: '', amount: '' }],
-              })
-            }
+            onClick={() => dispatch({ type: 'addPlanned' })}
           >
             Ajouter un apport prévu
           </Button>
