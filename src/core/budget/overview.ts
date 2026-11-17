@@ -13,7 +13,15 @@ import {
 } from '@/core/budget/budget';
 import { addMonths, monthEnd, monthKeyOf } from '@/core/shared/dates';
 import { patrimoineAt, type PatrimoineContext } from '@/core/patrimoine/patrimoine';
-import type { CategoryGroup, Dataset, IsoDate, MonthBudget, MonthKey, YearBudget } from '@/core/shared/model';
+import type {
+  CategoryGroup,
+  Dataset,
+  IsoDate,
+  MonthBudget,
+  MonthKey,
+  WorkspaceKind,
+  YearBudget,
+} from '@/core/shared/model';
 
 export const budgetOf = (dataset: Dataset, month: MonthKey): MonthBudget | null => {
   const { budget, inheritedFrom } = effectiveBudget(dataset.budgets, month);
@@ -42,6 +50,12 @@ export const patrimoineContext = (dataset: Dataset): PatrimoineContext => ({
 });
 
 export const BUDGET_GROUPS: CategoryGroup[] = ['revenu', 'fixe', 'epargne', 'plaisir'];
+
+/** Groupes du budget à saisir : dans le commun, revenus et épargne se calculent dans le mois du commun. */
+export const budgetGroupsFor = (kind: WorkspaceKind): CategoryGroup[] =>
+  kind === 'commun'
+    ? BUDGET_GROUPS.filter((group) => group !== 'revenu' && group !== 'epargne')
+    : BUDGET_GROUPS;
 
 export const referenceDate = (month: MonthKey, today: IsoDate): IsoDate => {
   if (monthKeyOf(today) === month) {
