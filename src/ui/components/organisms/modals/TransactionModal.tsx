@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import { PAYMENT_METHODS } from '@/ui/constants';
+import { isInternalMoveType } from '@/core/comptes/balances';
 import { STATUS_LABELS } from '@/core/comptes/csvImport';
 import { savingsCategoryFor } from '@/core/budget/budget';
 import type { Transaction, TransactionStatus, TransactionType } from '@/core/shared/model';
@@ -17,7 +18,6 @@ import Text from '@/ui/components/atoms/Text';
 import {
   categoriesForType,
   initialForm,
-  needsCounterpart,
   validateForm,
   type FormErrors,
   type TransactionFormState,
@@ -110,7 +110,7 @@ const TransactionModal = ({
 
   const submit = async () => {
     // Virement ou investissement : la catégorie d'épargne suit le compte crédité.
-    const categoryId = needsCounterpart(form.type)
+    const categoryId = isInternalMoveType(form.type)
       ? (savingsCategoryFor(form.counterpartAccountId, accountName, dataset.categories) ?? '')
       : form.categoryId;
     const result = validateForm({ ...form, categoryId }, members);
@@ -183,7 +183,7 @@ const TransactionModal = ({
             placeholder="Restaurant, courses, salaire…"
           />
         </Field>
-        {!needsCounterpart(form.type) && (
+        {!isInternalMoveType(form.type) && (
           <Field label={form.isRefund ? 'Remboursement de' : 'Catégorie'}>
             <Select
               value={form.categoryId}
@@ -192,14 +192,14 @@ const TransactionModal = ({
             />
           </Field>
         )}
-        <Field label={needsCounterpart(form.type) ? 'Compte débité' : 'Compte'}>
+        <Field label={isInternalMoveType(form.type) ? 'Compte débité' : 'Compte'}>
           <Select
             value={form.accountId}
             onChange={(accountId) => update({ accountId })}
             options={accountOptions}
           />
         </Field>
-        {needsCounterpart(form.type) && (
+        {isInternalMoveType(form.type) && (
           <Field label="Compte crédité" error={errors.counterpartAccountId}>
             <Select
               value={form.counterpartAccountId}

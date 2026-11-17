@@ -1,5 +1,5 @@
 import { isSavingsAccount } from '../comptes/accounts';
-import { isCounted } from '../comptes/balances';
+import { isCounted, isInternalMove } from '../comptes/balances';
 import { categoryActuals, inMonth, monthTotals, type MonthTotals } from './budget';
 import { monthKeyOf, monthsOfYear, parseMonthKey, yearOf } from '../shared/dates';
 import { isMirrored } from '../comptes/mirror';
@@ -97,7 +97,7 @@ const uncategorizedSavings = (
     .filter(
       (transaction) =>
         isCounted(transaction) &&
-        (transaction.type === 'virement' || transaction.type === 'investissement') &&
+        isInternalMove(transaction) &&
         transaction.counterpartAccountId !== null &&
         targets.has(transaction.counterpartAccountId) &&
         !targets.has(transaction.accountId) &&

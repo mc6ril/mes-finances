@@ -1,6 +1,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { memberName, membersOf } from '@/core/commun/household';
+import { isInternalMoveType } from '@/core/comptes/balances';
 import { TYPE_LABELS } from '@/core/comptes/csvImport';
 import { RULE_TYPES } from '@/core/comptes/importRules';
 import type { ImportRule, TransactionType } from '@/core/shared/model';
@@ -42,7 +43,7 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
     dataset.settings.kind === 'commun' ? memberLabelFor(form.type, form.refund === true) : null;
   const update = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
 
-  const isTransfer = form.type === 'virement' || form.type === 'investissement';
+  const isTransfer = isInternalMoveType(form.type);
 
   const save = async () => {
     const keepsMember = Boolean(memberLabel && form.memberId);
@@ -108,7 +109,7 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
             ]}
           />
         </Field>
-        {(form.type === 'virement' || form.type === 'investissement') && (
+        {isTransfer && (
           <Field
             label="Vers le compte"
             hint="Livret, assurance-vie, courtier… Sans compte : virement vers l’extérieur (autre banque, une personne)."

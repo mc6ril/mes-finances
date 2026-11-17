@@ -1,3 +1,4 @@
+import { isInternalMoveType } from '@/core/comptes/balances';
 import { centsToInput, parseEuros } from '@/core/shared/money';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import type {
@@ -38,9 +39,6 @@ export const GROUPS_BY_TYPE: Record<TransactionType, CategoryGroup[]> = {
 
 export const categoriesForType = (categories: Category[], type: TransactionType): Category[] =>
   categories.filter((category) => !category.archived && GROUPS_BY_TYPE[type].includes(category.group));
-
-export const needsCounterpart = (type: TransactionType): boolean =>
-  type === 'virement' || type === 'investissement';
 
 export const formFromTransaction = (transaction: Transaction): TransactionFormState => ({
   date: transaction.date,
@@ -141,7 +139,7 @@ export const validateForm = (
     errors.amount = 'Montant invalide (ex. 45,90)';
   }
   if (
-    needsCounterpart(form.type) &&
+    isInternalMoveType(form.type) &&
     (form.counterpartAccountId === '' || form.counterpartAccountId === form.accountId)
   ) {
     errors.counterpartAccountId = 'Choisis un compte de destination différent';
@@ -158,7 +156,7 @@ export const validateForm = (
       type: form.type,
       categoryId: form.categoryId || null,
       accountId: form.accountId,
-      counterpartAccountId: needsCounterpart(form.type) ? form.counterpartAccountId : null,
+      counterpartAccountId: isInternalMoveType(form.type) ? form.counterpartAccountId : null,
       paymentMethod: form.paymentMethod,
       status: form.status,
       ...(form.status === 'realise' && form.verified ? { verified: true } : {}),

@@ -1,5 +1,5 @@
 import { addDays } from '../shared/dates';
-import type { Account, Cents, IsoDate, Transaction } from '../shared/model';
+import type { Account, Cents, IsoDate, Transaction, TransactionType } from '../shared/model';
 
 export const isCounted = (transaction: Transaction): boolean => transaction.status !== 'prevu';
 
@@ -7,8 +7,11 @@ export const isCounted = (transaction: Transaction): boolean => transaction.stat
 export const isVerified = (transaction: Transaction): boolean =>
   transaction.status === 'realise' && transaction.verified === true;
 
-export const isInternalMove = (transaction: Transaction): boolean =>
-  transaction.type === 'virement' || transaction.type === 'investissement';
+/** Virement ou investissement : l'argent passe d'un compte à un autre (compte crédité à indiquer). */
+export const isInternalMoveType = (type: TransactionType): boolean =>
+  type === 'virement' || type === 'investissement';
+
+export const isInternalMove = (transaction: Transaction): boolean => isInternalMoveType(transaction.type);
 
 /** Avance d'un membre, ou opération marquée hors compte (revenu ou charge réglés ailleurs) : rien ne passe par le compte. */
 export const isOutsideAccount = (transaction: Transaction): boolean =>
