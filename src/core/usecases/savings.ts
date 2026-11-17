@@ -1,14 +1,7 @@
-import { ok, type Result } from '../shared/errors';
+import type { Result } from '../shared/errors';
 import { formatEuros } from '../shared/format';
-import type { Account, SavingsMovement, Valuation } from '../shared/model';
-import { plural, withId, type Draft, type FinanceDeps } from './shared';
-
-export type BrokerImport = {
-  account: Account;
-  movements: Draft<SavingsMovement>[];
-  openingPatch: Pick<Account, 'openingDate' | 'openingBalance'> | null;
-  valuation: Draft<Valuation> | null;
-};
+import type { SavingsMovement, Valuation } from '../shared/model';
+import { withId, type Draft, type FinanceDeps } from './shared';
 
 export const createSavingsUseCases = ({ gateway, newId }: FinanceDeps) => {
   const saveMovement = async (draft: Draft<SavingsMovement>): Promise<Result<void>> => {
@@ -43,46 +36,5 @@ export const createSavingsUseCases = ({ gateway, newId }: FinanceDeps) => {
       summary: valuation.date,
     });
 
-  const importBrokerExport = async ({
-    account,
-    movements,
-    openingPatch,
-    valuation,
-  }: BrokerImport): Promise<Result<number>> => {
-    const entity = 'Import Trade Republic';
-    if (openingPatch) {
-      const updated = await gateway.upsert('accounts', [{ ...account, ...openingPatch }], {
-        action: 'import',
-        entity,
-        summary: `${account.name} : ouverture au ${openingPatch.openingDate}`,
-      });
-      if (!updated.ok) {
-        return updated;
-      }
-    }
-    if (valuation) {
-      const saved = await gateway.upsert('valuations', [withId(valuation, newId).entity], {
-        action: 'import',
-        entity,
-        summary: `${account.name} : valorisation ${formatEuros(valuation.value)}`,
-      });
-      if (!saved.ok) {
-        return saved;
-      }
-    }
-    if (movements.length === 0) {
-      return ok(0);
-    }
-    const saved = await gateway.upsert(
-      'savingsMovements',
-      movements.map((movement) => withId(movement, newId).entity),
-      { action: 'import', entity, summary: `${account.name} : ${plural(movements.length, 'mouvement')}` },
-    );
-    if (!saved.ok) {
-      return saved;
-    }
-    return ok(movements.length);
-  };
-
-  return { saveMovement, deleteMovement, saveValuation, deleteValuation, importBrokerExport };
+  return { saveMovement, deleteMovement, saveValuation, deleteValuation };
 };

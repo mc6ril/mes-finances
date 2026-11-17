@@ -102,14 +102,6 @@ describe('lecture d’un relevé CSV', () => {
     const { useCases } = setup({ rows: fail('empty-csv') });
     expect(await useCases.readCsvRows(file)).toEqual({ ok: false, error: { code: 'empty-csv' } });
   });
-
-  it('refuse un export qui ne vient pas du courtier', async () => {
-    const { useCases } = setup({ rows: ok([['Date', 'Libellé']]) });
-    expect(await useCases.readBrokerExport(file)).toEqual({
-      ok: false,
-      error: { code: 'broker-not-recognized' },
-    });
-  });
 });
 
 describe('sauvegarde complète', () => {
