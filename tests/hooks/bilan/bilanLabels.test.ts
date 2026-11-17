@@ -6,7 +6,7 @@ import {
   pointLabel,
   pointTick,
   startLabel,
-} from '@/ui/pages/bilan/bilanLabels';
+} from '@/hooks/bilan/bilanLabels';
 
 const fullYear: PatrimoineEvolution = {
   from: '2025-12-31',

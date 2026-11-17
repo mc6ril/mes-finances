@@ -12,7 +12,7 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
 import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 import Text from '@/ui/components/atoms/Text';
-import { useInlineName } from '@/ui/pages/parametres/useInlineName';
+import { useInlineName } from '@/hooks/useInlineName';
 
 type AccountRowProps = { account: Account; isMain: boolean };
 

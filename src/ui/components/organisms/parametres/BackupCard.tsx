@@ -15,9 +15,9 @@ import Button from '@/ui/components/atoms/Button';
 import Card from '@/ui/components/molecules/cards/Card';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import Text from '@/ui/components/atoms/Text';
-import { lastBackupText } from '@/ui/pages/parametres/backupMessages';
+import { lastBackupText } from '@/hooks/parametres/backupMessages';
 import FilePickerButton from '@/ui/components/molecules/form/FilePickerButton';
-import { useBackupActions } from '@/ui/pages/parametres/useBackupActions';
+import { useBackupActions } from '@/hooks/parametres/useBackupActions';
 
 type BackupRowProps = { icon: LucideIcon; title: string; description: string; children: ReactNode };
 

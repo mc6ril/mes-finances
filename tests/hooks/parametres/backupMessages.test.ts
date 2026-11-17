@@ -5,7 +5,7 @@ import {
   lastBackupText,
   restoreMessage,
   settingsMessage,
-} from '@/ui/pages/parametres/backupMessages';
+} from '@/hooks/parametres/backupMessages';
 
 const none = { added: 0, updated: 0 };
 const emptySummary = { rules: none, categories: none, accounts: none, household: false };

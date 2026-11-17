@@ -14,7 +14,7 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
 import Segmented from '@/ui/components/molecules/Segmented';
 import Text from '@/ui/components/atoms/Text';
-import { useInlineName } from '@/ui/pages/parametres/useInlineName';
+import { useInlineName } from '@/hooks/useInlineName';
 
 const GROUP_STYLES: Record<CategoryGroup, { icon: LucideIcon; accent: string; dot: string }> = {
   revenu: {

@@ -1,9 +1,5 @@
 import { createInitialDataset } from '@/core/shared/seed';
-import {
-  backupDialogsReducer,
-  NO_BACKUP_DIALOG,
-  type BackupDialogs,
-} from '@/ui/pages/parametres/backupDialogs';
+import { backupDialogsReducer, NO_BACKUP_DIALOG, type BackupDialogs } from '@/hooks/parametres/backupDialogs';
 
 const dataset = createInitialDataset('2026-11-17', () => 'audit');
 const request = { entries: [], activeId: 'perso-uid' };

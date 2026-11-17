@@ -2,14 +2,12 @@ import { StickyNote } from 'lucide-react';
 import { useState } from 'react';
 import { monthLabel } from '@/core/shared/format';
 import type { MonthKey } from '@/core/shared/model';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
+import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
+import { useSavedNote } from '@/hooks/useSavedNote';
 import Button from '@/ui/components/atoms/Button';
 import { cx } from '@/ui/design-system/cx';
 import { Textarea } from '@/ui/components/atoms/form/Textarea';
-
-const useSavedNote = (month: MonthKey): string =>
-  useDataset().monthNotes.find((note) => note.month === month)?.text ?? '';
 
 type NoteButtonProps = { month: MonthKey; onClick: () => void };
 

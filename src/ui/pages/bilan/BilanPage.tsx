@@ -8,7 +8,7 @@ import PatrimoineChart from '@/ui/components/organisms/charts/PatrimoineChart';
 import PlaisirBudgetChart from '@/ui/components/organisms/charts/PlaisirBudgetChart';
 import SavingsChart from '@/ui/components/organisms/charts/SavingsChart';
 import TopCategoriesCard from '@/ui/components/organisms/bilan/TopCategoriesCard';
-import { useBilan } from './useBilan';
+import { useBilan } from '@/hooks/bilan/useBilan';
 
 const BilanPage = () => {
   const { kind, year, today, summary, evolution, patrimoine, monthly } = useBilan();

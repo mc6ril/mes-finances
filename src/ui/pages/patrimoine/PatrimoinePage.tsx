@@ -16,7 +16,7 @@ import JointAccountCard from '@/ui/components/organisms/patrimoine/JointAccountC
 import PatrimoineStats from '@/ui/components/organisms/patrimoine/PatrimoineStats';
 import SavingsAccountForm from '@/ui/components/organisms/modals/SavingsAccountForm';
 import SavingsAccountsSection from '@/ui/components/organisms/patrimoine/SavingsAccountsSection';
-import { usePatrimoine } from './usePatrimoine';
+import { usePatrimoine } from '@/hooks/patrimoine/usePatrimoine';
 
 const PatrimoinePage = () => {
   // Trois états indépendants (aucune transition entre eux) : de simples useState suffisent.

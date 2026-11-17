@@ -18,7 +18,7 @@ import LedgerToolbar from './LedgerToolbar';
 import RuleSuggestionBanner from './RuleSuggestionBanner';
 import SummaryCards from './SummaryCards';
 import TransactionModal from '@/ui/components/organisms/modals/TransactionModal';
-import { useLedger } from '@/ui/pages/compte/useLedger';
+import { useLedger } from '@/hooks/compte/useLedger';
 
 type LedgerProps = { dataset: Dataset; account: Account; initialFilters: TransactionFilters };
 

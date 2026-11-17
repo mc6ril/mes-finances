@@ -6,7 +6,7 @@ import {
   ledgerReducer,
   selectedRows,
   type LedgerState,
-} from '@/ui/pages/compte/ledgerState';
+} from '@/hooks/compte/ledgerState';
 import { aTransaction } from '../../core/fixtures';
 
 const filters: TransactionFilters = {

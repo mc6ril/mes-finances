@@ -21,7 +21,7 @@ import {
   validateForm,
   type FormErrors,
   type TransactionFormState,
-} from '@/ui/pages/compte/transactionForm';
+} from '@/hooks/compte/transactionForm';
 
 type TransactionModalProps = {
   transaction: Transaction | null;

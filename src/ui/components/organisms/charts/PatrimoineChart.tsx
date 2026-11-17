@@ -5,7 +5,7 @@ import { useChartTheme } from '@/hooks/useTheme';
 import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
 import Card from '@/ui/components/molecules/cards/Card';
-import { patrimoineSubtitle, pointLabel, pointTick } from '@/ui/pages/bilan/bilanLabels';
+import { patrimoineSubtitle, pointLabel, pointTick } from '@/hooks/bilan/bilanLabels';
 
 type PatrimoineChartProps = {
   points: PatrimoinePoint[];

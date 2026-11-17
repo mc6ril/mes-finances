@@ -6,7 +6,7 @@ import { groupLabel } from '@/ui/constants';
 import Amount from '@/ui/components/atoms/Amount';
 import StatCard from '@/ui/components/molecules/cards/StatCard';
 import Text from '@/ui/components/atoms/Text';
-import { evolutionPeriod } from '@/ui/pages/bilan/bilanLabels';
+import { evolutionPeriod } from '@/hooks/bilan/bilanLabels';
 
 type EvolutionProps = { evolution: PatrimoineEvolution | null };
 
