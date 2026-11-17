@@ -63,6 +63,13 @@ describe('opérations', () => {
     });
   });
 
+  it('garde la provenance d’une opération importée quand on la modifie', async () => {
+    const { useCases, calls } = setup();
+    const existing = aTransaction({ id: 't1', imported: true });
+    await useCases.saveTransaction(draftOf(), existing);
+    expect(calls[0]).toMatchObject({ items: [{ id: 't1', label: 'Café', imported: true }] });
+  });
+
   it('importe des opérations en leur donnant un identifiant chacune', async () => {
     const { useCases, calls } = setup();
     expect(await useCases.importTransactions([draftOf(), draftOf()])).toEqual({ ok: true, value: 2 });
