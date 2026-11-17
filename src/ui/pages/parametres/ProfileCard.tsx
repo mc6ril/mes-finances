@@ -41,7 +41,7 @@ const ProfileCard = () => {
     );
   return (
     <Card title="Type d’espace et réglages">
-      <div className="divide-y divide-stone-100 dark:divide-stone-800">
+      <div className="divide-y divide-line">
         <PreferenceRow label="Type d’espace" hint="Un compte commun se partage entre deux personnes.">
           <Segmented<WorkspaceKind>
             value={settings.kind}

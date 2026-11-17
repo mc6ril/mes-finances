@@ -186,7 +186,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
             Placement avec rendement (afficher des hypothèses à 2 % et 4 %/an)
           </Checkbox>
         </div>
-        <div className="border-t border-stone-200 pt-3 dark:border-stone-800 sm:col-span-2">
+        <div className="border-t border-line-strong pt-3 sm:col-span-2">
           <Text variant="label">Point de départ</Text>
           <Text variant="small" className="mt-0.5">
             La trajectoire prévue part d’ici. Elle sert à savoir, plus tard, si tu es en avance ou en retard.
@@ -210,7 +210,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
             placeholder={suggested ?? (form.initial || '0')}
           />
         </Field>
-        <div className="border-t border-stone-200 pt-3 dark:border-stone-800 sm:col-span-2">
+        <div className="border-t border-line-strong pt-3 sm:col-span-2">
           <Text variant="label">Apports prévus hors comptes</Text>
           <Text variant="small" className="mt-0.5">
             Prévisionnel (famille, primes…) : affiché seulement dans cet objectif, jamais compté comme
@@ -272,7 +272,7 @@ const GoalModal = ({ goal, onClose }: GoalModalProps) => {
             Ajouter un apport prévu
           </Button>
         </div>
-        {error && <Text className="text-red-600 dark:text-red-400 sm:col-span-2">{error}</Text>}
+        {error && <Text className="text-negative sm:col-span-2">{error}</Text>}
       </div>
     </Modal>
   );

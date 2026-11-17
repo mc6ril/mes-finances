@@ -69,8 +69,8 @@ const AnnualBudgetCard = ({ year }: AnnualBudgetCardProps) => {
       padded={false}
       action={
         <Text variant="small">
-          Dépensé <Amount cents={actual} className="font-semibold text-stone-900 dark:text-stone-50" /> /
-          prévu <Amount cents={planned} />
+          Dépensé <Amount cents={actual} className="font-semibold text-ink-strong" /> / prévu{' '}
+          <Amount cents={planned} />
         </Text>
       }
     >

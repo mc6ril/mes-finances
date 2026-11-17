@@ -212,7 +212,7 @@ const ImportRulesCard = () => {
           Aucune règle. Exemple : « NOM DE TON EMPLOYEUR » → Revenu, Salaires, de toi.
         </Text>
       ) : (
-        <ul className="flex flex-col divide-y divide-stone-100 dark:divide-stone-800">
+        <ul className="flex flex-col divide-y divide-line">
           {rules.map((rule) => (
             <li key={rule.id} className="flex items-start gap-2 py-2">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 pt-1.5">

@@ -37,7 +37,7 @@ const ForgotPasswordPage = () => {
             lien pour choisir un nouveau mot de passe.
           </Notice>
           <div className="flex items-start gap-3">
-            <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-stone-400" aria-hidden />
+            <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-ink-faint" aria-hidden />
             <Text variant="small">
               Rien reçu d’ici quelques minutes ? Regarde dans les courriers indésirables ou vérifie l’adresse
               saisie.

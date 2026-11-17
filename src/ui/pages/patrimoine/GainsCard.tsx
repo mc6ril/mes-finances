@@ -4,9 +4,7 @@ import type { ComparisonEntry } from '@/core/patrimoine/overview';
 import Card from '@/ui/design-system/Card';
 import ChartTooltip from '@/ui/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/charts/axis';
-
-const GAIN_COLOR = '#1baf7a';
-const LOSS_COLOR = '#e34948';
+import { GAIN_COLOR, LOSS_COLOR } from '@/ui/design-system/tokens';
 
 type GainsCardProps = { entries: ComparisonEntry[] };
 

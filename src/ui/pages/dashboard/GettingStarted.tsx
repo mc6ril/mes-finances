@@ -13,7 +13,7 @@ import { settingsPath } from '@/ui/layout/navigation';
 import { MUTED_TEXT } from '@/ui/design-system/textColors';
 import { cx } from '@/ui/design-system/cx';
 
-const LINK = 'shrink-0 text-sm font-medium text-brand-600 hover:underline dark:text-brand-300';
+const LINK = 'shrink-0 text-sm font-medium text-accent-ink hover:underline';
 
 /** Première étape : le solde du compte courant aujourd'hui, saisi sans quitter le tableau de bord. */
 const OpeningBalanceForm = () => {
@@ -59,7 +59,7 @@ const OpeningBalanceForm = () => {
       <Button type="submit" variant="primary" disabled={text.trim() === ''}>
         Enregistrer
       </Button>
-      {error && <Text className="w-full text-xs text-red-600 dark:text-red-400">{error}</Text>}
+      {error && <Text className="w-full text-xs text-negative">{error}</Text>}
     </form>
   );
 };
@@ -110,16 +110,14 @@ type GettingStartedProps = { content: DashboardContent };
 /** Premiers pas d'un espace sans opération : le tableau de bord se remplit avec ce qui est saisi. */
 const GettingStarted = ({ content }: GettingStartedProps) => (
   <Card title="Pour démarrer" subtitle="Le tableau de bord se remplira au fur et à mesure de ta saisie.">
-    <ol className="flex flex-col divide-y divide-stone-100 dark:divide-stone-800">
+    <ol className="flex flex-col divide-y divide-line">
       {stepsOf(content).map((step) => {
         const Icon = step.done ? CheckCircle2 : Circle;
         return (
           <li key={step.title} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
             <Icon
               className={
-                step.done
-                  ? 'mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400'
-                  : 'mt-0.5 h-5 w-5 shrink-0 text-stone-300 dark:text-stone-600'
+                step.done ? 'mt-0.5 h-5 w-5 shrink-0 text-positive' : 'mt-0.5 h-5 w-5 shrink-0 text-ink-ghost'
               }
               aria-label={step.done ? 'Fait' : 'À faire'}
             />

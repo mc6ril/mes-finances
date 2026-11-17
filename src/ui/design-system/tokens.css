@@ -49,6 +49,8 @@
   --color-ink-subtle-strong: var(--color-stone-500);
   --color-ink-subtle: var(--color-stone-500);
   --color-ink-subtle-fixed: var(--color-stone-500);
+  /* Liste « ajouter… » en pointillés : grisée en clair, texte normal en sombre. */
+  --color-ink-prompt: var(--color-stone-500);
   --color-ink-faint: var(--color-stone-400);
   --color-ink-faint-dim: var(--color-stone-400);
   --color-ink-ghost: var(--color-stone-300);
@@ -187,6 +189,7 @@
   --color-ink-muted: var(--color-stone-400);
   --color-ink-subtle-strong: var(--color-stone-300);
   --color-ink-subtle: var(--color-stone-400);
+  --color-ink-prompt: var(--color-stone-100);
   --color-ink-faint-dim: var(--color-stone-500);
   --color-ink-ghost: var(--color-stone-600);
 

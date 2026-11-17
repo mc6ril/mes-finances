@@ -25,11 +25,11 @@ const Curve = () => (
   >
     <path
       d="M0 130 C50 120 70 90 110 96 S170 128 210 100 S280 40 320 52 S380 30 400 18 L400 160 L0 160 Z"
-      className="fill-white/10"
+      className="fill-inverse/10"
     />
     <path
       d="M0 130 C50 120 70 90 110 96 S170 128 210 100 S280 40 320 52 S380 30 400 18"
-      className="fill-none stroke-white/40"
+      className="fill-none stroke-inverse/40"
       strokeWidth="2"
       vectorEffect="non-scaling-stroke"
     />
@@ -37,31 +37,31 @@ const Curve = () => (
 );
 
 const BrandPanel = () => (
-  <aside className="relative hidden overflow-hidden bg-linear-to-br from-brand-600 to-brand-800 p-10 text-white lg:flex lg:flex-col dark:from-brand-800 dark:to-brand-900">
-    <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" aria-hidden />
+  <aside className="relative hidden overflow-hidden bg-linear-to-br from-accent-gradient-from to-accent-gradient-to p-10 text-inverse lg:flex lg:flex-col">
+    <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-inverse/10 blur-3xl" aria-hidden />
     <Brand inverted className="px-0" />
     <div className="relative mt-auto mb-auto flex max-w-md flex-col gap-8">
       <div className="flex flex-col gap-3">
         <h2 className="text-3xl font-semibold tracking-tight">Les finances du foyer, à deux.</h2>
-        <p className="text-sm text-white/75">
+        <p className="text-sm text-inverse/75">
           Retrouvez vos comptes sur chacun de vos appareils et suivez ensemble le budget commun.
         </p>
       </div>
       <ul className="flex flex-col gap-4">
         {HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
           <li key={title} className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/20">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-inverse/15 ring-1 ring-inverse/20">
               <Icon className="h-4 w-4" aria-hidden />
             </span>
             <div>
               <p className="text-sm font-semibold">{title}</p>
-              <p className="text-sm text-white/70">{text}</p>
+              <p className="text-sm text-inverse/70">{text}</p>
             </div>
           </li>
         ))}
       </ul>
     </div>
-    <p className="relative text-[11px] text-white/60">Version {APP_VERSION}</p>
+    <p className="relative text-caption text-inverse/60">Version {APP_VERSION}</p>
     <Curve />
   </aside>
 );

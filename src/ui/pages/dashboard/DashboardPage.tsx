@@ -184,7 +184,7 @@ const DashboardPage = () => {
               icon={PiggyBank}
               value={<Amount cents={saved} />}
               hint="Versés vers tes comptes d’épargne"
-              accent="text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-300"
+              accent="text-positive-ink bg-positive-soft"
             />
           )}
           {overview.plaisirBudget > 0 && (
@@ -197,7 +197,7 @@ const DashboardPage = () => {
                   sur <Amount cents={overview.plaisirBudget} rounded /> de budget mensuel
                 </>
               }
-              accent="text-pink-600 bg-pink-50 dark:bg-pink-500/10 dark:text-pink-300"
+              accent="text-plaisir-ink bg-plaisir-soft"
             />
           )}
           {content.hasSavingsAccounts && (
@@ -206,7 +206,7 @@ const DashboardPage = () => {
               icon={Landmark}
               value={<Amount cents={overview.patrimoine.personalTotal} rounded />}
               hint={patrimoineHint(content.hasJointAccount, overview.patrimoine.joint.shareMissing)}
-              accent="text-violet-600 bg-violet-50 dark:bg-violet-500/10 dark:text-violet-300"
+              accent="text-insight-ink bg-insight-soft"
             />
           )}
           {content.hasSavingsAccounts && hasPreviousMonth && (
@@ -220,7 +220,7 @@ const DashboardPage = () => {
                   <Amount cents={patrimoineDelta - contributionsDelta} signed rounded />
                 </>
               }
-              accent="text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300"
+              accent="text-warning-ink bg-warning-soft"
             />
           )}
         </div>
@@ -290,10 +290,7 @@ const DashboardPage = () => {
                 title="Pas encore d’opérations"
                 description="Ajoute tes opérations ou importe un relevé CSV pour voir l’évolution de ton solde."
                 action={
-                  <Link
-                    to="/compte"
-                    className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-300"
-                  >
+                  <Link to="/compte" className="text-sm font-medium text-accent-ink hover:underline">
                     Voir les opérations
                   </Link>
                 }
@@ -344,7 +341,7 @@ const DashboardPage = () => {
                           {slice.name}
                         </Text>
                       </span>
-                      <Amount cents={slice.value} rounded className="text-stone-900 dark:text-stone-100" />
+                      <Amount cents={slice.value} rounded className="text-ink" />
                     </li>
                   ))}
                 </ul>

@@ -25,7 +25,7 @@ const BulkBar = ({ selected, categories, onClear, onDelete, onRecategorized }: B
     return null;
   }
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 dark:bg-brand-500/10">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl bg-accent-soft px-3 py-2">
       <Text variant="strong" as="span">
         {selected.length} sélectionnée{selected.length > 1 ? 's' : ''}
       </Text>

@@ -123,8 +123,8 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
             (CSV). Le fichier est lu dans ton navigateur : seuls les mouvements importés sont enregistrés dans
             ton espace, ni nom ni IBAN ne sont conservés.
           </Text>
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-200 px-6 py-10 text-center hover:border-brand-400 dark:border-stone-700">
-            <FileUp className="h-6 w-6 text-brand-600" aria-hidden />
+          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-line-field px-6 py-10 text-center hover:border-accent-line">
+            <FileUp className="h-6 w-6 text-accent" aria-hidden />
             <Text variant="strong">Choisir l’export CSV</Text>
             <Text variant="small">
               Les achats et ventes de titres restent internes au compte : seuls les virements, dividendes et
@@ -155,7 +155,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
           </div>
 
           {plan.openingAdjustment && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <div className="rounded-xl border border-warning-line-strong bg-warning-soft p-3">
               <Checkbox checked={adjustOpening} onChange={setAdjustOpening}>
                 Faire démarrer le compte le {formatDateFr(plan.openingAdjustment.openingDate)} avec un solde
                 initial de 0 € (recommandé)
@@ -179,9 +179,9 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
               <Input type="date" value={valueDate} onChange={setValueDate} />
             </Field>
           </div>
-          {error && <Text className="text-red-600 dark:text-red-400">{error}</Text>}
+          {error && <Text className="text-negative">{error}</Text>}
 
-          <div className="max-h-[40vh] overflow-auto rounded-xl border border-stone-100 dark:border-stone-800">
+          <div className="max-h-[40vh] overflow-auto rounded-xl border border-line">
             <table className="table-base">
               <thead>
                 <tr>
@@ -211,7 +211,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
           </div>
         </div>
       )}
-      {!plan && error && <Text className="mt-3 text-red-600 dark:text-red-400">{error}</Text>}
+      {!plan && error && <Text className="mt-3 text-negative">{error}</Text>}
     </Modal>
   );
 };
@@ -219,7 +219,7 @@ const BrokerImportModal = ({ account, onClose }: BrokerImportModalProps) => {
 type TotalProps = { label: string; cents: number };
 
 const Total = ({ label, cents }: TotalProps) => (
-  <div className="rounded-xl bg-stone-50 p-3 dark:bg-stone-800/50">
+  <div className="rounded-xl bg-surface-sunken-strong p-3">
     <Text variant="label">{label}</Text>
     <div className="mt-1 text-base font-semibold">
       <Amount cents={cents} signed colored />

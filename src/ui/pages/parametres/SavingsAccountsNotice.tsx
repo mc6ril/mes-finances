@@ -19,7 +19,7 @@ const SavingsAccountsNotice = () => {
         </Text>
         <Link
           to="/patrimoine"
-          className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline dark:text-brand-300"
+          className="inline-flex items-center gap-1 text-sm font-medium text-accent-ink hover:underline"
         >
           Épargne et patrimoine <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </Link>

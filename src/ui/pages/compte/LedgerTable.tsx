@@ -37,11 +37,11 @@ const SortHeader = ({ label, sortKey, sort, onSort, align = 'left' }: SortHeader
     <button
       type="button"
       onClick={() => onSort(sortKey)}
-      className="inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-white"
+      className="inline-flex items-center gap-1 hover:text-ink-max"
     >
       {label}
       <ArrowDownUp
-        className={sort.key === sortKey ? 'h-3 w-3 text-brand-600' : 'h-3 w-3 opacity-40'}
+        className={sort.key === sortKey ? 'h-3 w-3 text-accent' : 'h-3 w-3 opacity-40'}
         aria-hidden
       />
     </button>
@@ -86,7 +86,7 @@ const LedgerRow = memo(
         </Text>
         {transfer !== null && <Text variant="caption">{transfer}</Text>}
         {imputation !== null && (
-          <Text variant="caption" className="text-amber-700 dark:text-amber-400">
+          <Text variant="caption" className="text-warning-ink-strong">
             {imputation}
           </Text>
         )}

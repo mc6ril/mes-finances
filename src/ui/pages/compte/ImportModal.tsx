@@ -201,8 +201,8 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
             Exporte un relevé CSV depuis l’espace en ligne de ta banque, puis sélectionne-le. Le fichier est
             lu dans ton navigateur : seules les opérations importées sont enregistrées dans ton espace.
           </Text>
-          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-200 px-6 py-10 text-center hover:border-brand-400 dark:border-stone-700">
-            <FileUp className="h-6 w-6 text-brand-600" aria-hidden />
+          <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-line-field px-6 py-10 text-center hover:border-accent-line">
+            <FileUp className="h-6 w-6 text-accent" aria-hidden />
             <Text variant="strong">Choisir un fichier CSV</Text>
             <Text variant="small">
               Séparateur « ; » ou « , », dates JJ/MM/AAAA ou AAAA-MM-JJ, montants au format français.
@@ -219,7 +219,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
               }}
             />
           </label>
-          {error && <Text className="text-red-600 dark:text-red-400">{error}</Text>}
+          {error && <Text className="text-negative">{error}</Text>}
         </div>
       )}
 
@@ -248,7 +248,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
               </Field>
             ))}
           </div>
-          <div className="overflow-x-auto rounded-xl border border-stone-100 dark:border-stone-800">
+          <div className="overflow-x-auto rounded-xl border border-line">
             <table className="table-base">
               <tbody>
                 {preview.map((row, index) => (
@@ -296,7 +296,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
             d’import (Paramètres → Catégories et règles) s’applique : elle fixe alors le type, la catégorie et
             la personne.
           </Text>
-          <div className="max-h-[50vh] overflow-auto rounded-xl border border-stone-100 dark:border-stone-800">
+          <div className="max-h-[50vh] overflow-auto rounded-xl border border-line">
             <table className="table-base min-w-[720px]">
               <thead>
                 <tr>

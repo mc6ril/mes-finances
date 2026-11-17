@@ -20,7 +20,7 @@ const SavingsAccountCard = ({ account, position, color, onOpen }: SavingsAccount
   <button
     type="button"
     onClick={onOpen}
-    className="group flex flex-col gap-3 rounded-2xl border border-stone-200/80 bg-white p-4 text-left shadow-card transition hover:border-brand-300 dark:border-stone-800 dark:bg-[#1c1c1b] dark:hover:border-brand-500/50"
+    className="group flex flex-col gap-3 rounded-2xl border border-line-card bg-surface p-4 text-left shadow-card transition hover:border-accent-line-soft"
   >
     <div className="flex items-start justify-between gap-2">
       <div className="flex items-center gap-2">
@@ -28,7 +28,7 @@ const SavingsAccountCard = ({ account, position, color, onOpen }: SavingsAccount
         <Text variant="strong">{account.name}</Text>
       </div>
       <ChevronRight
-        className="h-4 w-4 text-stone-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500"
+        className="h-4 w-4 text-ink-ghost-fixed transition group-hover:translate-x-0.5 group-hover:text-accent-bright"
         aria-hidden
       />
     </div>

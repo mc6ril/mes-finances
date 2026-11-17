@@ -16,11 +16,10 @@ const AuditCard = () => {
       <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto">
         {entries.map((entry) => (
           <li key={entry.id} className="flex items-start gap-2">
-            <History className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-400" aria-hidden />
+            <History className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-faint" aria-hidden />
             <Text variant="small">
               <span className="tabular-nums">{formatDateFr(entry.at.slice(0, 10))}</span> ·{' '}
-              <span className="font-medium text-stone-700 dark:text-stone-200">{entry.entity}</span> ·{' '}
-              {entry.summary}
+              <span className="font-medium text-ink-body">{entry.entity}</span> · {entry.summary}
             </Text>
           </li>
         ))}

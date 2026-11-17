@@ -13,7 +13,7 @@ const ArchivedAccountsCard = ({ accounts, onManage }: ArchivedAccountsCardProps)
   }
   return (
     <Card title="Comptes archivés" subtitle="Ils restent dans l’historique mais ne sont plus suivis">
-      <ul className="divide-y divide-stone-100 dark:divide-stone-800">
+      <ul className="divide-y divide-line">
         {accounts.map((account) => (
           <li key={account.id} className="flex items-center justify-between gap-3 py-2">
             <Text>{account.name}</Text>

@@ -18,11 +18,11 @@ export const emailFrom = (state: unknown): string =>
 
 export const Divider = () => (
   <div className="flex items-center gap-3" role="separator">
-    <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
+    <span className="h-px flex-1 bg-line-strong" />
     <Text variant="small" as="span">
       ou
     </Text>
-    <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
+    <span className="h-px flex-1 bg-line-strong" />
   </div>
 );
 
@@ -32,7 +32,7 @@ export const AuthLink = ({ to, children, email }: AuthLinkProps) => (
   <Link
     to={to}
     state={email ? ({ email } satisfies AuthLocationState) : null}
-    className="font-medium text-brand-600 underline-offset-2 hover:underline focus:outline-hidden focus-visible:underline dark:text-brand-300"
+    className="font-medium text-accent-ink underline-offset-2 hover:underline focus:outline-hidden focus-visible:underline"
   >
     {children}
   </Link>

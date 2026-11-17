@@ -25,9 +25,9 @@ const TopCategoriesCard = ({ categories, kind }: TopCategoriesCardProps) => (
               </Text>
               <Amount cents={entry.total} rounded className="text-sm" />
             </div>
-            <div className="mt-1 h-1.5 rounded-full bg-stone-100 dark:bg-stone-800">
+            <div className="mt-1 h-1.5 rounded-full bg-surface-muted">
               <div
-                className="h-full rounded-full bg-brand-500"
+                className="h-full rounded-full bg-accent-bright"
                 style={{ width: `${categoryShare(entry.total, categories[0]?.total)}%` }}
               />
             </div>
