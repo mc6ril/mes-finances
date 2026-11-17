@@ -3,7 +3,7 @@ name: Release
 # Lancement manuel depuis main-dev (Actions → Release → Run workflow) :
 # vérifie le code, inscrit la version dans package.json sur main-dev,
 # avance main sur main-dev (fast-forward, sans commit de merge), pose le tag,
-# crée la release GitHub puis met la version en ligne sur Firebase Hosting.
+# crée la release GitHub, publie les règles Firestore puis met la version en ligne sur Firebase Hosting.
 # main n'est jamais modifiée autrement.
 
 on:
@@ -98,7 +98,7 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: gh release create "v$VERSION" --title "v$VERSION" --generate-notes --verify-tag
 
-  # Mise en ligne sur Firebase Hosting de la version taguée. En cas d'échec,
+  # Règles Firestore et mise en ligne sur Firebase Hosting de la version taguée. En cas d'échec,
   # « Re-run failed jobs » relance uniquement ce job.
   deploy:
     needs: release
@@ -121,12 +121,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - name: Déploiement Firebase Hosting
+      # Règles Firestore d'abord, puis l'hébergement : la version en ligne n'est jamais servie avec
+      # des règles plus anciennes que celles qu'elle attend. Le compte de service doit avoir le rôle
+      # « Administrateur Firebase Rules » (roles/firebaserules.admin) en plus de celui d'Hosting.
+      - name: Déploiement des règles Firestore et de Firebase Hosting
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           KEY="$RUNNER_TEMP/firebase-service-account.json"
+          trap 'rm -f "$KEY"' EXIT
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY"
           export GOOGLE_APPLICATION_CREDENTIALS="$KEY"
+          npx firebase deploy --only firestore:rules --project "$VITE_FIREBASE_PROJECT_ID" --non-interactive
           npx firebase deploy --only hosting --project "$VITE_FIREBASE_PROJECT_ID" --non-interactive
-          rm -f "$KEY"

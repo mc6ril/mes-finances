@@ -7,6 +7,7 @@ import { SCHEMA_VERSION } from '@/core/shared/model';
 import { orderCategories } from '@/core/budget/categoryOrder';
 import { itemKey } from '@/core/shared/collections';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import { planRestore } from '@/core/sauvegarde/restorePlan';
 import { fail, ok, type AppError, type Result } from '@/core/shared/errors';
 import {
   type AuditLog,
@@ -18,7 +19,7 @@ import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import {
   activeIn,
   canDelete,
-  DEFAULT_WORKSPACE,
+  isMainWorkspace,
   newWorkspace,
   renamedWorkspaces,
   sortWorkspaces,
@@ -73,21 +74,30 @@ export interface FinanceStoreInterface {
   restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>>;
 }
 
-/** Liste reçue : l'espace principal reste toujours présent et en tête. */
-const withMain = (workspaces: Workspace[]): Workspace[] =>
-  sortWorkspaces(
-    workspaces.some((item) => item.id === DEFAULT_WORKSPACE.id)
-      ? workspaces
-      : [DEFAULT_WORKSPACE, ...workspaces],
-  );
+/** Espace affiché avant le chargement de la liste (aucun compte connecté, ou liste en cours). */
+const UNLOADED_WORKSPACE: Workspace = { id: '', name: 'Mon espace', kind: 'perso', role: 'owner' };
+
+const notLoaded = async <T>(): Promise<Result<T>> => fail('workspace-not-found');
+
+/** Dépôt tant que la liste des espaces n'est pas chargée : rien ne s'écrit nulle part. */
+const UNLOADED_REPOSITORY: FinanceRepositoryInterface = {
+  load: () => notLoaded<Dataset | null>(),
+  watch: () => () => undefined,
+  saveSettings: () => notLoaded<void>(),
+  put: () => notLoaded<void>(),
+  remove: () => notLoaded<void>(),
+  replaceAll: () => notLoaded<void>(),
+  destroy: () => notLoaded<void>(),
+  close: async () => undefined,
+};
 
 const INITIAL_STATE: StoreState = {
   status: 'loading',
   dataset: null,
   error: null,
   syncError: null,
-  workspaces: [DEFAULT_WORKSPACE],
-  workspace: DEFAULT_WORKSPACE,
+  workspaces: [],
+  workspace: UNLOADED_WORKSPACE,
 };
 
 const withOrderedCategories = (patch: Partial<StoreState>): Partial<StoreState> => {
@@ -116,6 +126,8 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   #unwatchDataset: (() => void) | null = null;
   /** Espaces créés sur cet appareil, pas encore vus dans une liste reçue du serveur. */
   #unconfirmed = new Map<string, Workspace>();
+  /** Espace principal du compte connecté (`perso-<uid>`), connu une fois la liste chargée. */
+  #main: Workspace = UNLOADED_WORKSPACE;
 
   constructor(
     createRepository: RepositoryFactory,
@@ -125,7 +137,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   ) {
     this.#createRepository = createRepository;
     this.#registry = registry;
-    this.#repository = createRepository(DEFAULT_WORKSPACE.id);
+    this.#repository = UNLOADED_REPOSITORY;
     this.#newId = newId;
     this.#now = now;
   }
@@ -136,6 +148,13 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   };
 
   getSnapshot = (): StoreState => this.#state;
+
+  /** Liste reçue : l'espace principal reste toujours présent et en tête. */
+  #withMain(workspaces: Workspace[]): Workspace[] {
+    return sortWorkspaces(
+      workspaces.some((item) => item.id === this.#main.id) ? workspaces : [this.#main, ...workspaces],
+    );
+  }
 
   currentDataset(): Dataset | null {
     return this.#state.dataset;
@@ -191,8 +210,13 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     if (!loaded.ok) {
       return loaded;
     }
-    const workspaces = withMain(loaded.value.workspaces);
-    const workspace = activeIn(workspaces, loaded.value.activeId);
+    const main = loaded.value.workspaces.find(isMainWorkspace);
+    if (!main) {
+      return fail('workspace-not-found');
+    }
+    this.#main = main;
+    const workspaces = this.#withMain(loaded.value.workspaces);
+    const workspace = activeIn(workspaces, loaded.value.activeId, main);
     this.#registryLoaded = true;
     await this.#repository.close();
     this.#repository = this.#createRepository(workspace.id);
@@ -208,14 +232,14 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     const pending = [...this.#unconfirmed.values()].filter(
       (item) => !received.some((other) => other.id === item.id),
     );
-    const workspaces = withMain([...received, ...pending]);
+    const workspaces = this.#withMain([...received, ...pending]);
     const current = workspaces.find((item) => item.id === this.#state.workspace.id);
     if (current) {
       this.#set({ workspaces, workspace: current });
       return;
     }
     this.#set({ workspaces });
-    await this.#open(DEFAULT_WORKSPACE);
+    await this.#open(this.#main);
   }
 
   #watchDataset(): void {
@@ -289,7 +313,8 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     this.#registryLoaded = false;
     this.#unconfirmed.clear();
     void this.#repository.close();
-    this.#repository = this.#createRepository(DEFAULT_WORKSPACE.id);
+    this.#repository = UNLOADED_REPOSITORY;
+    this.#main = UNLOADED_WORKSPACE;
     this.#set(INITIAL_STATE);
   }
 
@@ -424,7 +449,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return created;
     }
     this.#unconfirmed.set(workspace.value.id, workspace.value);
-    this.#set({ workspaces: withMain([...this.#state.workspaces, workspace.value]) });
+    this.#set({ workspaces: this.#withMain([...this.#state.workspaces, workspace.value]) });
     return this.switchWorkspace(workspace.value.id);
   }
 
@@ -443,13 +468,13 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
     }
     this.#set({
       workspaces: workspaces.value,
-      workspace: activeIn(workspaces.value, this.#state.workspace.id),
+      workspace: activeIn(workspaces.value, this.#state.workspace.id, this.#main),
     });
     return ok(undefined);
   }
 
   async deleteWorkspace(workspaceId: string): Promise<Result<void>> {
-    if (workspaceId === DEFAULT_WORKSPACE.id) {
+    if (workspaceId === this.#main.id) {
       return fail('workspace-main-protected');
     }
     const workspace = this.#state.workspaces.find((item) => item.id === workspaceId);
@@ -460,7 +485,7 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       return fail('workspace-not-owner');
     }
     if (this.#state.workspace.id === workspaceId) {
-      await this.#open(DEFAULT_WORKSPACE);
+      await this.#open(this.#main);
     }
     const removed = await this.#destroy(workspaceId);
     if (!removed.ok) {
@@ -512,9 +537,10 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
   }
 
   /**
-   * Restaure une sauvegarde complète : chaque espace du fichier est recréé (à son nom s'il manque)
-   * puis remplacé ; les espaces dont on est propriétaire et absents du fichier sont supprimés.
-   * Les espaces communs rejoints comme invité ne sont jamais supprimés.
+   * Restaure une sauvegarde complète « chez soi » (voir `planRestore`) : l'espace principal du fichier
+   * remplit celui du compte connecté, les espaces dont on est membre sont remplacés, les autres
+   * deviennent des copies à soi. Les espaces absents du fichier ne sont jamais touchés.
+   * Les copies sont d'abord créées en un seul lot confirmé par le serveur : sans lui, rien n'est écrit.
    */
   async restoreAll(entries: WorkspaceData[], activeId: string): Promise<Result<void>> {
     const log: AuditLog = {
@@ -522,40 +548,38 @@ export class FinanceStore implements FinanceStoreInterface, FinanceGatewayInterf
       entity: 'Sauvegarde',
       summary: 'Restauration d’une sauvegarde complète',
     };
+    const plan = planRestore(
+      entries,
+      activeId,
+      { main: this.#main, workspaces: this.#state.workspaces },
+      this.#newId,
+    );
+    const copies = plan.steps.filter((step) => step.target === 'copy').map((step) => step.workspace);
+    if (copies.length > 0) {
+      const created = await this.#registry.createAll(copies);
+      if (!created.ok) {
+        return created;
+      }
+      copies.forEach((workspace) => this.#unconfirmed.set(workspace.id, workspace));
+    }
+    const displayed = this.#state.workspace;
     this.#stopWatchingDataset();
     await this.#repository.close();
-    let workspaces = this.#state.workspaces;
-    for (const entry of entries) {
-      if (!workspaces.some((item) => item.id === entry.workspace.id)) {
-        const created = await this.#registry.create(entry.workspace);
-        if (!created.ok) {
-          return created;
-        }
-        this.#unconfirmed.set(entry.workspace.id, entry.workspace);
-        workspaces = [...workspaces, entry.workspace];
-      }
-      const repository = this.#createRepository(entry.workspace.id);
+    const workspaces = this.#withMain([...this.#state.workspaces, ...copies]);
+    this.#set({ workspaces });
+    for (const step of plan.steps) {
+      const repository = this.#createRepository(step.workspace.id);
       const written = await repository.replaceAll({
-        ...entry.dataset,
-        audit: [this.#auditEntry(log), ...entry.dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
+        ...step.dataset,
+        audit: [this.#auditEntry(log), ...step.dataset.audit].slice(0, MAX_AUDIT_ENTRIES),
       });
       await repository.close();
       if (!written.ok) {
+        await this.#open(displayed);
         return written;
       }
     }
-    const kept = new Set(entries.map((entry) => entry.workspace.id));
-    const obsolete = workspaces.filter((item) => !kept.has(item.id) && canDelete(item));
-    for (const workspace of obsolete) {
-      const removed = await this.#destroy(workspace.id);
-      if (!removed.ok) {
-        return removed;
-      }
-    }
-    const remaining = withMain(workspaces.filter((item) => !obsolete.includes(item)));
-    const active = activeIn(remaining, activeId);
-    this.#set({ workspaces: remaining });
-    await this.#open(active);
+    await this.#open(activeIn(workspaces, plan.activeId, this.#main));
     return ok(undefined);
   }
 }

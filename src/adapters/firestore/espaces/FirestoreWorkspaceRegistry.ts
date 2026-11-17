@@ -9,22 +9,22 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
   type Firestore,
   type Query,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import {
-  DEFAULT_WORKSPACE,
+  mainWorkspace,
   resolveActiveId,
   type Workspace,
   type WorkspaceRegistryState,
 } from '@/core/espaces/workspaces';
-import { ok, type Result } from '@/core/shared/errors';
+import { fail, ok, type Result } from '@/core/shared/errors';
 import type { WorkspaceKind } from '@/core/shared/model';
 import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
-import { toDocumentId, toWorkspaceId } from './workspaceIds';
 
 /** Mémoire de l'appareil pour l'espace affiché (localStorage dans le navigateur). */
 export type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -36,8 +36,16 @@ export const ACTIVE_WORKSPACE_KEY_PREFIX = 'mes-finances:espace-actif:';
 /** Attente de la confirmation de création de l'espace principal avant de l'ouvrir. */
 const MAIN_CREATION_WAIT_MS = 5000;
 
-const settledWithin = (write: Promise<void>, timeoutMs: number): Promise<void> =>
-  Promise.race([write, new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
+/** Attente de la réponse du serveur à la création des espaces d'une sauvegarde. */
+const CREATE_ALL_WAIT_MS = 15000;
+
+const TIMED_OUT = Symbol('timeout');
+
+const settledWithin = (write: Promise<void>, timeoutMs: number): Promise<void | typeof TIMED_OUT> =>
+  Promise.race([
+    write,
+    new Promise<typeof TIMED_OUT>((resolve) => setTimeout(() => resolve(TIMED_OUT), timeoutMs)),
+  ]);
 
 /** Espaces dont l'utilisateur est membre (workspaces where memberIds array-contains uid). */
 export class FirestoreWorkspaceRegistry implements WorkspaceRegistryInterface {
@@ -63,13 +71,13 @@ export class FirestoreWorkspaceRegistry implements WorkspaceRegistryInterface {
   }
 
   #ref(workspaceId: string) {
-    return doc(this.#db, 'workspaces', toDocumentId(workspaceId, this.#userId));
+    return doc(this.#db, 'workspaces', workspaceId);
   }
 
   #toWorkspace(snapshot: QueryDocumentSnapshot): Workspace {
     const data = snapshot.data() as WorkspaceDocument;
     return {
-      id: toWorkspaceId(snapshot.id, this.#userId),
+      id: snapshot.id,
       name: data.name,
       kind: data.kind,
       role: data.ownerId === this.#userId ? 'owner' : 'guest',
@@ -103,14 +111,15 @@ export class FirestoreWorkspaceRegistry implements WorkspaceRegistryInterface {
     try {
       const snapshot = await getDocs(this.#query);
       const workspaces = snapshot.docs.map((item) => this.#toWorkspace(item));
-      const hasMain = workspaces.some((item) => item.id === DEFAULT_WORKSPACE.id);
+      const main = mainWorkspace(this.#userId);
+      const hasMain = workspaces.some((item) => item.id === main.id);
       // Première connexion : l'espace principal n'existe pas encore (seul le serveur peut l'affirmer).
       if (!hasMain && !snapshot.metadata.fromCache) {
-        const creation = this.#createDocument(DEFAULT_WORKSPACE);
+        const creation = this.#createDocument(main);
         this.#monitor.track(creation);
         await settledWithin(creation, MAIN_CREATION_WAIT_MS);
       }
-      const listed = hasMain ? workspaces : [DEFAULT_WORKSPACE, ...workspaces];
+      const listed = hasMain ? workspaces : [main, ...workspaces];
       return ok({ workspaces: listed, activeId: resolveActiveId(listed, this.#readActive()) });
     } catch (error) {
       return toSyncFailure(error);
@@ -125,14 +134,35 @@ export class FirestoreWorkspaceRegistry implements WorkspaceRegistryInterface {
     );
   }
 
-  #createDocument(workspace: Workspace): Promise<void> {
-    return setDoc(this.#ref(workspace.id), {
+  #newDocument(workspace: Workspace) {
+    return {
       ownerId: this.#userId,
       memberIds: [this.#userId],
       kind: workspace.kind,
       name: workspace.name,
       createdAt: serverTimestamp(),
-    });
+    };
+  }
+
+  #createDocument(workspace: Workspace): Promise<void> {
+    return setDoc(this.#ref(workspace.id), this.#newDocument(workspace));
+  }
+
+  async createAll(workspaces: Workspace[]): Promise<Result<void>> {
+    try {
+      const batch = writeBatch(this.#db);
+      workspaces.forEach((workspace) => batch.set(this.#ref(workspace.id), this.#newDocument(workspace)));
+      const commit = batch.commit();
+      // Hors ligne, le lot reste en file : on n'écrit rien de plus sans la réponse du serveur.
+      const settled = await settledWithin(commit, CREATE_ALL_WAIT_MS);
+      if (settled === TIMED_OUT) {
+        this.#monitor.track(commit);
+        return fail('sync-failed');
+      }
+      return ok(undefined);
+    } catch (error) {
+      return toSyncFailure(error);
+    }
   }
 
   async create(workspace: Workspace): Promise<Result<void>> {

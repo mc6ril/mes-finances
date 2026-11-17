@@ -1,7 +1,8 @@
 import { createBackup } from '@/core/sauvegarde/backup';
 import { createFullBackup, readAnyBackup } from '@/core/sauvegarde/fullBackup';
 import { createInitialDataset } from '@/core/shared/seed';
-import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';
+import type { Workspace } from '@/core/espaces/workspaces';
+import { TEST_MAIN } from '../../support/memoryAdapters';
 
 const dataset = createInitialDataset('2026-11-08', () => 'audit');
 const communDataset = createInitialDataset('2026-11-08', () => 'audit', 'commun');
@@ -13,7 +14,7 @@ describe('sauvegarde complète', () => {
   it('restitue tous les espaces, leur nature et l’espace actif', () => {
     const backup = createFullBackup(
       [
-        { workspace: DEFAULT_WORKSPACE, dataset },
+        { workspace: TEST_MAIN, dataset },
         { workspace: commun, dataset: communDataset },
       ],
       'w1',
@@ -23,13 +24,13 @@ describe('sauvegarde complète', () => {
     expect(read).toMatchObject({ ok: true, value: { kind: 'complete', activeId: 'w1' } });
     expect(
       read.ok && read.value.kind === 'complete' && read.value.entries.map((entry) => entry.workspace),
-    ).toEqual([DEFAULT_WORKSPACE, commun]);
+    ).toEqual([TEST_MAIN, commun]);
   });
 
   it('écrit chaque espace sans son rôle, et redevient propriétaire à la lecture', () => {
     const backup = createFullBackup(
       [
-        { workspace: DEFAULT_WORKSPACE, dataset },
+        { workspace: TEST_MAIN, dataset },
         { workspace: { ...commun, role: 'guest' }, dataset: communDataset },
       ],
       'perso',
@@ -43,7 +44,7 @@ describe('sauvegarde complète', () => {
   it('lit l’ancien format de sauvegarde complète (espace importé, dates)', () => {
     const backup = createFullBackup(
       [
-        { workspace: DEFAULT_WORKSPACE, dataset },
+        { workspace: TEST_MAIN, dataset },
         { workspace: commun, dataset: communDataset },
       ],
       'perso',
@@ -59,7 +60,7 @@ describe('sauvegarde complète', () => {
     const read = roundTrip(legacy);
     expect(
       read.ok && read.value.kind === 'complete' && read.value.entries.map((entry) => entry.workspace),
-    ).toEqual([DEFAULT_WORKSPACE, commun]);
+    ).toEqual([TEST_MAIN, commun]);
   });
 
   it('reconnaît toujours le fichier d’un seul espace', () => {
@@ -74,10 +75,19 @@ describe('sauvegarde complète', () => {
     expect(roundTrip(backup)).toEqual({ ok: false, error: { code: 'backup-missing-main' } });
   });
 
+  it('refuse une sauvegarde dont l’espace principal porte l’ancien identifiant générique', () => {
+    const backup = createFullBackup(
+      [{ workspace: { ...TEST_MAIN, id: 'perso' }, dataset }],
+      'perso',
+      '2026-11-08T10:00:00.000Z',
+    );
+    expect(roundTrip(backup)).toEqual({ ok: false, error: { code: 'backup-missing-main' } });
+  });
+
   it('signale l’espace dont les données sont corrompues', () => {
     const backup = createFullBackup(
       [
-        { workspace: DEFAULT_WORKSPACE, dataset },
+        { workspace: TEST_MAIN, dataset },
         { workspace: commun, dataset: { ...dataset, transactions: 'oops' as never } },
       ],
       'perso',

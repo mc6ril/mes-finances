@@ -4,7 +4,7 @@ import type { FinanceRepositoryInterface } from '@/core/store/interface';
 import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import type { Workspace } from '@/core/espaces/workspaces';
 import { aTransaction } from '../core/fixtures';
-import { MemoryDatabase, MemoryWorkspaceRegistry } from '../support/memoryAdapters';
+import { MemoryDatabase, MemoryWorkspaceRegistry, TEST_MAIN } from '../support/memoryAdapters';
 
 class FailingRegistry implements WorkspaceRegistryInterface {
   #inner = new MemoryWorkspaceRegistry();
@@ -25,6 +25,10 @@ class FailingRegistry implements WorkspaceRegistryInterface {
 
   create(workspace: Workspace) {
     return this.#attempt(() => this.#inner.create(workspace));
+  }
+
+  createAll(workspaces: Workspace[]) {
+    return this.#attempt(() => this.#inner.createAll(workspaces));
   }
 
   rename(workspaceId: string, name: string) {
@@ -55,18 +59,12 @@ const failingPuts = (
   close: () => repository.close(),
 });
 
-const setup = (options: { failingCollections?: string[]; failingDestroy?: boolean } = {}) => {
+const setup = (options: { failingCollections?: string[] } = {}) => {
   const db = new MemoryDatabase();
   const registry = new FailingRegistry();
   let counter = 0;
   const store = new FinanceStore(
-    (workspaceId) => {
-      const real = db.repository(workspaceId);
-      const repository = failingPuts(real, options.failingCollections ?? []);
-      return options.failingDestroy && workspaceId !== 'perso'
-        ? { ...repository, destroy: async () => fail('storage-failed') }
-        : repository;
-    },
+    (workspaceId) => failingPuts(db.repository(workspaceId), options.failingCollections ?? []),
     registry,
     () => {
       counter += 1;
@@ -84,7 +82,7 @@ describe('erreurs du store', () => {
     registry.failing = true;
     expect(await store.createWorkspace('Commun')).toEqual({ ok: false, error: { code: 'storage-full' } });
     expect(store.getSnapshot().workspaces.map((workspace) => workspace.name)).toEqual(['Mon espace']);
-    expect(await store.renameWorkspace('perso', 'Jean D.')).toEqual({
+    expect(await store.renameWorkspace(TEST_MAIN.id, 'Jean D.')).toEqual({
       ok: false,
       error: { code: 'storage-full' },
     });
@@ -112,15 +110,6 @@ describe('erreurs du store', () => {
     );
     expect(await store.refresh()).toEqual({ ok: false, error: { code: 'storage-full' } });
     expect(store.getSnapshot().syncError).toEqual({ code: 'storage-full' });
-  });
-
-  it('fait remonter l’échec de suppression d’un espace absent de la sauvegarde complète', async () => {
-    const { store } = setup({ failingDestroy: true });
-    await store.start();
-    await store.createWorkspace('Brouillon');
-    const saved = await store.allWorkspaceData();
-    const perso = saved.ok ? saved.value.filter((entry) => entry.workspace.id === 'perso') : [];
-    expect(await store.restoreAll(perso, 'perso')).toEqual({ ok: false, error: { code: 'storage-failed' } });
   });
 
   it('confirme le succès quand tout va bien', async () => {

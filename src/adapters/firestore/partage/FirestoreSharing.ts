@@ -19,7 +19,6 @@ import type { Invitation, NewInvitation } from '@/core/partage/model';
 import { fail, ok, type Result } from '@/core/shared/errors';
 import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 import type { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
-import { toDocumentId, toWorkspaceId } from '@/adapters/firestore/espaces/workspaceIds';
 
 /** Création et acceptation n'aboutissent qu'une fois confirmées par le serveur. */
 const CONFIRMATION_TIMEOUT_MS = 10000;
@@ -56,13 +55,13 @@ export class FirestoreSharing implements SharingGatewayInterface {
   }
 
   #workspaceRef(workspaceId: string) {
-    return doc(this.#db, 'workspaces', toDocumentId(workspaceId, this.#userId));
+    return doc(this.#db, 'workspaces', workspaceId);
   }
 
   #toInvitation(token: string, data: DocumentData): Invitation {
     return {
       token,
-      workspaceId: toWorkspaceId(data.workspaceId as string, this.#userId),
+      workspaceId: data.workspaceId as string,
       workspaceName: data.workspaceName as string,
       ownerId: data.ownerId as string,
       expiresAt: (data.expiresAt as Timestamp).toDate().toISOString(),
@@ -83,7 +82,7 @@ export class FirestoreSharing implements SharingGatewayInterface {
     try {
       return await confirmed(
         setDoc(this.#invitationRef(invitation.token), {
-          workspaceId: toDocumentId(invitation.workspaceId, this.#userId),
+          workspaceId: invitation.workspaceId,
           ownerId: this.#userId,
           workspaceName: invitation.workspaceName,
           createdAt: serverTimestamp(),
@@ -138,7 +137,7 @@ export class FirestoreSharing implements SharingGatewayInterface {
         query(
           collection(this.#db, 'invitations'),
           where('ownerId', '==', this.#userId),
-          where('workspaceId', '==', toDocumentId(workspaceId, this.#userId)),
+          where('workspaceId', '==', workspaceId),
         ),
       );
       const now = new Date().toISOString();

@@ -1,7 +1,7 @@
 import { BACKUP_APP_ID, readBackup } from './backup';
 import { fail, ok, type Result } from '../shared/errors';
 import type { Dataset } from '../shared/model';
-import { DEFAULT_WORKSPACE, readWorkspace, resolveActiveId, type Workspace } from '../espaces/workspaces';
+import { isMainWorkspace, readWorkspace, resolveActiveId, type Workspace } from '../espaces/workspaces';
 import { isArray, isObject, isString } from '@/core/shared/typeCheck';
 
 export const FULL_BACKUP_KIND = 'complete';
@@ -70,7 +70,7 @@ const readFullBackup = (raw: Record<string, unknown>): Result<AnyBackupContent> 
     }
     entries.push(entry.value);
   }
-  if (!entries.some((entry) => entry.workspace.id === DEFAULT_WORKSPACE.id)) {
+  if (!entries.some((entry) => isMainWorkspace(entry.workspace))) {
     return fail('backup-missing-main');
   }
   const workspaces = entries.map((entry) => entry.workspace);

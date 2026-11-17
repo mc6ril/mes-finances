@@ -1,4 +1,4 @@
-import { FileUp, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
@@ -21,7 +21,6 @@ import { ConfirmDialog, Modal } from '@/ui/design-system/Modal';
 import Segmented from '@/ui/design-system/Segmented';
 import Text from '@/ui/design-system/Text';
 import ChartTooltip from '@/ui/charts/ChartTooltip';
-import BrokerImportModal from './BrokerImportModal';
 import SavingsAccountForm from './SavingsAccountForm';
 import { axisProps, euroTick } from '@/ui/charts/axis';
 
@@ -48,7 +47,6 @@ type FormKind = 'movement' | 'valuation';
 const AccountModal = ({ account: initial, months, endDate, onClose }: AccountModalProps) => {
   const dataset = useDataset();
   const account = dataset.accounts.find((item) => item.id === initial.id) ?? initial;
-  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const { today } = usePeriod();
   const finance = useFinanceUseCases();
@@ -155,17 +153,6 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
           Modifier le compte
         </Button>
       </div>
-      {account.group === 'investissement' && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-brand-50 px-4 py-3 dark:bg-brand-500/10">
-          <Text variant="small">
-            Importe l’export CSV de tes transactions Trade Republic : versements, dividendes et frais sont
-            ajoutés automatiquement.
-          </Text>
-          <Button size="sm" icon={FileUp} onClick={() => setImportOpen(true)}>
-            Importer un export Trade Republic
-          </Button>
-        </div>
-      )}
       <div className="grid gap-3 sm:grid-cols-4">
         <Summary label="Valeur" value={<Amount cents={position.value} />} />
         <Summary label="Versé net" value={<Amount cents={position.contributions} />} />
@@ -304,7 +291,6 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
       {editing && (
         <SavingsAccountForm account={account} onClose={() => setEditing(false)} onArchived={onClose} />
       )}
-      {importOpen && <BrokerImportModal account={account} onClose={() => setImportOpen(false)} />}
       {confirm && (
         <ConfirmDialog
           title="Supprimer cette ligne ?"

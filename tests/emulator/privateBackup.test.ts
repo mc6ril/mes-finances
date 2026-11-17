@@ -5,8 +5,8 @@ import type { Firestore } from 'firebase/firestore';
 import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
 import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
-import { toDocumentId } from '@/adapters/firestore/espaces/workspaceIds';
 import { readAnyBackup, type WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import { isMainWorkspace, mainWorkspaceId } from '@/core/espaces/workspaces';
 import { COLLECTION_NAMES, itemKey } from '@/core/shared/collections';
 import type { Dataset } from '@/core/shared/model';
 import { FinanceStore } from '@/core/store/FinanceStore';
@@ -22,6 +22,19 @@ import { addMonths, daysBetween, monthEnd, monthKeyOf, todayIso } from '@/core/s
  */
 const BACKUP = process.env.FINANCES_BACKUP ?? 'private/mes-finances-sauvegarde-complete-2026-11-14.json';
 const OWNER = 'owner-a';
+
+/** Fichier exporté avant que l'espace principal ne porte l'uid : `perso` devient `perso-<OWNER>`. */
+const withOwnerMain = (raw: { activeId?: string; workspaces?: { workspace: { id: string } }[] }) => {
+  const main = (id: string | undefined) => (id === 'perso' ? `perso-${OWNER}` : id);
+  return {
+    ...raw,
+    activeId: main(raw.activeId),
+    workspaces: raw.workspaces?.map((entry) => ({
+      ...entry,
+      workspace: { ...entry.workspace, id: main(entry.workspace.id) },
+    })),
+  };
+};
 
 const canonical = (value: unknown): unknown => {
   if (Array.isArray(value)) {
@@ -107,7 +120,7 @@ describe.skipIf(!existsSync(BACKUP))('sauvegarde réelle vers Firestore', () => 
       projectId: 'demo-finances-backup',
       firestore: { rules: readFileSync('firestore.rules', 'utf8') },
     });
-    const read = readAnyBackup(JSON.parse(readFileSync(BACKUP, 'utf8')));
+    const read = readAnyBackup(withOwnerMain(JSON.parse(readFileSync(BACKUP, 'utf8'))));
     if (!read.ok || read.value.kind !== 'complete') {
       throw new Error(`Sauvegarde illisible : ${read.ok ? read.value.kind : read.error.code}`);
     }
@@ -122,7 +135,7 @@ describe.skipIf(!existsSync(BACKUP))('sauvegarde réelle vers Firestore', () => 
   it('restaure tous les espaces puis les relit à l’identique', async () => {
     const monitor = new SyncMonitor();
     const repository = (db: Firestore) => (workspaceId: string) =>
-      new FirestoreFinanceRepository(db, toDocumentId(workspaceId, OWNER), monitor);
+      new FirestoreFinanceRepository(db, workspaceId, monitor);
     const writer = dbOf();
     const store = new FinanceStore(
       repository(writer),
@@ -137,11 +150,18 @@ describe.skipIf(!existsSync(BACKUP))('sauvegarde réelle vers Firestore', () => 
 
     const reader = dbOf();
     const registry = await new FirestoreWorkspaceRegistry(reader, OWNER, monitor, memoryStorage()).load();
-    expect(registry.ok && registry.value.workspaces.map((item) => item.id).sort()).toEqual(
-      entries.map((entry) => entry.workspace.id).sort(),
-    );
+    const restoredWorkspaces = registry.ok ? registry.value.workspaces : [];
+    // Restauration chez soi sur un compte neuf : le perso va dans perso-<OWNER>, chaque commun
+    // devient une copie à son nom (nouvel identifiant).
+    const targetOf = (entry: WorkspaceData) =>
+      isMainWorkspace(entry.workspace)
+        ? mainWorkspaceId(OWNER)
+        : restoredWorkspaces.find((item) => item.name === entry.workspace.name)?.id;
+    expect(restoredWorkspaces).toHaveLength(entries.length);
     for (const entry of entries) {
-      const loaded = await repository(reader)(entry.workspace.id).load();
+      const target = targetOf(entry);
+      expect(target).toBeDefined();
+      const loaded = await repository(reader)(target ?? '').load();
       expect(loaded.ok).toBe(true);
       const dataset = loaded.ok ? loaded.value : null;
       expect(dataset).not.toBeNull();
