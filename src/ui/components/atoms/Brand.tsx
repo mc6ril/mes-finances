@@ -1,4 +1,4 @@
-import Text from '@/ui/design-system/Text';
+import Text from '@/ui/components/atoms/Text';
 import { cx } from '@/ui/design-system/cx';
 
 type BrandProps = { inverted?: boolean; className?: string };

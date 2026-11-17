@@ -3,10 +3,10 @@ import { useState } from 'react';
 import type { Goal } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import Button from '@/ui/design-system/Button';
-import EmptyState from '@/ui/design-system/EmptyState';
-import { ConfirmDialog } from '@/ui/design-system/Modal';
-import PageHeader from '@/ui/layout/PageHeader';
+import Button from '@/ui/components/atoms/Button';
+import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
+import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
+import PageHeader from '@/ui/components/molecules/PageHeader';
 import GoalCard from './GoalCard';
 import GoalModal from './GoalModal';
 

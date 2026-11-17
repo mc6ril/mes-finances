@@ -10,12 +10,12 @@ import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useToast } from '@/hooks/useToast';
 import { useReport } from '@/hooks/useReport';
 import { APP_VERSION } from '@/ui/constants';
-import Button from '@/ui/design-system/Button';
-import { Select } from '@/ui/design-system/Field';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import { Select } from '@/ui/components/atoms/form/Select';
+import Text from '@/ui/components/atoms/Text';
 import { cx } from '@/ui/design-system/cx';
 import AccountMenu from './AccountMenu';
-import Brand from './Brand';
+import Brand from '@/ui/components/atoms/Brand';
 import { NAV_ITEMS, navItemOf } from './navigation';
 import PeriodPicker from './PeriodPicker';
 

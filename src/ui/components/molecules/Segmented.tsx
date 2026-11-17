@@ -1,4 +1,4 @@
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 type SegmentedOption<T extends string> = { value: T; label: string };
 

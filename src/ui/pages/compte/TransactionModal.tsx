@@ -6,10 +6,14 @@ import { PAYMENT_METHODS } from '@/ui/constants';
 import { STATUS_LABELS } from '@/core/comptes/csvImport';
 import { savingsCategoryFor } from '@/core/budget/budget';
 import type { Transaction, TransactionStatus, TransactionType } from '@/core/shared/model';
-import Button from '@/ui/design-system/Button';
-import { Checkbox, Field, Input, Select, Textarea } from '@/ui/design-system/Field';
-import { Modal } from '@/ui/design-system/Modal';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Select } from '@/ui/components/atoms/form/Select';
+import { Textarea } from '@/ui/components/atoms/form/Textarea';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Text from '@/ui/components/atoms/Text';
 import {
   categoriesForType,
   initialForm,

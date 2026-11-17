@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { useSharingUseCases } from '@/hooks/useSharing';
-import { AUTH_PATHS } from '@/ui/pages/auth/authParts';
+import { AUTH_PATHS } from '@/ui/routing/authPaths';
 
 /** Lien ouvert sans être connecté : gardé le temps de se connecter ou de créer son compte. */
 const RememberInvitation = () => {

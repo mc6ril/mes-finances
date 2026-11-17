@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { userLabel } from '@/core/auth/model';
 import { useAuthUseCases, useCurrentUser } from '@/hooks/useAuth';
 import { useReport } from '@/hooks/useReport';
-import Badge from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
+import Badge from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
 import DeleteAccountModal from './DeleteAccountModal';
-import SettingRow from './SettingRow';
+import SettingRow from '@/ui/components/molecules/form/PreferenceRow';
 
 const PROVIDER_LABELS = { password: 'E-mail et mot de passe', google: 'Google' } as const;
 

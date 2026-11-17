@@ -3,9 +3,10 @@ import { SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
 import type { Household, HouseholdMember } from '@/core/shared/model';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import { Checkbox, Input } from '@/ui/design-system/Field';
-import Segmented from '@/ui/design-system/Segmented';
-import SettingRow from './SettingRow';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import { Input } from '@/ui/components/atoms/form/Input';
+import Segmented from '@/ui/components/molecules/Segmented';
+import SettingRow from '@/ui/components/molecules/form/PreferenceRow';
 import { cx } from '@/ui/design-system/cx';
 
 const percentText = (rate: number): string => String(Math.round(rate * 1000) / 10).replace('.', ',');

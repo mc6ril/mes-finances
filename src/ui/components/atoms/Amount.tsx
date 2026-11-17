@@ -1,6 +1,6 @@
 import { formatEuros, formatEurosRounded } from '@/core/shared/format';
 import type { Cents } from '@/core/shared/model';
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 type AmountProps = {
   cents: Cents;

@@ -1,9 +1,9 @@
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useChartTheme } from '@/hooks/useTheme';
 import type { ComparisonEntry } from '@/core/patrimoine/overview';
-import Card from '@/ui/design-system/Card';
-import ChartTooltip from '@/ui/charts/ChartTooltip';
-import { axisProps, euroTick } from '@/ui/charts/axis';
+import Card from '@/ui/components/molecules/cards/Card';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
+import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
 import { GAIN_COLOR, LOSS_COLOR } from '@/ui/design-system/tokens';
 
 type GainsCardProps = { entries: ComparisonEntry[] };

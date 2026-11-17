@@ -3,9 +3,9 @@ import type { YearSummary } from '@/core/budget/annual';
 import type { PatrimoineEvolution } from '@/core/patrimoine/patrimoine';
 import type { WorkspaceKind } from '@/core/shared/model';
 import { groupLabel } from '@/ui/constants';
-import Amount from '@/ui/design-system/Amount';
-import StatCard from '@/ui/design-system/StatCard';
-import Text from '@/ui/design-system/Text';
+import Amount from '@/ui/components/atoms/Amount';
+import StatCard from '@/ui/components/molecules/cards/StatCard';
+import Text from '@/ui/components/atoms/Text';
 import { evolutionPeriod } from './bilanLabels';
 
 type EvolutionProps = { evolution: PatrimoineEvolution | null };

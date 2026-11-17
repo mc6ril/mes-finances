@@ -2,8 +2,8 @@ import { LogOut } from 'lucide-react';
 import { userLabel } from '@/core/auth/model';
 import { useAuthState, useAuthUseCases } from '@/hooks/useAuth';
 import { useReport } from '@/hooks/useReport';
-import Button from '@/ui/design-system/Button';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import Text from '@/ui/components/atoms/Text';
 
 /** Utilisateur connecté et déconnexion, en pied de menu. */
 const AccountMenu = () => {

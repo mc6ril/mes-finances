@@ -11,12 +11,12 @@ import {
 import type { ReactNode } from 'react';
 import { useBackupHistory } from '@/hooks/useBackupHistory';
 import BackupPasswordDialog from '@/ui/common/BackupPasswordDialog';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
-import { ConfirmDialog } from '@/ui/design-system/Modal';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
+import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
+import Text from '@/ui/components/atoms/Text';
 import { lastBackupText } from './backupMessages';
-import FilePickerButton from './FilePickerButton';
+import FilePickerButton from '@/ui/components/molecules/form/FilePickerButton';
 import { useBackupActions } from './useBackupActions';
 
 type BackupRowProps = { icon: LucideIcon; title: string; description: string; children: ReactNode };

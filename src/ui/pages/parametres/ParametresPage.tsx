@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import { Navigate, useParams } from 'react-router';
-import Tabs from '@/ui/design-system/Tabs';
+import Tabs from '@/ui/components/molecules/Tabs';
 import { SETTINGS_TABS, settingsPath, type SettingsTab } from '@/ui/layout/navigation';
-import PageHeader from '@/ui/layout/PageHeader';
+import PageHeader from '@/ui/components/molecules/PageHeader';
 import AccountCard from './AccountCard';
 import AccountsCard from './AccountsCard';
 import AuditCard from './AuditCard';

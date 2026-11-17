@@ -3,7 +3,7 @@ import { usePeriod } from '@/hooks/usePeriod';
 import { addMonths, parseMonthKey, toMonthKey } from '@/core/shared/dates';
 import { capitalize, monthLabel } from '@/core/shared/format';
 import type { MonthKey } from '@/core/shared/model';
-import Button from '@/ui/design-system/Button';
+import Button from '@/ui/components/atoms/Button';
 
 type PickerMode = 'month' | 'year';
 

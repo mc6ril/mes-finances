@@ -1,9 +1,9 @@
 import { Landmark, Plus } from 'lucide-react';
 import type { AccountPosition } from '@/core/patrimoine/patrimoine';
 import type { Account } from '@/core/shared/model';
-import Button from '@/ui/design-system/Button';
-import EmptyState from '@/ui/design-system/EmptyState';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
+import Text from '@/ui/components/atoms/Text';
 import SavingsAccountCard from './SavingsAccountCard';
 
 type SavingsAccountsSectionProps = {

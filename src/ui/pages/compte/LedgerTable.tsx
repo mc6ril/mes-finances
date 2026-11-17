@@ -7,11 +7,11 @@ import { imputationHint, transferHint } from '@/core/comptes/hints';
 import type { SortKey, SortState } from '@/core/comptes/sort';
 import { formatDateFr } from '@/core/shared/format';
 import type { Dataset, Transaction } from '@/core/shared/model';
-import Amount from '@/ui/design-system/Amount';
-import Badge, { type BadgeTone } from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import { Checkbox } from '@/ui/design-system/Field';
-import Text from '@/ui/design-system/Text';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge, { type BadgeTone } from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import Text from '@/ui/components/atoms/Text';
 
 const statusTone = (transaction: Transaction): BadgeTone => {
   if (transaction.status === 'prevu') {

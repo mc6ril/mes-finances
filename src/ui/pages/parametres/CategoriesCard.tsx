@@ -6,13 +6,14 @@ import { useReport } from '@/hooks/useReport';
 import { categoriesOfGroup, hasBudgetPeriod, newCategoryDraft } from '@/core/budget/categories';
 import type { BudgetPeriod, Category, CategoryGroup } from '@/core/shared/model';
 import { GROUP_LABELS, groupLabel } from '@/ui/constants';
-import Badge from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
+import Badge from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
 import { cx } from '@/ui/design-system/cx';
-import { Input, Select } from '@/ui/design-system/Field';
-import Segmented from '@/ui/design-system/Segmented';
-import Text from '@/ui/design-system/Text';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Select } from '@/ui/components/atoms/form/Select';
+import Segmented from '@/ui/components/molecules/Segmented';
+import Text from '@/ui/components/atoms/Text';
 import { useInlineName } from './useInlineName';
 
 const GROUP_STYLES: Record<CategoryGroup, { icon: LucideIcon; accent: string; dot: string }> = {

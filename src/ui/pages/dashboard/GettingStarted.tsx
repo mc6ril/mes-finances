@@ -5,10 +5,10 @@ import type { DashboardContent } from '@/core/budget/overview';
 import { parseEuros } from '@/core/shared/money';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
-import { Input } from '@/ui/design-system/Field';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
+import { Input } from '@/ui/components/atoms/form/Input';
+import Text from '@/ui/components/atoms/Text';
 import { settingsPath } from '@/ui/layout/navigation';
 import { cx } from '@/ui/design-system/cx';
 

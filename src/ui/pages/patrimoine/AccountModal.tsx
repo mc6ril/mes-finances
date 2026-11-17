@@ -13,16 +13,19 @@ import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/sh
 import { parseEuros } from '@/core/shared/money';
 import type { Account, Cents, IsoDate, MonthKey, SavingsMovementKind } from '@/core/shared/model';
 import { accountPosition } from '@/core/patrimoine/patrimoine';
-import Amount from '@/ui/design-system/Amount';
-import Badge from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import { Field, Input, Select } from '@/ui/design-system/Field';
-import { ConfirmDialog, Modal } from '@/ui/design-system/Modal';
-import Segmented from '@/ui/design-system/Segmented';
-import Text from '@/ui/design-system/Text';
-import ChartTooltip from '@/ui/charts/ChartTooltip';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Select } from '@/ui/components/atoms/form/Select';
+import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Segmented from '@/ui/components/molecules/Segmented';
+import Text from '@/ui/components/atoms/Text';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import SavingsAccountForm from './SavingsAccountForm';
-import { axisProps, euroTick } from '@/ui/charts/axis';
+import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
 
 const MOVEMENT_SIGN: Record<SavingsMovementKind, 1 | -1> = {
   versement: 1,

@@ -11,12 +11,14 @@ import { formatDateFr } from '@/core/shared/format';
 import { parseEuros } from '@/core/shared/money';
 import type { Account, SavingsMovement, Valuation } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
-import Amount from '@/ui/design-system/Amount';
-import Badge, { type BadgeTone } from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import { Checkbox, Field, Input } from '@/ui/design-system/Field';
-import { Modal } from '@/ui/design-system/Modal';
-import Text from '@/ui/design-system/Text';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge, { type BadgeTone } from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Text from '@/ui/components/atoms/Text';
 
 const STATUS_BADGE: Record<BrokerRowStatus, { tone: BadgeTone; label: string } | null> = {
   nouveau: null,

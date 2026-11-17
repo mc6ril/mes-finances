@@ -1,4 +1,4 @@
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 export type ProgressTone = 'good' | 'warning' | 'critical' | 'brand';
 

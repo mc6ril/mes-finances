@@ -1,8 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import InfoTip from './InfoTip';
-import Text from './Text';
-import { cx } from './cx';
+import InfoTip from '@/ui/components/atoms/InfoTip';
+import Text from '@/ui/components/atoms/Text';
+import { cx } from '@/ui/design-system/cx';
 
 type StatCardProps = {
   label: string;

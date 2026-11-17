@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { cx } from './cx';
-import Title from './Title';
-import Text from './Text';
+import { cx } from '@/ui/design-system/cx';
+import Title from '@/ui/components/atoms/Title';
+import Text from '@/ui/components/atoms/Text';
 
 type CardProps = {
   children: ReactNode;

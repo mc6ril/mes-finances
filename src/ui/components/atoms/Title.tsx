@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 type TitleLevel = 1 | 2 | 3;
 

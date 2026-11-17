@@ -18,8 +18,8 @@ import {
 import type { MonthOverview } from '@/core/budget/overview';
 import { formatEuros, formatEurosRounded } from '@/core/shared/format';
 import type { Dataset, MonthKey } from '@/core/shared/model';
-import Amount from '@/ui/design-system/Amount';
-import StatCard from '@/ui/design-system/StatCard';
+import Amount from '@/ui/components/atoms/Amount';
+import StatCard from '@/ui/components/molecules/cards/StatCard';
 
 type CommonStatsProps = { dataset: Dataset; month: MonthKey; overview: MonthOverview };
 

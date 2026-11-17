@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Text from '@/ui/design-system/Text';
+import Text from '@/ui/components/atoms/Text';
 
 type SettingRowProps = { label: string; hint?: ReactNode; children: ReactNode };
 

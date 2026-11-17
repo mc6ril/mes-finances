@@ -2,10 +2,10 @@ import type { ReactNode } from 'react';
 import { cashflowSummary, livePosition, periodPhase } from '@/core/comptes/balances';
 import { formatDateFr } from '@/core/shared/format';
 import type { Account, IsoDate, Transaction } from '@/core/shared/model';
-import Amount from '@/ui/design-system/Amount';
-import Card from '@/ui/design-system/Card';
+import Amount from '@/ui/components/atoms/Amount';
+import Card from '@/ui/components/molecules/cards/Card';
 import { cx } from '@/ui/design-system/cx';
-import Text from '@/ui/design-system/Text';
+import Text from '@/ui/components/atoms/Text';
 
 type SummaryCardProps = { label: string; value: ReactNode; caption?: ReactNode; valueClassName?: string };
 

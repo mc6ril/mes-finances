@@ -1,9 +1,8 @@
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import Button from './Button';
-import Text from './Text';
-import Title from './Title';
-import { cx } from './cx';
+import Button from '@/ui/components/atoms/Button';
+import Title from '@/ui/components/atoms/Title';
+import { cx } from '@/ui/design-system/cx';
 
 type ModalProps = {
   title: string;
@@ -39,29 +38,4 @@ export const Modal = ({ title, onClose, children, footer, size = 'md' }: ModalPr
       )}
     </div>
   </div>
-);
-
-type ConfirmDialogProps = {
-  title: string;
-  message: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-};
-
-export const ConfirmDialog = ({ title, message, confirmLabel, onConfirm, onCancel }: ConfirmDialogProps) => (
-  <Modal
-    title={title}
-    onClose={onCancel}
-    footer={
-      <>
-        <Button onClick={onCancel}>Annuler</Button>
-        <Button variant="danger" onClick={onConfirm}>
-          {confirmLabel}
-        </Button>
-      </>
-    }
-  >
-    <Text>{message}</Text>
-  </Modal>
 );

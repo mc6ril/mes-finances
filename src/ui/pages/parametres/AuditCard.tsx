@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 import { useDataset } from '@/hooks/useFinance';
 import { latestAuditEntries } from '@/core/shared/audit';
 import { formatDateFr } from '@/core/shared/format';
-import Card from '@/ui/design-system/Card';
-import Text from '@/ui/design-system/Text';
+import Card from '@/ui/components/molecules/cards/Card';
+import Text from '@/ui/components/atoms/Text';
 
 const AUDIT_LIMIT = 40;
 

@@ -4,9 +4,9 @@ import { monthLabel } from '@/core/shared/format';
 import type { MonthKey } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import Button from '@/ui/design-system/Button';
+import Button from '@/ui/components/atoms/Button';
 import { cx } from '@/ui/design-system/cx';
-import { Textarea } from '@/ui/design-system/Field';
+import { Textarea } from '@/ui/components/atoms/form/Textarea';
 
 const useSavedNote = (month: MonthKey): string =>
   useDataset().monthNotes.find((note) => note.month === month)?.text ?? '';

@@ -1,8 +1,8 @@
 import { Landmark } from 'lucide-react';
 import type { PatrimoineSnapshot } from '@/core/patrimoine/patrimoine';
 import type { Cents } from '@/core/shared/model';
-import Amount from '@/ui/design-system/Amount';
-import StatCard from '@/ui/design-system/StatCard';
+import Amount from '@/ui/components/atoms/Amount';
+import StatCard from '@/ui/components/molecules/cards/StatCard';
 
 type PatrimoineStatsProps = {
   snapshot: PatrimoineSnapshot;

@@ -5,10 +5,11 @@ import { useReport } from '@/hooks/useReport';
 import { parseSharePercent } from '@/core/patrimoine/overview';
 import { personalValueOf, type AccountPosition } from '@/core/patrimoine/patrimoine';
 import type { Account } from '@/core/shared/model';
-import Amount from '@/ui/design-system/Amount';
-import Card from '@/ui/design-system/Card';
-import { Field, Input } from '@/ui/design-system/Field';
-import Text from '@/ui/design-system/Text';
+import Amount from '@/ui/components/atoms/Amount';
+import Card from '@/ui/components/molecules/cards/Card';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import Text from '@/ui/components/atoms/Text';
 
 type JointAccountCardProps = { account: Account; position: AccountPosition };
 

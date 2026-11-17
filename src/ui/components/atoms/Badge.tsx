@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 export type BadgeTone = 'neutral' | 'good' | 'warning' | 'critical' | 'info' | 'brand';
 

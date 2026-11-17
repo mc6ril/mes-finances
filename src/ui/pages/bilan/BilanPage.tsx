@@ -1,6 +1,6 @@
 import { BarChart3 } from 'lucide-react';
-import EmptyState from '@/ui/design-system/EmptyState';
-import PageHeader from '@/ui/layout/PageHeader';
+import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
+import PageHeader from '@/ui/components/molecules/PageHeader';
 import AnnualTable from './AnnualTable';
 import BilanStats from './BilanStats';
 import IncomeExpenseChart from './IncomeExpenseChart';

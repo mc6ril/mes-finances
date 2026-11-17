@@ -1,6 +1,6 @@
 import { CircleAlert, CircleCheck, Info, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 type NoticeTone = 'error' | 'success' | 'info';
 

@@ -6,18 +6,21 @@ import type { HouseholdMember, MonthKey, Settlement } from '@/core/shared/model'
 import type { SettlementLine } from '@/core/commun/household';
 import { monthEnd } from '@/core/shared/dates';
 import TransactionModal from '@/ui/pages/compte/TransactionModal';
-import { Checkbox, Field, Input } from '@/ui/design-system/Field';
-import MoneyInput from '@/ui/design-system/MoneyInput';
-import Segmented from '@/ui/design-system/Segmented';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
+import Segmented from '@/ui/components/molecules/Segmented';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
-import Amount from '@/ui/design-system/Amount';
-import Badge from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
-import { ConfirmDialog, Modal } from '@/ui/design-system/Modal';
-import Text from '@/ui/design-system/Text';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
+import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Text from '@/ui/components/atoms/Text';
 
 type LinkModalProps = { member: HouseholdMember; month: MonthKey; onClose: () => void };
 

@@ -10,10 +10,12 @@ import type { Draft } from '@/core/usecases/shared';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
-import Button from '@/ui/design-system/Button';
-import { Checkbox, Field, Input } from '@/ui/design-system/Field';
-import { Modal } from '@/ui/design-system/Modal';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Text from '@/ui/components/atoms/Text';
 
 type GoalForm = {
   name: string;

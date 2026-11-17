@@ -1,7 +1,8 @@
 import { ALL, STATUS_FILTERS, TO_CLASSIFY, type TransactionFilters } from '@/core/comptes/filters';
 import { TYPE_LABELS } from '@/core/comptes/csvImport';
 import type { Category } from '@/core/shared/model';
-import { Input, Select } from '@/ui/design-system/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Select } from '@/ui/components/atoms/form/Select';
 
 type LedgerFiltersProps = {
   filters: TransactionFilters;

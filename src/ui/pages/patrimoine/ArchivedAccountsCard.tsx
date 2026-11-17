@@ -1,8 +1,8 @@
 import { ArchiveRestore } from 'lucide-react';
 import type { Account } from '@/core/shared/model';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
+import Text from '@/ui/components/atoms/Text';
 
 type ArchivedAccountsCardProps = { accounts: Account[]; onManage: (account: Account) => void };
 

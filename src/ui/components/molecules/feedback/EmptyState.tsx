@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import Text from './Text';
-import Title from './Title';
+import Text from '@/ui/components/atoms/Text';
+import Title from '@/ui/components/atoms/Title';
 
 type EmptyStateProps = { icon: LucideIcon; title: string; description: string; action?: ReactNode };
 

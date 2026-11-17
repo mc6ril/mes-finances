@@ -8,10 +8,12 @@ import { parseFlexibleDate } from '@/core/shared/dates';
 import { parseEuros } from '@/core/shared/money';
 import type { Account, AccountKind } from '@/core/shared/model';
 import { ACCOUNT_KIND_LABELS } from '@/ui/constants';
-import Button from '@/ui/design-system/Button';
-import { Field, Input, Select } from '@/ui/design-system/Field';
-import { Modal } from '@/ui/design-system/Modal';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Select } from '@/ui/components/atoms/form/Select';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Text from '@/ui/components/atoms/Text';
 
 const centsToText = (cents: number): string =>
   cents === 0 ? '' : (cents / 100).toFixed(2).replace('.', ',');

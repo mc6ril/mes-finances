@@ -3,9 +3,9 @@ import { useState } from 'react';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import type { Category, Transaction } from '@/core/shared/model';
-import Button from '@/ui/design-system/Button';
-import { Select } from '@/ui/design-system/Field';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import { Select } from '@/ui/components/atoms/form/Select';
+import Text from '@/ui/components/atoms/Text';
 import type { CategoryChange } from './useLedger';
 
 type BulkBarProps = {

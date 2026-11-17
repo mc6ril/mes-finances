@@ -1,6 +1,6 @@
 import { Loader2, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md';

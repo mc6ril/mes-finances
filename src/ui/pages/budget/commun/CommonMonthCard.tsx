@@ -12,12 +12,13 @@ import { formatDateFr, formatEuros } from '@/core/shared/format';
 import type { Cents, CommonMonth, MonthKey, SavingsRate } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import Amount from '@/ui/design-system/Amount';
+import Amount from '@/ui/components/atoms/Amount';
 import { cx } from '@/ui/design-system/cx';
-import { Input, Select } from '@/ui/design-system/Field';
-import MoneyInput from '@/ui/design-system/MoneyInput';
-import Text from '@/ui/design-system/Text';
-import Title from '@/ui/design-system/Title';
+import { Input } from '@/ui/components/atoms/form/Input';
+import { Select } from '@/ui/components/atoms/form/Select';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
+import Text from '@/ui/components/atoms/Text';
+import Title from '@/ui/components/atoms/Title';
 import { MEMBER_COLORS, NEUTRAL_MARK } from '@/ui/design-system/tokens';
 
 const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;

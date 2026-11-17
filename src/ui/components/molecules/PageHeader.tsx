@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import Text from '@/ui/design-system/Text';
-import Title from '@/ui/design-system/Title';
+import Text from '@/ui/components/atoms/Text';
+import Title from '@/ui/components/atoms/Title';
 
 type PageHeaderProps = { title: string; description?: string; actions?: ReactNode };
 

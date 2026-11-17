@@ -2,10 +2,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { useChartTheme } from '@/hooks/useTheme';
 import type { AllocationEntry } from '@/core/patrimoine/overview';
 import { formatPercent } from '@/core/shared/format';
-import Amount from '@/ui/design-system/Amount';
-import Card from '@/ui/design-system/Card';
-import Text from '@/ui/design-system/Text';
-import ChartTooltip from '@/ui/charts/ChartTooltip';
+import Amount from '@/ui/components/atoms/Amount';
+import Card from '@/ui/components/molecules/cards/Card';
+import Text from '@/ui/components/atoms/Text';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 
 type AllocationCardProps = { entries: (AllocationEntry & { name: string; color: string })[] };
 

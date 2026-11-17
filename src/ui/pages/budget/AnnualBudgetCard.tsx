@@ -5,13 +5,13 @@ import { useReport } from '@/hooks/useReport';
 import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget/budget';
 import type { Cents, WorkspaceKind } from '@/core/shared/model';
 import { groupLabel } from '@/ui/constants';
-import Amount from '@/ui/design-system/Amount';
-import Badge from '@/ui/design-system/Badge';
-import Card from '@/ui/design-system/Card';
-import EmptyState from '@/ui/design-system/EmptyState';
-import MoneyInput from '@/ui/design-system/MoneyInput';
-import ProgressBar, { type ProgressTone } from '@/ui/design-system/ProgressBar';
-import Text from '@/ui/design-system/Text';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge from '@/ui/components/atoms/Badge';
+import Card from '@/ui/components/molecules/cards/Card';
+import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
+import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
+import Text from '@/ui/components/atoms/Text';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',

@@ -5,10 +5,10 @@ import { INVITATION_VALIDITY_DAYS } from '@/core/partage/model';
 import { useReport } from '@/hooks/useReport';
 import { invitationLink, useWorkspaceInvitation } from '@/hooks/useSharing';
 import { useToast } from '@/hooks/useToast';
-import Button from '@/ui/design-system/Button';
-import { Modal } from '@/ui/design-system/Modal';
-import Notice from '@/ui/design-system/Notice';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
+import Notice from '@/ui/components/molecules/feedback/Notice';
+import Text from '@/ui/components/atoms/Text';
 import { errorMessage } from '@/ui/errorMessages';
 
 type InviteModalProps = { workspace: Workspace; onClose: () => void };

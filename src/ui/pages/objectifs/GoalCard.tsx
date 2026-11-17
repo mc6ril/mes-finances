@@ -24,15 +24,15 @@ import type { Cents, Goal, MonthKey } from '@/core/shared/model';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useChartTheme } from '@/hooks/useTheme';
-import Amount from '@/ui/design-system/Amount';
-import Badge from '@/ui/design-system/Badge';
-import Button from '@/ui/design-system/Button';
-import Card from '@/ui/design-system/Card';
-import ProgressBar from '@/ui/design-system/ProgressBar';
-import Text from '@/ui/design-system/Text';
-import ChartTooltip from '@/ui/charts/ChartTooltip';
-import { axisProps, euroTick } from '@/ui/charts/axis';
-import Legend from '@/ui/charts/Legend';
+import Amount from '@/ui/components/atoms/Amount';
+import Badge from '@/ui/components/atoms/Badge';
+import Button from '@/ui/components/atoms/Button';
+import Card from '@/ui/components/molecules/cards/Card';
+import ProgressBar from '@/ui/components/atoms/ProgressBar';
+import Text from '@/ui/components/atoms/Text';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
+import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
+import Legend from '@/ui/components/molecules/charts/Legend';
 
 const NO_RETURNS = [0];
 

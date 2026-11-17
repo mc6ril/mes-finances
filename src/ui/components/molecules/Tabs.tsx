@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { cx } from './cx';
+import { cx } from '@/ui/design-system/cx';
 
 type TabLink = { id: string; label: string; to: string };
 

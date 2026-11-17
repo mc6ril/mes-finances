@@ -13,11 +13,11 @@ import type { MonthlyChartPoint, YearSummary } from '@/core/budget/annual';
 import { capitalize, monthLabel, monthShortLabel } from '@/core/shared/format';
 import type { WorkspaceKind } from '@/core/shared/model';
 import { useChartTheme } from '@/hooks/useTheme';
-import ChartTooltip from '@/ui/charts/ChartTooltip';
-import { axisProps, euroTick } from '@/ui/charts/axis';
-import Legend from '@/ui/charts/Legend';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
+import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
+import Legend from '@/ui/components/molecules/charts/Legend';
 import { groupLabel } from '@/ui/constants';
-import Card from '@/ui/design-system/Card';
+import Card from '@/ui/components/molecules/cards/Card';
 import { overBudgetOpacity } from './bilanLabels';
 
 type PlaisirBudgetChartProps = {

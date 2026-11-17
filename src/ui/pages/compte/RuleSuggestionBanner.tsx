@@ -2,8 +2,8 @@ import { Sparkles } from 'lucide-react';
 import type { RuleSuggestion } from '@/core/comptes/learnedRules';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import Button from '@/ui/design-system/Button';
-import Text from '@/ui/design-system/Text';
+import Button from '@/ui/components/atoms/Button';
+import Text from '@/ui/components/atoms/Text';
 
 type RuleSuggestionBannerProps = { suggestion: RuleSuggestion; onDone: () => void };
 
