@@ -1,48 +1,22 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { useMemo } from 'react';
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import { patrimoineContext } from '@/core/budget/overview';
-import { GOAL_RATE_HYPOTHESES, goalProgress, projectionScenarios } from '@/core/patrimoine/goals';
-import {
-  goalHistory,
-  goalTracking,
-  plannedAmountAt,
-  plannedContributionsOf,
-} from '@/core/patrimoine/goalTracking';
-import { addMonths, monthEnd, monthKeyOf, monthsBetween } from '@/core/shared/dates';
+import { isOnPlan, MAX_PROJECTION_YEARS } from '@/core/patrimoine/goals';
 import {
   capitalize,
   formatDateFr,
   formatEuros,
   formatRate,
   monthLabel,
-  monthShortLabel,
   rateInput,
 } from '@/core/shared/format';
-import type { Cents, Goal, MonthKey } from '@/core/shared/model';
-import { useDataset } from '@/hooks/useFinance';
-import { usePeriod } from '@/hooks/usePeriod';
-import { useChartTheme } from '@/hooks/useTheme';
+import type { Cents, Goal } from '@/core/shared/model';
+import { useGoalView } from '@/hooks/objectifs/useGoalView';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
 import Card from '@/ui/components/molecules/cards/Card';
 import ProgressBar from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
-import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
-import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
-import Legend from '@/ui/components/molecules/charts/Legend';
-
-const NO_RETURNS = [0];
+import GoalChart from '@/ui/components/organisms/charts/GoalChart';
 
 const rateLabel = (rate: number): string => {
   if (rate === 0) {
@@ -51,15 +25,7 @@ const rateLabel = (rate: number): string => {
   return `Hypothèse ${rateInput(rate)} %/an`;
 };
 
-const ACTUAL = 'Réel';
-const PLAN = 'Trajectoire prévue';
-
-type ChartRow = { month: MonthKey } & Record<string, number | null | string>;
-
 type GapProps = { gap: Cents; planned: Cents; goal: Goal };
-
-/** En dessous de 1 % de la cible, l'écart n'est pas significatif. */
-const isOnPlan = (gap: Cents, goal: Goal): boolean => Math.abs(gap) < goal.targetAmount / 100;
 
 const PlanGap = ({ gap, planned, goal }: GapProps) => (
   <div>
@@ -81,96 +47,47 @@ const PlanGap = ({ gap, planned, goal }: GapProps) => (
   </div>
 );
 
-type PlannedProps = { goal: Goal; current: Cents; total: Cents };
+type PlannedProps = { goal: Goal; withPlanned: { amount: Cents; percent: number } };
 
 /** Apports attendus hors comptes : prévisionnels, affichés à part et jamais comptés comme constitués. */
-const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
-  const withPlanned = current + total;
-  const percentWith = Math.min(100, Math.round((withPlanned / goal.targetAmount) * 1000) / 10);
-  return (
-    <div className="mt-3 rounded-xl border border-dashed border-line-field px-3 py-2.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <Text variant="small">Apports prévus hors comptes · prévisionnel</Text>
-        <Text variant="small">
-          avec eux : <Amount cents={withPlanned} className="font-medium text-ink-strong" /> ·{' '}
-          {formatRate(percentWith / 100)}
-        </Text>
-      </div>
-      <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
-        {(goal.plannedContributions ?? []).map((line) => (
-          <li key={line.id} className="text-xs text-ink-muted">
-            {line.label} <Amount cents={line.amount} rounded className="text-ink-body" />
-          </li>
-        ))}
-      </ul>
+const PlannedContributions = ({ goal, withPlanned }: PlannedProps) => (
+  <div className="mt-3 rounded-xl border border-dashed border-line-field px-3 py-2.5">
+    <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <Text variant="small">Apports prévus hors comptes · prévisionnel</Text>
+      <Text variant="small">
+        avec eux : <Amount cents={withPlanned.amount} className="font-medium text-ink-strong" /> ·{' '}
+        {formatRate(withPlanned.percent / 100)}
+      </Text>
     </div>
-  );
-};
+    <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+      {(goal.plannedContributions ?? []).map((line) => (
+        <li key={line.id} className="text-xs text-ink-muted">
+          {line.label} <Amount cents={line.amount} rounded className="text-ink-body" />
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 type GoalCardProps = { goal: Goal; onEdit: () => void; onDelete: () => void };
 
 const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
-  const dataset = useDataset();
-  const { today } = usePeriod();
-  const { series, ink } = useChartTheme();
-  const context = useMemo(() => patrimoineContext(dataset), [dataset]);
-  const tracking = useMemo(
-    () => goalTracking(goal, dataset.accounts, context, today),
-    [goal, dataset.accounts, context, today],
-  );
-  const history = useMemo(
-    () => goalHistory(goal, dataset.accounts, context, today),
-    [goal, dataset.accounts, context, today],
-  );
-  const current = tracking.actual;
-  const plannedTotal = plannedContributionsOf(goal);
-  const progress = goalProgress(goal, current, today);
-  const month = monthKeyOf(today);
-  // Ce qu'il faut réunir sur les comptes : la cible moins les apports prévus hors comptes.
-  const savingsTarget = Math.max(0, goal.targetAmount - plannedTotal);
-  const rates = goal.withReturns === false ? NO_RETURNS : GOAL_RATE_HYPOTHESES;
-  const scenarios = useMemo(
-    () =>
-      projectionScenarios({
-        current,
-        monthly: goal.monthlyContribution,
-        target: savingsTarget,
-        annualRates: rates,
-        fromMonth: month,
-      }),
-    [current, goal.monthlyContribution, savingsTarget, rates, month],
-  );
+  const {
+    tracking,
+    history,
+    current,
+    plannedTotal,
+    withPlanned,
+    progress,
+    savingsTarget,
+    scenarios,
+    showProjections,
+    chart,
+  } = useGoalView(goal);
   const labelFor = (rate: number): string =>
     goal.withReturns === false
       ? `Projection à ${formatEuros(goal.monthlyContribution)} / mois`
       : rateLabel(rate);
-  const showProjections = goal.monthlyContribution > 0 && progress.remaining > 0;
-  const chart = useMemo(() => {
-    const startMonth = monthKeyOf(goal.startDate) < month ? monthKeyOf(goal.startDate) : month;
-    const targetMonth = monthKeyOf(goal.targetDate);
-    const projected = Math.min(120, Math.max(12, (scenarios[0]?.monthsToTarget ?? 60) + 6));
-    const lastMonth =
-      [targetMonth, showProjections ? addMonths(month, projected) : month].sort().at(-1) ?? month;
-    const actualByMonth = new Map(history.map((point) => [point.month, point.actual]));
-    return Array.from({ length: monthsBetween(startMonth, lastMonth) + 1 }, (_, index): ChartRow => {
-      const key = addMonths(startMonth, index);
-      const fromNow = monthsBetween(month, key);
-      return {
-        month: key,
-        actual: actualByMonth.get(key) ?? null,
-        plan:
-          key <= targetMonth
-            ? plannedAmountAt(goal, key === monthKeyOf(goal.startDate) ? goal.startDate : monthEnd(key))
-            : null,
-        ...Object.fromEntries(
-          scenarios.map((scenario) => [
-            `r${scenario.annualRate}`,
-            showProjections && fromNow >= 0 ? (scenario.series[fromNow] ?? null) : null,
-          ]),
-        ),
-      };
-    });
-  }, [goal, history, month, scenarios, showProjections]);
 
   return (
     <Card
@@ -198,7 +115,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
         className="mt-2 h-2.5"
         label={`Avancement ${goal.name}`}
       />
-      {plannedTotal > 0 && <PlannedContributions goal={goal} current={current} total={plannedTotal} />}
+      {plannedTotal > 0 && <PlannedContributions goal={goal} withPlanned={withPlanned} />}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <PlanGap gap={tracking.gap} planned={tracking.planned} goal={goal} />
@@ -254,76 +171,15 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
       </div>
 
       <div className="mt-5">
-        <Legend
-          items={[
-            ...(history.length > 0 ? [{ label: ACTUAL, color: ink.text }] : []),
-            { label: PLAN, color: ink.axis, dashed: true },
-            ...(showProjections
-              ? scenarios.map((scenario, index) => ({
-                  label: labelFor(scenario.annualRate),
-                  color: series[index] ?? '',
-                }))
-              : []),
-          ]}
+        <GoalChart
+          rows={chart}
+          historyLength={history.length}
+          scenarios={scenarios}
+          showProjections={showProjections}
+          labelFor={labelFor}
+          savingsTarget={savingsTarget}
+          plannedTotal={plannedTotal}
         />
-        <div className="h-56">
-          <ResponsiveContainer>
-            <LineChart data={chart} margin={{ left: 4, right: 8, top: 4 }}>
-              <CartesianGrid stroke={ink.grid} vertical={false} />
-              <XAxis
-                dataKey="month"
-                {...axisProps(ink)}
-                tickFormatter={(value: string) => `${monthShortLabel(value)} ${value.slice(2, 4)}`}
-                minTickGap={30}
-              />
-              <YAxis {...axisProps(ink)} tickFormatter={euroTick} width={64} />
-              <Tooltip content={<ChartTooltip labelFormatter={(value) => capitalize(monthLabel(value))} />} />
-              <ReferenceLine
-                y={savingsTarget}
-                stroke={ink.grid}
-                label={{
-                  value: plannedTotal > 0 ? 'Cible sans les apports prévus' : 'Cible',
-                  fill: ink.axis,
-                  fontSize: 11,
-                  position: 'insideTopLeft',
-                }}
-              />
-              <Line
-                type="linear"
-                dataKey="plan"
-                name={PLAN}
-                stroke={ink.axis}
-                strokeDasharray="5 4"
-                strokeWidth={1.5}
-                dot={false}
-                connectNulls
-              />
-              {showProjections &&
-                scenarios.map((scenario, index) => (
-                  <Line
-                    key={scenario.annualRate}
-                    type="monotone"
-                    dataKey={`r${scenario.annualRate}`}
-                    name={labelFor(scenario.annualRate)}
-                    stroke={series[index]}
-                    strokeWidth={1.5}
-                    strokeOpacity={0.8}
-                    dot={false}
-                  />
-                ))}
-              {history.length > 0 && (
-                <Line
-                  type="monotone"
-                  dataKey="actual"
-                  name={ACTUAL}
-                  stroke={ink.text}
-                  strokeWidth={2.5}
-                  dot={history.length === 1}
-                />
-              )}
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
         {showProjections && (
           <ul className="mt-2 flex flex-wrap gap-2">
             {scenarios.map((scenario) => (
@@ -332,7 +188,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
                   {labelFor(scenario.annualRate)} :{' '}
                   {scenario.reachedMonth
                     ? capitalize(monthLabel(scenario.reachedMonth))
-                    : 'au-delà de 50 ans'}
+                    : `au-delà de ${MAX_PROJECTION_YEARS} ans`}
                 </Badge>
               </li>
             ))}

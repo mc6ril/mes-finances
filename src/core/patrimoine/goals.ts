@@ -1,5 +1,6 @@
 import { addMonths, monthKeyOf, monthsBetween } from '../shared/dates';
 import type { Cents, Goal, IsoDate, MonthKey } from '../shared/model';
+import { plannedContributionsOf } from './goalTracking';
 
 export type GoalProgress = {
   percent: number;
@@ -120,3 +121,34 @@ export const projectionScenarios = ({
   });
 
 export const GOAL_RATE_HYPOTHESES = [0, 0.02, 0.04];
+
+/** Horizon au-delà duquel une projection est déclarée hors d'atteinte, en années. */
+export const MAX_PROJECTION_YEARS = MAX_PROJECTION_MONTHS / 12;
+
+/** Sans rendement : une seule projection, au versement mensuel prévu. */
+const NO_RETURNS = [0];
+
+/** Hypothèses de rendement retenues pour un objectif. */
+export const scenarioRates = (goal: Goal): number[] =>
+  goal.withReturns === false ? NO_RETURNS : GOAL_RATE_HYPOTHESES;
+
+/** En dessous de 1 % de la cible, l'écart avec la trajectoire prévue n'est pas significatif. */
+export const isOnPlan = (gap: Cents, goal: Goal): boolean => Math.abs(gap) < goal.targetAmount / 100;
+
+/** Ce qu'il faut réunir sur les comptes : la cible moins les apports prévus hors comptes. */
+export const savingsTarget = (goal: Goal): Cents =>
+  Math.max(0, goal.targetAmount - plannedContributionsOf(goal));
+
+/** Les projections n'ont de sens qu'avec un versement mensuel et un reste à constituer. */
+export const showsProjections = (goal: Goal, progress: GoalProgress): boolean =>
+  goal.monthlyContribution > 0 && progress.remaining > 0;
+
+/** Avancement en comptant les apports prévus (prévisionnel), au dixième et plafonné à 100 %. */
+export const progressWithPlanned = (
+  goal: Goal,
+  current: Cents,
+  plannedTotal: Cents,
+): { amount: Cents; percent: number } => {
+  const amount = current + plannedTotal;
+  return { amount, percent: Math.min(100, roundOneDecimal((amount / goal.targetAmount) * 100)) };
+};

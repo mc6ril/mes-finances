@@ -62,7 +62,16 @@ export const createEntityUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   };
 
   const saveGoal = async (draft: Draft<Goal>): Promise<Result<void>> => {
-    const { entity, isNew } = withId(draft, newId);
+    const { entity: goal, isNew } = withId(draft, newId);
+    // Un apport ajouté dans le formulaire arrive sans identifiant.
+    const entity: Goal = goal.plannedContributions
+      ? {
+          ...goal,
+          plannedContributions: goal.plannedContributions.map((line) =>
+            line.id ? line : { ...line, id: newId() },
+          ),
+        }
+      : goal;
     return gateway.upsert('goals', [entity], {
       action: isNew ? 'creation' : 'modification',
       entity: 'Objectif',
