@@ -14,6 +14,11 @@ export interface AuthGatewayInterface {
   sendEmailVerification(): Promise<Result<void>>;
   /** Relit le profil auprès du fournisseur (confirmation d'adresse) ; null si personne n'est connecté. */
   reloadUser(): Promise<Result<AuthUser | null>>;
+  /** Applique le code d'un lien reçu par e-mail (confirmation d'adresse, annulation d'un changement d'adresse). */
+  applyActionCode(code: string): Promise<Result<void>>;
+  /** Vérifie un lien de réinitialisation du mot de passe ; renvoie l'adresse du compte concerné. */
+  verifyPasswordResetCode(code: string): Promise<Result<string>>;
+  confirmPasswordReset(code: string, password: string): Promise<Result<void>>;
   /** Redemande l'identité avant une action sensible (mot de passe ou fenêtre Google). */
   reauthenticate(reauthentication: Reauthentication): Promise<Result<void>>;
   /** Supprime définitivement le compte connecté (ré-authentifié juste avant). */

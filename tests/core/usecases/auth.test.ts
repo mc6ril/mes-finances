@@ -331,3 +331,83 @@ describe('suppression du compte', () => {
     expect(calls.map((call) => call.kind)).toEqual(['reauthenticate']);
   });
 });
+
+const authUseCases = (gateway: ReturnType<typeof fakeAuthGateway>['gateway']) =>
+  createAuthUseCases({ gateway, sync: fakeSync(), accountData: noAccountData });
+
+describe('lien de confirmation d’adresse', () => {
+  it('applique le code puis relit l’utilisateur connecté, désormais confirmé', async () => {
+    const { gateway, calls } = fakeAuthGateway({ reloadUser: ok(aUser({ emailVerified: true })) });
+    expect(await authUseCases(gateway).confirmEmail('CODE')).toEqual(ok(aUser({ emailVerified: true })));
+    expect(calls).toEqual([{ kind: 'applyActionCode', code: 'CODE' }, { kind: 'reloadUser' }]);
+  });
+
+  it('renvoie null quand personne n’est connecté dans ce navigateur', async () => {
+    const { gateway } = fakeAuthGateway({ reloadUser: ok(null) });
+    expect(await authUseCases(gateway).confirmEmail('CODE')).toEqual(ok(null));
+  });
+
+  it('reste réussie si la relecture échoue : l’adresse est confirmée', async () => {
+    const { gateway } = fakeAuthGateway({ reloadUser: fail('auth-network') });
+    expect(await authUseCases(gateway).confirmEmail('CODE')).toEqual(ok(null));
+  });
+
+  it('fait remonter un lien expiré sans relire l’utilisateur', async () => {
+    const { gateway, calls } = fakeAuthGateway({ applyActionCode: fail('auth-action-expired') });
+    expect(await authUseCases(gateway).confirmEmail('CODE')).toEqual(fail('auth-action-expired'));
+    expect(calls.map((call) => call.kind)).toEqual(['applyActionCode']);
+  });
+});
+
+describe('lien d’annulation d’un changement d’adresse', () => {
+  it('applique le code puis relit l’utilisateur', async () => {
+    const { gateway, calls } = fakeAuthGateway();
+    expect(await authUseCases(gateway).recoverEmail('CODE')).toEqual(ok(undefined));
+    expect(calls).toEqual([{ kind: 'applyActionCode', code: 'CODE' }, { kind: 'reloadUser' }]);
+  });
+
+  it('fait remonter un lien invalide', async () => {
+    const { gateway } = fakeAuthGateway({ applyActionCode: fail('auth-action-invalid') });
+    expect(await authUseCases(gateway).recoverEmail('CODE')).toEqual(fail('auth-action-invalid'));
+  });
+});
+
+describe('lien de réinitialisation du mot de passe', () => {
+  it('vérifie le code et renvoie l’adresse du compte', async () => {
+    const { gateway, calls } = fakeAuthGateway({ verifyPasswordResetCode: ok('camille@example.com') });
+    expect(await authUseCases(gateway).verifyPasswordReset('CODE')).toEqual(ok('camille@example.com'));
+    expect(calls).toEqual([{ kind: 'verifyPasswordResetCode', code: 'CODE' }]);
+  });
+
+  it('fait remonter un lien expiré', async () => {
+    const { gateway } = fakeAuthGateway({ verifyPasswordResetCode: fail('auth-action-expired') });
+    expect(await authUseCases(gateway).verifyPasswordReset('CODE')).toEqual(fail('auth-action-expired'));
+  });
+
+  it('enregistre le nouveau mot de passe', async () => {
+    const { gateway, calls } = fakeAuthGateway();
+    expect(await authUseCases(gateway).resetPassword('CODE', 'nouveaumdp', 'nouveaumdp')).toEqual(
+      ok(undefined),
+    );
+    expect(calls).toEqual([{ kind: 'confirmPasswordReset', code: 'CODE', password: 'nouveaumdp' }]);
+  });
+
+  it.each([
+    ['trop court', 'court', 'court', 'auth-password-too-short'],
+    ['mal confirmé', 'nouveaumdp', 'nouveaumdq', 'auth-password-mismatch'],
+  ] as const)(
+    'refuse un mot de passe %s sans appeler le fournisseur',
+    async (_, password, confirmation, code) => {
+      const { gateway, calls } = fakeAuthGateway();
+      expect(await authUseCases(gateway).resetPassword('CODE', password, confirmation)).toEqual(fail(code));
+      expect(calls).toEqual([]);
+    },
+  );
+
+  it('fait remonter un lien devenu invalide entre-temps', async () => {
+    const { gateway } = fakeAuthGateway({ confirmPasswordReset: fail('auth-action-invalid') });
+    expect(await authUseCases(gateway).resetPassword('CODE', 'nouveaumdp', 'nouveaumdp')).toEqual(
+      fail('auth-action-invalid'),
+    );
+  });
+});

@@ -10,7 +10,9 @@ export type AuthUser = {
 
 export type SignInForm = { email: string; password: string };
 
-export type SignUpForm = { displayName: string; email: string; password: string; confirmation: string };
+export type NewPasswordForm = { password: string; confirmation: string };
+
+export type SignUpForm = { displayName: string; email: string } & NewPasswordForm;
 
 export type SignUpCredentials = { displayName: string; email: string; password: string };
 

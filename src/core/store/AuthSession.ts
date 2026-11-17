@@ -140,6 +140,18 @@ export class AuthSession implements AuthGatewayInterface {
     return reloaded.ok ? ok(undefined) : reloaded;
   }
 
+  async applyActionCode(code: string): Promise<Result<void>> {
+    return this.#gateway ? this.#gateway.applyActionCode(code) : notConfigured();
+  }
+
+  async verifyPasswordResetCode(code: string): Promise<Result<string>> {
+    return this.#gateway ? this.#gateway.verifyPasswordResetCode(code) : notConfigured();
+  }
+
+  async confirmPasswordReset(code: string, password: string): Promise<Result<void>> {
+    return this.#gateway ? this.#gateway.confirmPasswordReset(code, password) : notConfigured();
+  }
+
   async reauthenticate(reauthentication: Reauthentication): Promise<Result<void>> {
     return this.#gateway ? this.#gateway.reauthenticate(reauthentication) : notConfigured();
   }
