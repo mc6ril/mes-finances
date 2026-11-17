@@ -1,4 +1,4 @@
-import { applyShare, centsToInput, parseEuros, sumCents } from '@/core/shared/money';
+import { applyShare, centsToInput, parseEuros, parsePercent, sumCents } from '@/core/shared/money';
 
 describe('parseEuros', () => {
   it.each([
@@ -77,5 +77,41 @@ describe('centsToInput', () => {
       expect(parseEuros(centsToInput(cents))).toBe(cents);
       expect(parseEuros(centsToInput(cents, { compact: true }))).toBe(cents);
     });
+  });
+});
+
+describe('parsePercent', () => {
+  it('laisse la valeur non renseignée quand le champ est vide', () => {
+    expect(parsePercent('')).toEqual({ ok: true, value: null });
+    expect(parsePercent('   ')).toEqual({ ok: true, value: null });
+  });
+
+  it('lit un pourcentage, avec une virgule, des espaces ou le signe %', () => {
+    expect(parsePercent('50')).toEqual({ ok: true, value: 50 });
+    expect(parsePercent('12,5')).toEqual({ ok: true, value: 12.5 });
+    expect(parsePercent(' 33.3 ')).toEqual({ ok: true, value: 33.3 });
+    expect(parsePercent('12,5 %')).toEqual({ ok: true, value: 12.5 });
+  });
+
+  it('accepte par défaut les bornes 0 et 100', () => {
+    expect(parsePercent('0')).toEqual({ ok: true, value: 0 });
+    expect(parsePercent('100')).toEqual({ ok: true, value: 100 });
+  });
+
+  it('refuse un pourcentage hors de 0 à 100', () => {
+    expect(parsePercent('-1')).toEqual({ ok: false });
+    expect(parsePercent('100,01')).toEqual({ ok: false });
+  });
+
+  it('peut exclure le minimum (une part versée au commun ne peut pas être nulle)', () => {
+    expect(parsePercent('0', { minExclusive: true })).toEqual({ ok: false });
+    expect(parsePercent('0,1', { minExclusive: true })).toEqual({ ok: true, value: 0.1 });
+    expect(parsePercent('100', { minExclusive: true })).toEqual({ ok: true, value: 100 });
+  });
+
+  it('refuse un texte qui n’est pas un nombre', () => {
+    expect(parsePercent('moitié')).toEqual({ ok: false });
+    expect(parsePercent('1,2,3')).toEqual({ ok: false });
+    expect(parsePercent('Infinity')).toEqual({ ok: false });
   });
 });
