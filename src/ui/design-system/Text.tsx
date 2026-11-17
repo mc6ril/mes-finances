@@ -5,12 +5,12 @@ import { MUTED_TEXT } from './textColors';
 type TextVariant = 'body' | 'muted' | 'small' | 'label' | 'strong' | 'caption';
 
 const VARIANTS: Record<TextVariant, string> = {
-  body: 'text-sm text-stone-700 dark:text-stone-200',
+  body: 'text-sm text-ink-body',
   muted: `text-sm ${MUTED_TEXT}`,
   small: `text-xs ${MUTED_TEXT}`,
   label: `text-xs font-medium uppercase tracking-wide ${MUTED_TEXT}`,
-  strong: 'text-sm font-semibold text-stone-900 dark:text-stone-50',
-  caption: `text-[11px] ${MUTED_TEXT}`,
+  strong: 'text-sm font-semibold text-ink-strong',
+  caption: `text-caption ${MUTED_TEXT}`,
 };
 
 type TextProps = {

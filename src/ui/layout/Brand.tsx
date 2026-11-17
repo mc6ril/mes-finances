@@ -9,7 +9,7 @@ const Brand = ({ inverted = false, className }: BrandProps) => (
     <span
       className={cx(
         'flex h-8 w-8 items-center justify-center rounded-lg shadow-xs',
-        inverted ? 'bg-white text-brand-700' : 'bg-brand-600 text-white',
+        inverted ? 'bg-inverse text-accent-hover' : 'bg-accent text-inverse',
       )}
     >
       <svg viewBox="0 0 32 32" className="h-5 w-5" aria-hidden>
@@ -23,7 +23,7 @@ const Brand = ({ inverted = false, className }: BrandProps) => (
         />
       </svg>
     </span>
-    <Text variant="strong" className={cx(inverted && 'text-white dark:text-white')}>
+    <Text variant="strong" className={cx(inverted && 'text-inverse')}>
       Mes finances
     </Text>
   </div>

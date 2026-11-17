@@ -6,16 +6,15 @@ type NoticeTone = 'error' | 'success' | 'info';
 
 const TONES: Record<NoticeTone, { className: string; icon: LucideIcon }> = {
   error: {
-    className: 'bg-red-50 text-red-800 ring-red-200 dark:bg-red-950/60 dark:text-red-200 dark:ring-red-900',
+    className: 'bg-negative-surface text-negative-ink-deep ring-negative-line',
     icon: CircleAlert,
   },
   success: {
-    className:
-      'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-200 dark:ring-emerald-900',
+    className: 'bg-positive-surface text-positive-ink-deep ring-positive-line',
     icon: CircleCheck,
   },
   info: {
-    className: 'bg-sky-50 text-sky-800 ring-sky-200 dark:bg-sky-950/60 dark:text-sky-200 dark:ring-sky-900',
+    className: 'bg-info-surface text-info-ink-deep ring-info-line',
     icon: Info,
   },
 };

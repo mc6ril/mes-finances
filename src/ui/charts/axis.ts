@@ -1,3 +1,4 @@
+import { NEUTRAL_MARK } from '@/ui/design-system/tokens';
 import { formatEurosRounded } from '@/core/shared/format';
 
 const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
@@ -17,11 +18,9 @@ export const axisProps = (ink: { axis: string }) => ({
   axisLine: false,
 });
 
-const OTHER_COLOR = '#a8a29e';
-
 export const sliceColor = (id: string, color: string | undefined): string => {
   if (id === 'autres' || !color) {
-    return OTHER_COLOR;
+    return NEUTRAL_MARK;
   }
   return color;
 };

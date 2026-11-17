@@ -4,7 +4,7 @@ import { cx } from './cx';
 import Text from './Text';
 
 const CONTROL =
-  'h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100';
+  'h-10 w-full rounded-lg border border-line-field bg-surface-field px-3 text-sm text-ink placeholder:text-ink-faint focus:border-accent-bright focus:outline-hidden focus:ring-2 focus:ring-accent-bright/20';
 
 type FieldProps = {
   label: string;
@@ -16,14 +16,14 @@ type FieldProps = {
 
 export const Field = ({ label, children, hint, error, className }: FieldProps) => (
   <label className={cx('flex flex-col gap-1.5', className)}>
-    <span className="text-xs font-medium text-stone-600 dark:text-stone-300">{label}</span>
+    <span className="text-xs font-medium text-ink-secondary">{label}</span>
     {children}
     {hint && !error && (
       <Text variant="caption" as="span">
         {hint}
       </Text>
     )}
-    {error && <span className="text-[11px] text-red-600 dark:text-red-400">{error}</span>}
+    {error && <span className="text-caption text-negative">{error}</span>}
   </label>
 );
 
@@ -102,7 +102,7 @@ export const PasswordInput = ({
         onClick={() => setVisible((current) => !current)}
         aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
         title={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-stone-400 transition-colors hover:text-stone-700 focus:outline-hidden focus-visible:text-brand-600 dark:hover:text-stone-200"
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-lg text-ink-faint transition-colors hover:text-ink-body focus:outline-hidden focus-visible:text-accent"
       >
         <Icon className="h-4 w-4" aria-hidden />
       </button>
@@ -177,13 +177,13 @@ type CheckboxProps = {
 };
 
 export const Checkbox = ({ checked, onChange, label, children }: CheckboxProps) => (
-  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-stone-700 dark:text-stone-200">
+  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-ink-body">
     <input
       type="checkbox"
       checked={checked}
       aria-label={label}
       onChange={(event) => onChange(event.target.checked)}
-      className="h-4 w-4 rounded-sm border-stone-300 text-brand-600 focus:ring-brand-500 dark:border-stone-600 dark:bg-stone-900"
+      className="h-4 w-4 rounded-sm border-line-heavy text-accent focus:ring-accent-bright dark:bg-surface-field"
     />
     {children}
   </label>

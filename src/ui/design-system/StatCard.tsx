@@ -20,12 +20,12 @@ const StatCard = ({
   hint,
   info,
   icon: Icon,
-  accent = 'text-brand-600 bg-brand-50 dark:bg-brand-500/10 dark:text-brand-300',
+  accent = 'text-accent-ink bg-accent-soft',
   className,
 }: StatCardProps) => (
   <div
     className={cx(
-      'relative flex flex-col gap-2 rounded-2xl border border-stone-200/80 bg-white p-4 shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none',
+      'relative flex flex-col gap-2 rounded-2xl border border-line-card bg-surface p-4 shadow-card dark:shadow-none',
       className,
     )}
   >
@@ -40,9 +40,7 @@ const StatCard = ({
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </span>
     </div>
-    <div className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50 sm:text-[22px]">
-      {value}
-    </div>
+    <div className="text-xl font-semibold tracking-tight text-ink-strong sm:text-figure">{value}</div>
     {hint && (
       <Text variant="small" as="div">
         {hint}

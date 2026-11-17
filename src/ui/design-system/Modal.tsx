@@ -17,7 +17,7 @@ const SIZES = { md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
 
 export const Modal = ({ title, onClose, children, footer, size = 'md' }: ModalProps) => (
   <div
-    className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 backdrop-blur-xs sm:items-center sm:p-4"
+    className="fixed inset-0 z-50 flex items-end justify-center bg-scrim backdrop-blur-xs sm:items-center sm:p-4"
     role="dialog"
     aria-modal
     aria-label={title}
@@ -25,19 +25,17 @@ export const Modal = ({ title, onClose, children, footer, size = 'md' }: ModalPr
     <div className="absolute inset-0" onClick={onClose} aria-hidden />
     <div
       className={cx(
-        'relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl animate-in dark:bg-[#1c1c1b] sm:rounded-2xl',
+        'relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-surface shadow-2xl animate-in sm:rounded-2xl',
         SIZES[size],
       )}
     >
-      <header className="flex items-center justify-between gap-3 border-b border-stone-100 px-5 py-4 dark:border-stone-800">
+      <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
         <Title level={2}>{title}</Title>
         <Button variant="ghost" size="sm" icon={X} onClick={onClose} label="Fermer" />
       </header>
       <div className="overflow-y-auto px-5 py-4">{children}</div>
       {footer && (
-        <footer className="flex flex-wrap justify-end gap-2 border-t border-stone-100 px-5 py-3 dark:border-stone-800">
-          {footer}
-        </footer>
+        <footer className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</footer>
       )}
     </div>
   </div>

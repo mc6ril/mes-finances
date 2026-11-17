@@ -27,13 +27,13 @@ export const MonthNoteButton = ({ month, onClick }: NoteButtonProps) => {
       className={cx(
         'relative inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors',
         hasNote
-          ? 'text-amber-600 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-500/10'
-          : 'text-stone-400 hover:bg-stone-100 hover:text-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-200',
+          ? 'text-warning hover:bg-warning-soft'
+          : 'text-ink-faint hover:bg-surface-muted hover:text-ink-body',
       )}
     >
       <StickyNote className="h-[18px] w-[18px]" aria-hidden />
       {hasNote && (
-        <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+        <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-warning-bright" aria-hidden />
       )}
     </button>
   );
@@ -62,7 +62,7 @@ const MonthNote = ({ month, editing, onEditingChange }: MonthNoteProps) => {
 
   if (editing) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-500/20 dark:bg-amber-500/5">
+      <div className="rounded-xl border border-warning-line bg-warning-soft-faint p-3">
         <Textarea
           value={draft}
           onChange={setDraft}
@@ -92,9 +92,9 @@ const MonthNote = ({ month, editing, onEditingChange }: MonthNoteProps) => {
       type="button"
       onClick={open}
       title="Modifier la note"
-      className="group -mt-2 flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-stone-600 transition-colors hover:bg-amber-50 dark:text-stone-300 dark:hover:bg-amber-500/5"
+      className="group -mt-2 flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-ink-secondary transition-colors hover:bg-warning-soft-hover"
     >
-      <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" aria-hidden />
+      <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-bright" aria-hidden />
       <span className="line-clamp-2 whitespace-pre-wrap">{saved}</span>
     </button>
   );
