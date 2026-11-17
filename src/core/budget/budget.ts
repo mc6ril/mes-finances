@@ -11,7 +11,6 @@ import type {
   Transaction,
   YearBudget,
 } from '../shared/model';
-import { ratio } from '../shared/money';
 
 export type CategoryActual = { actual: Cents; upcoming: Cents };
 
@@ -82,17 +81,35 @@ export type BudgetLine = {
   status: LineStatus;
 };
 
-const ATTENTION_THRESHOLD = 0.8;
+/** Seuil d'alerte unique : une dépense passe « presque atteinte » à 80 % de son budget. */
+export const SPENDING_ALERT_THRESHOLD = 0.8;
 
-const expenseStatus = (available: Cents, actual: Cents): LineStatus => {
-  if (actual > available) {
+/**
+ * Part du budget utilisée (barres de progression). Une dépense sans budget compte comme un budget
+ * entièrement utilisé : elle est déjà un dépassement, la barre ne doit pas rester vide.
+ */
+export const budgetUsage = (actual: Cents, budget: Cents): number => {
+  if (budget <= 0) {
+    return actual > 0 ? 1 : 0;
+  }
+  return actual / budget;
+};
+
+/** État d'une dépense face à son budget : dans le budget, presque atteint (80 %) ou dépassé. */
+export const spendingStatus = (actual: Cents, budget: Cents): LineStatus => {
+  if (actual > budget) {
     return 'depasse';
   }
-  if (available > 0 && actual < available && actual / available >= ATTENTION_THRESHOLD) {
+  if (budget > 0 && actual < budget && actual / budget >= SPENDING_ALERT_THRESHOLD) {
     return 'attention';
   }
   return 'ok';
 };
+
+const expenseStatus = (available: Cents, actual: Cents): LineStatus => spendingStatus(actual, available);
+
+/** Seules les dépenses ont une limite : revenus et épargne n'ont ni alerte ni dépassement. */
+export const hasSpendingLimit = (group: CategoryGroup): boolean => group === 'fixe' || group === 'plaisir';
 
 const incomeStatus = (planned: Cents, actual: Cents): LineStatus => {
   if (actual >= planned) {
@@ -151,7 +168,7 @@ export const budgetLines = ({
         actual,
         upcoming,
         gap: lineGap(isIncome, available, actual),
-        progress: ratio(actual, available),
+        progress: budgetUsage(actual, available),
         previousActual: previousActuals[category.id]?.actual ?? 0,
         status: statusOf(available, actual),
       };
@@ -311,7 +328,7 @@ export const annualLines = ({
         actual,
         upcoming,
         remaining: planned - actual,
-        progress: ratio(actual, planned),
+        progress: budgetUsage(actual, planned),
         monthlyProvision: Math.round(planned / 12),
         status: expenseStatus(planned, actual),
       };
@@ -381,6 +398,44 @@ export const groupTotal = (
   group: CategoryGroup,
   key: 'available' | 'actual' | 'upcoming',
 ): Cents => lines.filter((line) => line.group === group).reduce((total, line) => total + line[key], 0);
+
+export type MonthBudgetSummary = {
+  income: Cents;
+  plannedIncome: Cents;
+  /** Charges fixes + dépenses personnelles + dépenses des budgets annuels du mois. */
+  spending: Cents;
+  /** Prévu des charges fixes et dépenses personnelles + provision des budgets annuels. */
+  plannedSpending: Cents;
+  saving: Cents;
+  plannedSaving: Cents;
+  balance: Cents;
+  plannedBalance: Cents;
+};
+
+/** Résumé du mois (espace perso) : revenus, dépenses et épargne, en réel et en prévu, et le solde. */
+export const monthBudgetSummary = (
+  lines: BudgetLine[],
+  provision: Cents,
+  annualSpent: Cents,
+): MonthBudgetSummary => {
+  const income = groupTotal(lines, 'revenu', 'actual');
+  const plannedIncome = groupTotal(lines, 'revenu', 'available');
+  const spending = groupTotal(lines, 'fixe', 'actual') + groupTotal(lines, 'plaisir', 'actual') + annualSpent;
+  const plannedSpending =
+    provision + groupTotal(lines, 'fixe', 'available') + groupTotal(lines, 'plaisir', 'available');
+  const saving = groupTotal(lines, 'epargne', 'actual');
+  const plannedSaving = groupTotal(lines, 'epargne', 'available');
+  return {
+    income,
+    plannedIncome,
+    spending,
+    plannedSpending,
+    saving,
+    plannedSaving,
+    balance: income - spending - saving,
+    plannedBalance: plannedIncome - plannedSpending - plannedSaving,
+  };
+};
 
 export const annualActualInMonth = (
   transactions: Transaction[],

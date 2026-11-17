@@ -2,7 +2,7 @@ import { CalendarClock } from 'lucide-react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { yearBudgetOf, yearBudgetOriginOf } from '@/core/budget/overview';
 import { useReport } from '@/hooks/useReport';
-import { annualLines, type AnnualLine, type LineStatus } from '@/core/budget/budget';
+import { annualLines, type AnnualLine } from '@/core/budget/budget';
 import type { Cents, WorkspaceKind } from '@/core/shared/model';
 import { groupLabel } from '@/ui/constants';
 import Amount from '@/ui/components/atoms/Amount';
@@ -10,19 +10,9 @@ import Badge from '@/ui/components/atoms/Badge';
 import Card from '@/ui/components/molecules/cards/Card';
 import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
-import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
+import ProgressBar from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
-
-const STATUS_TONE: Record<LineStatus, ProgressTone> = {
-  ok: 'good',
-  attention: 'warning',
-  depasse: 'critical',
-};
-const STATUS_BADGE: Record<LineStatus, { tone: 'good' | 'warning' | 'critical'; label: string } | null> = {
-  ok: null,
-  attention: { tone: 'warning', label: 'Presque atteint' },
-  depasse: { tone: 'critical', label: 'Dépassé' },
-};
+import { STATUS_BADGE, STATUS_TONE } from './budgetStatus';
 
 type RemainingProps = { line: AnnualLine };
 
