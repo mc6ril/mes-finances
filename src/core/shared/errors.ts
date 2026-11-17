@@ -31,6 +31,8 @@ export const APP_ERROR_CODES = [
   'invitation-own-workspace',
   'invalid-date',
   'invalid-amount',
+  'goal-incomplete',
+  'goal-start-after-target',
   'data-not-loaded',
   'auth-not-configured',
   'auth-name-empty',

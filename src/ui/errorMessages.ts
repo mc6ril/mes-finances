@@ -47,6 +47,9 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
     'Cet espace a été modifié avec une version plus récente de l’application. Recharge la page pour la mettre à jour.',
   'invalid-date': () => 'Date illisible',
   'invalid-amount': () => 'Montant illisible',
+  'goal-incomplete': () =>
+    'Renseigne un nom, un montant cible, une date cible, un départ et des montants valides.',
+  'goal-start-after-target': () => 'La date de départ doit précéder la date cible.',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
   'auth-not-configured': () =>
     'La connexion n’est pas configurée : renseigne les variables VITE_FIREBASE_* (voir .env.example).',
