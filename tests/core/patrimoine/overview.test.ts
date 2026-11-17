@@ -1,4 +1,10 @@
-import { evolutionPoints, monthsForRange, periodChange } from '@/core/patrimoine/overview';
+import {
+  allocation,
+  ALLOCATION_GROUPS,
+  evolutionPoints,
+  monthsForRange,
+  periodChange,
+} from '@/core/patrimoine/overview';
 
 describe('mois affichés selon la période', () => {
   it('prend le mois courant et les N mois précédents', () => {
@@ -34,5 +40,32 @@ describe('points de la courbe d’évolution', () => {
   it('ne voit aucune évolution sur un seul point ou sans point', () => {
     expect(periodChange(evolutionPoints(series.slice(0, 1)))).toEqual({ patrimoine: 0, verse: 0 });
     expect(periodChange([])).toEqual({ patrimoine: 0, verse: 0 });
+  });
+});
+
+describe('répartition du patrimoine', () => {
+  it('suit l’ordre courant, sécurisé, investissement', () => {
+    expect(ALLOCATION_GROUPS).toEqual(['courant', 'securise', 'investissement']);
+  });
+
+  it('donne la part arrondie de chaque groupe', () => {
+    expect(allocation({ courant: 100000, securise: 200000, investissement: 0 })).toEqual([
+      { group: 'courant', value: 100000, percent: 33 },
+      { group: 'securise', value: 200000, percent: 67 },
+    ]);
+  });
+
+  it('écarte les groupes vides ou négatifs', () => {
+    const groups = allocation({ courant: -5000, securise: 0, investissement: 10000 }).map(
+      (entry) => entry.group,
+    );
+    expect(groups).toEqual(['investissement']);
+  });
+
+  it('ne divise jamais par zéro (total nul ou négatif ramené à 1 centime, comme avant)', () => {
+    expect(allocation({ courant: 0, securise: 0, investissement: 0 })).toEqual([]);
+    expect(allocation({ courant: -100, securise: 0, investissement: 100 })).toEqual([
+      { group: 'investissement', value: 100, percent: 10000 },
+    ]);
   });
 });

@@ -1,5 +1,5 @@
 import { lastMonths, parseMonthKey, toMonthKey } from '../shared/dates';
-import type { Cents, MonthKey } from '../shared/model';
+import type { AccountGroup, Cents, MonthKey } from '../shared/model';
 
 /** Période du graphique d'évolution : N derniers mois, ou depuis janvier ('annee'). */
 export type PatrimoineRange = '1' | '3' | '6' | '12' | 'annee';
@@ -34,4 +34,22 @@ export const periodChange = (points: EvolutionPoint[]): { patrimoine: Cents; ver
     patrimoine: (last?.patrimoine ?? 0) - (first?.patrimoine ?? 0),
     verse: (last?.verse ?? 0) - (first?.verse ?? 0),
   };
+};
+
+/** Ordre des groupes dans la répartition (et donc de leurs couleurs). */
+export const ALLOCATION_GROUPS: readonly AccountGroup[] = ['courant', 'securise', 'investissement'];
+
+export type AllocationEntry = { group: AccountGroup; value: Cents; percent: number };
+
+/** Répartition du patrimoine personnel (hors commun) : groupes positifs et leur part arrondie. */
+export const allocation = (byGroup: Record<AccountGroup, Cents>): AllocationEntry[] => {
+  const total = Math.max(
+    1,
+    ALLOCATION_GROUPS.reduce((sum, group) => sum + byGroup[group], 0),
+  );
+  return ALLOCATION_GROUPS.map((group) => ({
+    group,
+    value: byGroup[group],
+    percent: Math.round((byGroup[group] / total) * 100),
+  })).filter((entry) => entry.value > 0);
 };
