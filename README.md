@@ -119,6 +119,7 @@ src/
   ui/
     design-system/      Text, Title, Button, Card, Field, Modal…
     layout/ charts/ pages/
+    routing/            Pages chargées à la demande, préchargement, reprise après redéploiement
 tests/                  Tests Vitest (core + adapters)
 ```
 

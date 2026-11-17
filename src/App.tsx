@@ -1,11 +1,11 @@
-import { HashRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import type { Container } from '@/app/container';
 import FinanceProvider from '@/ui/providers/FinanceProvider';
 import PeriodProvider from '@/ui/providers/PeriodProvider';
 import BackupHistoryProvider from '@/ui/providers/BackupHistoryProvider';
 import ToastProvider from '@/ui/providers/ToastProvider';
-import { Suspense, useEffect, type ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import { useAuthState } from '@/hooks/useAuth';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { INVITATION_PATH, usePendingInvitation } from '@/hooks/useSharing';
@@ -21,61 +21,9 @@ import SignInPage from '@/ui/pages/auth/SignInPage';
 import SignUpPage from '@/ui/pages/auth/SignUpPage';
 import VerifyEmailPage from '@/ui/pages/auth/VerifyEmailPage';
 import RememberInvitation from '@/ui/pages/invitation/RememberInvitation';
-import { lazyPage } from '@/ui/lazyPage';
-
-// Pages de l'application chargées à la demande : l'écran de connexion n'embarque ni elles ni recharts.
-const pages = {
-  dashboard: lazyPage(() => import('@/ui/pages/dashboard/DashboardPage')),
-  budget: lazyPage(() => import('@/ui/pages/budget/BudgetPage')),
-  compte: lazyPage(() => import('@/ui/pages/compte/ComptePage')),
-  patrimoine: lazyPage(() => import('@/ui/pages/patrimoine/PatrimoinePage')),
-  bilan: lazyPage(() => import('@/ui/pages/bilan/BilanPage')),
-  objectifs: lazyPage(() => import('@/ui/pages/objectifs/ObjectifsPage')),
-  parametres: lazyPage(() => import('@/ui/pages/parametres/ParametresPage')),
-  invitation: lazyPage(() => import('@/ui/pages/invitation/InvitationPage')),
-};
-
-const DashboardPage = pages.dashboard.Page;
-const BudgetPage = pages.budget.Page;
-const ComptePage = pages.compte.Page;
-const PatrimoinePage = pages.patrimoine.Page;
-const BilanPage = pages.bilan.Page;
-const ObjectifsPage = pages.objectifs.Page;
-const ParametresPage = pages.parametres.Page;
-const InvitationPage = pages.invitation.Page;
-
-/** Page de l'adresse ouverte (« /parametres/xxx » compris), le tableau de bord sinon. */
-const pageForPath = (pathname: string) => {
-  const segment = pathname.split('/')[1] ?? '';
-  if (`/${segment}` === INVITATION_PATH) {
-    return pages.invitation;
-  }
-  return Object.hasOwn(pages, segment) ? pages[segment as keyof typeof pages] : pages.dashboard;
-};
-
-/**
- * Télécharge la page de l'adresse pendant l'ouverture des données, puis toutes les autres une
- * fois l'application affichée : la navigation reste immédiate, hors ligne compris.
- */
-const usePreloadPages = (ready: boolean) => {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    void pageForPath(pathname).preload();
-  }, [pathname]);
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
-    const timer = window.setTimeout(() => Object.values(pages).forEach((page) => void page.preload()), 1500);
-    return () => window.clearTimeout(timer);
-  }, [ready]);
-};
-
-const PageLoader = () => (
-  <div className="flex justify-center py-16">
-    <Loader2 className="h-6 w-6 animate-spin text-brand-600" aria-label="Chargement" />
-  </div>
-);
+import PageLoader from '@/ui/layout/PageLoader';
+import { pages } from '@/ui/routing/pages';
+import { usePreloadPages } from '@/hooks/usePreloadPages';
 
 const FullScreenLoader = () => (
   <div className="flex min-h-screen items-center justify-center">
@@ -133,15 +81,15 @@ const Gate = () => {
       <AppShell>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/budget" element={<BudgetPage />} />
-            <Route path="/compte" element={<ComptePage />} />
-            <Route path="/patrimoine" element={<PatrimoinePage />} />
-            <Route path="/bilan" element={<BilanPage />} />
-            <Route path="/objectifs" element={<ObjectifsPage />} />
-            <Route path="/parametres" element={<ParametresPage />} />
-            <Route path="/parametres/:tab" element={<ParametresPage />} />
-            <Route path={`${INVITATION_PATH}/:token`} element={<InvitationPage />} />
+            <Route path="/" element={<pages.dashboard.Page />} />
+            <Route path="/budget" element={<pages.budget.Page />} />
+            <Route path="/compte" element={<pages.compte.Page />} />
+            <Route path="/patrimoine" element={<pages.patrimoine.Page />} />
+            <Route path="/bilan" element={<pages.bilan.Page />} />
+            <Route path="/objectifs" element={<pages.objectifs.Page />} />
+            <Route path="/parametres" element={<pages.parametres.Page />} />
+            <Route path="/parametres/:tab" element={<pages.parametres.Page />} />
+            <Route path={`${INVITATION_PATH}/:token`} element={<pages.invitation.Page />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
