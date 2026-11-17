@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import { overBudgetLines, type BudgetLine } from '@/core/budget/budget';
 import { toClassify } from '@/core/comptes/filters';
 import type { Dataset } from '@/core/shared/model';
-import { toClassifyPath } from '@/ui/layout/navigation';
+import { toClassifyPath } from '@/ui/routing/navigation';
 import { usePeriod } from '@/hooks/usePeriod';
 
 type ItemProps = { to: string; icon: LucideIcon; tone: string; children: string; onClick?: () => void };

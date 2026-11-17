@@ -9,7 +9,7 @@ import Button from '@/ui/components/atoms/Button';
 import Card from '@/ui/components/molecules/cards/Card';
 import { Input } from '@/ui/components/atoms/form/Input';
 import Text from '@/ui/components/atoms/Text';
-import { settingsPath } from '@/ui/layout/navigation';
+import { settingsPath } from '@/ui/routing/navigation';
 import { cx } from '@/ui/design-system/cx';
 
 const LINK = 'shrink-0 text-sm font-medium text-accent-ink hover:underline';

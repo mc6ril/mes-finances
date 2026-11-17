@@ -14,7 +14,7 @@ import Button from '@/ui/components/atoms/Button';
 import Text from '@/ui/components/atoms/Text';
 import Title from '@/ui/components/atoms/Title';
 import { errorMessage } from '@/ui/errorMessages';
-import AppShell from '@/ui/layout/AppShell';
+import AppShell from '@/ui/components/templates/AppShell';
 import { AUTH_PATHS } from '@/ui/routing/authPaths';
 import ForgotPasswordPage from '@/ui/pages/auth/ForgotPasswordPage';
 import SignInPage from '@/ui/pages/auth/SignInPage';

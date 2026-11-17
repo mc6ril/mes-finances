@@ -14,10 +14,10 @@ import Button from '@/ui/components/atoms/Button';
 import { Select } from '@/ui/components/atoms/form/Select';
 import Text from '@/ui/components/atoms/Text';
 import { cx } from '@/ui/design-system/cx';
-import AccountMenu from './AccountMenu';
+import AccountMenu from '@/ui/components/organisms/layout/AccountMenu';
 import Brand from '@/ui/components/atoms/Brand';
-import { NAV_ITEMS, navItemOf } from './navigation';
-import PeriodPicker from './PeriodPicker';
+import { NAV_ITEMS, navItemOf } from '@/ui/routing/navigation';
+import PeriodPicker from '@/ui/components/organisms/layout/PeriodPicker';
 
 type NavListProps = { onNavigate?: () => void };
 

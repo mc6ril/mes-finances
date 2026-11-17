@@ -8,7 +8,7 @@ import { Field } from '@/ui/components/molecules/form/Field';
 import { Input } from '@/ui/components/atoms/form/Input';
 import { PasswordInput } from '@/ui/components/atoms/form/PasswordInput';
 import Notice from '@/ui/components/molecules/feedback/Notice';
-import AuthLayout from './AuthLayout';
+import AuthLayout from '@/ui/components/templates/AuthLayout';
 import { AUTH_PATHS, emailFrom } from '@/ui/routing/authPaths';
 import { AuthLink } from '@/ui/components/molecules/auth/AuthLink';
 import { Divider } from '@/ui/components/atoms/Divider';
