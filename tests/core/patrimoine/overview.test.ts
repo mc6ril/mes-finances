@@ -4,7 +4,12 @@ import {
   evolutionPoints,
   monthsForRange,
   periodChange,
+  positionsById,
+  savingsComparison,
+  splitAccounts,
 } from '@/core/patrimoine/overview';
+import type { AccountPosition } from '@/core/patrimoine/patrimoine';
+import { anAccount } from '../fixtures';
 
 describe('mois affichés selon la période', () => {
   it('prend le mois courant et les N mois précédents', () => {
@@ -66,6 +71,65 @@ describe('répartition du patrimoine', () => {
     expect(allocation({ courant: 0, securise: 0, investissement: 0 })).toEqual([]);
     expect(allocation({ courant: -100, securise: 0, investissement: 100 })).toEqual([
       { group: 'investissement', value: 100, percent: 10000 },
+    ]);
+  });
+});
+
+describe('classement des comptes', () => {
+  const courant = anAccount({ id: 'courant' });
+  const livret = anAccount({ id: 'livret', kind: 'livret', group: 'securise' });
+  const av = anAccount({ id: 'av', kind: 'assurance-vie', group: 'investissement' });
+  const immo = anAccount({ id: 'immo', kind: 'commun-immo', group: 'securise', isJoint: true });
+  const oldLivret = anAccount({ id: 'old', kind: 'livret', group: 'securise', archived: true });
+  const oldCourant = anAccount({ id: 'old-courant', archived: true });
+  const ids = (accounts: { id: string }[]) => accounts.map((account) => account.id);
+
+  const split = splitAccounts([courant, livret, oldLivret, immo, av, oldCourant]);
+
+  it('garde les comptes actifs dans leur ordre', () => {
+    expect(ids(split.active)).toEqual(['courant', 'livret', 'immo', 'av']);
+  });
+
+  it('sépare l’épargne personnelle suivie des comptes communs', () => {
+    expect(ids(split.savings)).toEqual(['livret', 'av']);
+    expect(ids(split.joint)).toEqual(['immo']);
+  });
+
+  it('ne liste en archivés que l’épargne, pas les comptes courants', () => {
+    expect(ids(split.archivedSavings)).toEqual(['old']);
+  });
+});
+
+describe('comparaison des placements', () => {
+  const position = (accountId: string, value: number, performance: number): AccountPosition => ({
+    accountId,
+    contributions: value - performance,
+    deposits: 0,
+    withdrawals: 0,
+    interests: 0,
+    fees: 0,
+    value,
+    performance,
+    marketGain: 0,
+    valuationDate: null,
+    isEstimate: false,
+  });
+
+  it('indexe les positions par compte', () => {
+    const positions = positionsById([position('livret', 1000, 10)]);
+    expect(positions.get('livret')?.value).toBe(1000);
+    expect(positions.get('autre')).toBeUndefined();
+  });
+
+  it('donne la valeur et le gain de chaque compte, à zéro sans position', () => {
+    const accounts = [
+      anAccount({ id: 'livret', name: 'Livret A', group: 'securise' }),
+      anAccount({ id: 'pea', name: 'PEA', group: 'investissement' }),
+    ];
+    const positions = positionsById([position('livret', 500000, 12000)]);
+    expect(savingsComparison(accounts, positions)).toEqual([
+      { accountId: 'livret', name: 'Livret A', value: 500000, gain: 12000 },
+      { accountId: 'pea', name: 'PEA', value: 0, gain: 0 },
     ]);
   });
 });

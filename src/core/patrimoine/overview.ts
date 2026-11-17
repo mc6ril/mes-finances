@@ -1,5 +1,7 @@
+import { isSavingsAccount } from '../comptes/accounts';
 import { lastMonths, parseMonthKey, toMonthKey } from '../shared/dates';
-import type { AccountGroup, Cents, MonthKey } from '../shared/model';
+import type { Account, AccountGroup, Cents, MonthKey } from '../shared/model';
+import type { AccountPosition } from './patrimoine';
 
 /** Période du graphique d'évolution : N derniers mois, ou depuis janvier ('annee'). */
 export type PatrimoineRange = '1' | '3' | '6' | '12' | 'annee';
@@ -53,3 +55,41 @@ export const allocation = (byGroup: Record<AccountGroup, Cents>): AllocationEntr
     percent: Math.round((byGroup[group] / total) * 100),
   })).filter((entry) => entry.value > 0);
 };
+
+export type AccountsSplit = {
+  /** Comptes suivis, dans leur ordre (l'index donne la couleur). */
+  active: Account[];
+  /** Épargne et placements personnels suivis. */
+  savings: Account[];
+  /** Comptes communs suivis, affichés à part du patrimoine personnel. */
+  joint: Account[];
+  /** Épargne archivée : reste dans l'historique, réactivable. */
+  archivedSavings: Account[];
+};
+
+export const splitAccounts = (accounts: Account[]): AccountsSplit => {
+  const active = accounts.filter((account) => !account.archived);
+  return {
+    active,
+    savings: active.filter((account) => isSavingsAccount(account) && !account.isJoint),
+    joint: active.filter((account) => account.isJoint),
+    archivedSavings: accounts.filter((account) => account.archived && isSavingsAccount(account)),
+  };
+};
+
+export const positionsById = (positions: AccountPosition[]): ReadonlyMap<string, AccountPosition> =>
+  new Map(positions.map((position) => [position.accountId, position]));
+
+export type ComparisonEntry = { accountId: string; name: string; value: Cents; gain: Cents };
+
+/** Valeur et performance constatée de chaque compte (zéro s'il n'a pas de position). */
+export const savingsComparison = (
+  accounts: Account[],
+  positions: ReadonlyMap<string, AccountPosition>,
+): ComparisonEntry[] =>
+  accounts.map((account) => ({
+    accountId: account.id,
+    name: account.name,
+    value: positions.get(account.id)?.value ?? 0,
+    gain: positions.get(account.id)?.performance ?? 0,
+  }));
