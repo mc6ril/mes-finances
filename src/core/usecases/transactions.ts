@@ -1,9 +1,8 @@
 import { ok, type Result } from '../shared/errors';
 import { formatEuros } from '../shared/format';
 import type { Transaction } from '../shared/model';
+import type { TransactionDraft } from '../comptes/transactionDraft';
 import { agreed, loadedDataset, plural, type FinanceDeps } from './shared';
-
-export type TransactionDraft = Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>;
 
 export const createTransactionUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const saveTransaction = async (
