@@ -93,3 +93,17 @@ export const savingsComparison = (
     value: positions.get(account.id)?.value ?? 0,
     gain: positions.get(account.id)?.performance ?? 0,
   }));
+
+export type ShareInput = { ok: true; value: number | null } | { ok: false };
+
+/** Quote-part saisie pour un compte commun : vide = non renseignée, sinon un pourcentage de 0 à 100. */
+export const parseSharePercent = (text: string): ShareInput => {
+  if (text.trim() === '') {
+    return { ok: true, value: null };
+  }
+  const value = Number(text.replaceAll(',', '.'));
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    return { ok: false };
+  }
+  return { ok: true, value };
+};
