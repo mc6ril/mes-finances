@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { parseEuros } from '@/core/shared/money';
+import { centsToInput, parseEuros } from '@/core/shared/money';
 import type { Cents } from '@/core/shared/model';
 import { cx } from '@/ui/design-system/cx';
 
@@ -11,12 +11,8 @@ type MoneyInputProps = {
   allowNegative?: boolean;
 };
 
-const toText = (cents: Cents): string => {
-  if (cents === 0) {
-    return '';
-  }
-  return (cents / 100).toFixed(2).replace('.', ',').replace(',00', '');
-};
+/** Montant affiché dans le champ : vide pour zéro, sans « ,00 » pour un montant rond. */
+const toText = (cents: Cents): string => centsToInput(cents, { compact: true, blankZero: true });
 
 const MoneyInput = ({ cents, onCommit, label, className, allowNegative = false }: MoneyInputProps) => {
   const [text, setText] = useState(toText(cents));

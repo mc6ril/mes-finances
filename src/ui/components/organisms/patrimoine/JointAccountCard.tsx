@@ -2,7 +2,7 @@ import { Users } from 'lucide-react';
 import { useState } from 'react';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import { parseSharePercent } from '@/core/patrimoine/overview';
+import { parsePercent } from '@/core/shared/money';
 import { personalValueOf, type AccountPosition } from '@/core/patrimoine/patrimoine';
 import type { Account } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
@@ -22,7 +22,7 @@ const JointAccountCard = ({ account, position }: JointAccountCardProps) => {
   );
   const [error, setError] = useState<string | null>(null);
   const commit = () => {
-    const parsed = parseSharePercent(share);
+    const parsed = parsePercent(share);
     if (!parsed.ok) {
       setError('Entre 0 et 100 %');
       return;

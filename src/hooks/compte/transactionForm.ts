@@ -1,4 +1,5 @@
-import { parseEuros } from '@/core/shared/money';
+import { isInternalMoveType } from '@/core/comptes/balances';
+import { centsToInput, parseEuros } from '@/core/shared/money';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import type {
   Category,
@@ -39,15 +40,10 @@ export const GROUPS_BY_TYPE: Record<TransactionType, CategoryGroup[]> = {
 export const categoriesForType = (categories: Category[], type: TransactionType): Category[] =>
   categories.filter((category) => !category.archived && GROUPS_BY_TYPE[type].includes(category.group));
 
-export const needsCounterpart = (type: TransactionType): boolean =>
-  type === 'virement' || type === 'investissement';
-
-const amountText = (cents: number): string => (Math.abs(cents) / 100).toFixed(2).replace('.', ',');
-
 export const formFromTransaction = (transaction: Transaction): TransactionFormState => ({
   date: transaction.date,
   label: transaction.label,
-  amount: amountText(transaction.amount),
+  amount: centsToInput(Math.abs(transaction.amount)),
   type: transaction.type,
   isRefund: transaction.type === 'depense' && transaction.amount > 0,
   categoryId: transaction.categoryId ?? '',
@@ -143,7 +139,7 @@ export const validateForm = (
     errors.amount = 'Montant invalide (ex. 45,90)';
   }
   if (
-    needsCounterpart(form.type) &&
+    isInternalMoveType(form.type) &&
     (form.counterpartAccountId === '' || form.counterpartAccountId === form.accountId)
   ) {
     errors.counterpartAccountId = 'Choisis un compte de destination différent';
@@ -160,7 +156,7 @@ export const validateForm = (
       type: form.type,
       categoryId: form.categoryId || null,
       accountId: form.accountId,
-      counterpartAccountId: needsCounterpart(form.type) ? form.counterpartAccountId : null,
+      counterpartAccountId: isInternalMoveType(form.type) ? form.counterpartAccountId : null,
       paymentMethod: form.paymentMethod,
       status: form.status,
       ...(form.status === 'realise' && form.verified ? { verified: true } : {}),

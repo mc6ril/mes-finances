@@ -1,3 +1,4 @@
+import { isSavingsAccount } from '../comptes/accounts';
 import { isCounted } from '../comptes/balances';
 import { monthKeyOf, monthsOfYear } from '../shared/dates';
 import type {
@@ -506,7 +507,7 @@ export const savingsAccountOfCategory = (
     return null;
   }
   const named = (name: string) =>
-    accounts.find((account) => account.group !== 'courant' && comparable(account.name) === comparable(name));
+    accounts.find((account) => isSavingsAccount(account) && comparable(account.name) === comparable(name));
   const existing = (previous ? named(previous.name) : undefined) ?? named(category.name);
   if (!existing || (existing.name === category.name && existing.archived === category.archived)) {
     return null;

@@ -82,12 +82,18 @@ export const savingsPayerOf = (household: Household | null): string | null => {
 
 export const membersOf = (dataset: Dataset): HouseholdMember[] => dataset.settings.household?.members ?? [];
 
-/** Prénom du membre, ou « Personne 1 / 2 » tant qu'il n'est pas renseigné. */
-export const memberLabel = (dataset: Dataset, memberId: string): string => {
-  const members = membersOf(dataset);
+/** Nom par défaut d'un membre dont le prénom n'est pas renseigné : « Membre 1 », « Membre 2 ». */
+export const defaultMemberName = (index: number): string => `Membre ${index + 1}`;
+
+/** Prénom du membre, ou « Membre 1 / 2 » tant qu'il n'est pas renseigné. */
+export const memberName = (members: HouseholdMember[], memberId: string): string => {
   const index = members.findIndex((member) => member.id === memberId);
-  return members[index]?.name.trim() || `Personne ${index + 1}`;
+  return members[index]?.name.trim() || defaultMemberName(index);
 };
+
+/** Nom affiché d'un membre du foyer de l'espace. */
+export const memberLabel = (dataset: Dataset, memberId: string): string =>
+  memberName(membersOf(dataset), memberId);
 
 const inMonth = (transaction: Transaction, month: MonthKey): boolean => transaction.date.startsWith(month);
 

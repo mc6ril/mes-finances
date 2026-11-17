@@ -3,7 +3,6 @@ import {
   ALLOCATION_GROUPS,
   evolutionPoints,
   monthsForRange,
-  parseSharePercent,
   periodChange,
   positionsById,
   savingsComparison,
@@ -140,34 +139,5 @@ describe('comparaison des placements', () => {
       { accountId: 'livret', name: 'Livret A', value: 500000, gain: 12000 },
       { accountId: 'pea', name: 'PEA', value: 0, gain: 0 },
     ]);
-  });
-});
-
-describe('quote-part d’un compte commun', () => {
-  it('laisse la quote-part non renseignée quand le champ est vide', () => {
-    expect(parseSharePercent('')).toEqual({ ok: true, value: null });
-    expect(parseSharePercent('   ')).toEqual({ ok: true, value: null });
-  });
-
-  it('lit un pourcentage, avec une virgule ou des espaces', () => {
-    expect(parseSharePercent('50')).toEqual({ ok: true, value: 50 });
-    expect(parseSharePercent('12,5')).toEqual({ ok: true, value: 12.5 });
-    expect(parseSharePercent(' 33.3 ')).toEqual({ ok: true, value: 33.3 });
-  });
-
-  it('accepte les bornes 0 et 100', () => {
-    expect(parseSharePercent('0')).toEqual({ ok: true, value: 0 });
-    expect(parseSharePercent('100')).toEqual({ ok: true, value: 100 });
-  });
-
-  it('refuse un pourcentage hors de 0 à 100', () => {
-    expect(parseSharePercent('-1')).toEqual({ ok: false });
-    expect(parseSharePercent('100,01')).toEqual({ ok: false });
-  });
-
-  it('refuse un texte qui n’est pas un nombre', () => {
-    expect(parseSharePercent('moitié')).toEqual({ ok: false });
-    expect(parseSharePercent('1,2,3')).toEqual({ ok: false });
-    expect(parseSharePercent('Infinity')).toEqual({ ok: false });
   });
 });

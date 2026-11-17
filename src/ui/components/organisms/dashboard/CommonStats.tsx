@@ -16,14 +16,12 @@ import {
   membersOf,
 } from '@/core/commun/household';
 import type { MonthOverview } from '@/core/budget/overview';
-import { formatEuros, formatEurosRounded } from '@/core/shared/format';
+import { formatEuros, formatEurosRounded, formatRate } from '@/core/shared/format';
 import type { Dataset, MonthKey } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
 import StatCard from '@/ui/components/molecules/cards/StatCard';
 
 type CommonStatsProps = { dataset: Dataset; month: MonthKey; overview: MonthOverview };
-
-const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;
 
 /** Cartes du tableau de bord pour un espace commun : le mois du commun en un coup d'œil. */
 const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
@@ -63,7 +61,7 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
         label="Enveloppe commune"
         icon={WalletCards}
         value={<Amount cents={summary.envelope} rounded />}
-        hint={`${percent(rate)} des revenus, arrondie`}
+        hint={`${formatRate(rate)} des revenus, arrondie`}
       />
       <StatCard
         label="Dépenses communes"

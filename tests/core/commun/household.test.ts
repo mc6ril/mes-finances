@@ -2,13 +2,16 @@ import { accountBalanceAt } from '@/core/comptes/balances';
 import {
   commonMonthSummary,
   contributionsFor,
+  defaultMemberName,
+  memberLabel,
+  memberName,
   memberSettlement,
   savingsPayerOf,
   settlementCandidates,
   suggestedEnvelope,
 } from '@/core/commun/household';
 import type { CommonMonth, Dataset } from '@/core/shared/model';
-import { createInitialDataset } from '@/core/shared/seed';
+import { createInitialDataset, DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
 import { aCategory, anAccount, aTransaction } from '../fixtures';
 
 const members = [
@@ -441,5 +444,29 @@ describe('savingsPayerOf', () => {
     expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: 'commun' })).toBeNull();
     expect(savingsPayerOf({ members, contributionRate: 0.75, savingsPaidBy: 'm1' })).toBe('m1');
     expect(savingsPayerOf(null)).toBeNull();
+  });
+});
+
+describe('nom affiché d’un membre', () => {
+  const members = [
+    { id: 'a', name: 'Alex', salaryOnCommon: true },
+    { id: 'b', name: '  ', salaryOnCommon: false },
+  ];
+
+  it('donne le prénom renseigné', () => {
+    expect(memberName(members, 'a')).toBe('Alex');
+  });
+
+  it('donne « Membre N » tant que le prénom n’est pas renseigné', () => {
+    expect(memberName(members, 'b')).toBe('Membre 2');
+    expect(defaultMemberName(0)).toBe('Membre 1');
+  });
+
+  it('lit les membres du foyer de l’espace', () => {
+    const dataset = createInitialDataset('2026-10-01', () => 'id');
+    const household = { ...DEFAULT_HOUSEHOLD, members };
+    const commun = { ...dataset, settings: { ...dataset.settings, household } };
+    expect(memberLabel(commun, 'a')).toBe('Alex');
+    expect(memberLabel(commun, 'b')).toBe('Membre 2');
   });
 });

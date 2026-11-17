@@ -3,6 +3,7 @@ import { FileUp, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useDataset, useFileUseCases, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
+import { membersOf } from '@/core/commun/household';
 import {
   findDuplicates,
   guessMapping,
@@ -106,7 +107,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
 
   const rules = dataset.settings.importRules ?? [];
   const accountName = (id: string) => dataset.accounts.find((account) => account.id === id)?.name;
-  const members = dataset.settings.household?.members ?? [];
+  const members = membersOf(dataset);
 
   const prepareReview = () => {
     const { drafts, errors } = mapRows(rows, mapping, { accountId, hasHeader });

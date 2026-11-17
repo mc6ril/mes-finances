@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
+import { defaultMemberName, memberName, SAVINGS_FROM_COMMON, savingsPayerOf } from '@/core/commun/household';
+import { formatRate, rateInput } from '@/core/shared/format';
+import { parsePercent } from '@/core/shared/money';
 import type { Household, HouseholdMember } from '@/core/shared/model';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -8,13 +10,6 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import Segmented from '@/ui/components/molecules/Segmented';
 import SettingRow from '@/ui/components/molecules/form/PreferenceRow';
 import { cx } from '@/ui/design-system/cx';
-
-const percentText = (rate: number): string => String(Math.round(rate * 1000) / 10).replace('.', ',');
-
-const parsePercent = (text: string): number | null => {
-  const value = Number(text.replaceAll(',', '.').replaceAll('%', '').trim());
-  return Number.isFinite(value) && value > 0 && value <= 100 ? value / 100 : null;
-};
 
 type NameInputProps = { member: HouseholdMember; index: number; onSave: (name: string) => void };
 
@@ -25,8 +20,8 @@ const NameInput = ({ member, index, onSave }: NameInputProps) => {
       value={name}
       onChange={setName}
       onBlur={() => name.trim() !== member.name && onSave(name.trim())}
-      placeholder={`Personne ${index + 1}`}
-      label={`Prénom de la personne ${index + 1}`}
+      placeholder={defaultMemberName(index)}
+      label={`Prénom du membre ${index + 1}`}
     />
   );
 };
@@ -35,7 +30,7 @@ const NameInput = ({ member, index, onSave }: NameInputProps) => {
 const HouseholdSettings = ({ household }: { household: Household }) => {
   const finance = useFinanceUseCases();
   const report = useReport();
-  const [rate, setRate] = useState(percentText(household.contributionRate));
+  const [rate, setRate] = useState(rateInput(household.contributionRate));
 
   const save = (next: Household, summary: string) =>
     void report(finance.updateSettings({ household: next }, summary), null);
@@ -61,13 +56,15 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
     );
 
   const commitRate = () => {
-    const parsed = parsePercent(rate);
-    if (parsed === null) {
-      setRate(percentText(household.contributionRate));
+    // Part versée au commun : strictement positive, 100 % au plus ; un champ vide est refusé.
+    const parsed = parsePercent(rate, { minExclusive: true });
+    if (!parsed.ok || parsed.value === null) {
+      setRate(rateInput(household.contributionRate));
       return;
     }
-    if (parsed !== household.contributionRate) {
-      save({ ...household, contributionRate: parsed }, `Part versée au commun : ${percentText(parsed)} %`);
+    const next = parsed.value / 100;
+    if (next !== household.contributionRate) {
+      save({ ...household, contributionRate: next }, `Part versée au commun : ${formatRate(next)}`);
     }
   };
 
@@ -90,8 +87,8 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
         hint="Cochez chaque personne payée sur le compte commun (les deux, une seule ou aucune). En fin de mois, le commun lui reverse ce qui dépasse sa part ; les autres versent leur part depuis leur compte."
       >
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          {household.members.map((member, index) => {
-            const name = member.name.trim() || `Personne ${index + 1}`;
+          {household.members.map((member) => {
+            const name = memberName(household.members, member.id);
             return (
               <Checkbox
                 key={member.id}
@@ -117,9 +114,9 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
           }
           options={[
             { value: SAVINGS_FROM_COMMON, label: 'Compte commun' },
-            ...household.members.map((member, index) => ({
+            ...household.members.map((member) => ({
               value: member.id,
-              label: member.name.trim() || `Personne ${index + 1}`,
+              label: memberName(household.members, member.id),
             })),
           ]}
         />

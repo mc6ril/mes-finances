@@ -71,3 +71,46 @@ export const ratio = (part: number, whole: number): number => {
   }
   return part / whole;
 };
+
+type CentsToInputOptions = {
+  /** Omet « ,00 » d'un montant rond (100 au lieu de 100,00). */
+  compact?: boolean;
+  /** Laisse le champ vide pour zéro. */
+  blankZero?: boolean;
+};
+
+/** Montant en centimes écrit pour un champ de saisie ou un export : « 12,50 », relu par parseEuros. */
+export const centsToInput = (
+  cents: Cents,
+  { compact = false, blankZero = false }: CentsToInputOptions = {},
+) => {
+  if (blankZero && cents === 0) {
+    return '';
+  }
+  const text = (cents / 100).toFixed(2).replace('.', ',');
+  return compact ? text.replace(/,00$/, '') : text;
+};
+
+export type PercentInput = { ok: true; value: number | null } | { ok: false };
+
+type PercentBounds = { min?: number; max?: number; minExclusive?: boolean };
+
+/**
+ * Pourcentage saisi (« 12,5 », « 12.5 », « 12,5 % ») : vide → valeur non renseignée (null),
+ * sinon un nombre entre les bornes (0 à 100 par défaut, inclus), ou un refus.
+ */
+export const parsePercent = (
+  text: string,
+  { min = 0, max = 100, minExclusive = false }: PercentBounds = {},
+): PercentInput => {
+  const cleaned = text.replaceAll('%', '').trim();
+  if (cleaned === '') {
+    return { ok: true, value: null };
+  }
+  const value = Number(cleaned.replaceAll(',', '.'));
+  const aboveMin = minExclusive ? value > min : value >= min;
+  if (!Number.isFinite(value) || !aboveMin || value > max) {
+    return { ok: false };
+  }
+  return { ok: true, value };
+};

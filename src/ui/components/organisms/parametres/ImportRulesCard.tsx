@@ -1,5 +1,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { memberName, membersOf } from '@/core/commun/household';
+import { isInternalMoveType } from '@/core/comptes/balances';
 import { TYPE_LABELS } from '@/core/comptes/csvImport';
 import { RULE_TYPES } from '@/core/comptes/importRules';
 import type { ImportRule, TransactionType } from '@/core/shared/model';
@@ -36,12 +38,12 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const [form, setForm] = useState<RuleForm>(initial);
-  const members = dataset.settings.household?.members ?? [];
+  const members = membersOf(dataset);
   const memberLabel =
     dataset.settings.kind === 'commun' ? memberLabelFor(form.type, form.refund === true) : null;
   const update = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
 
-  const isTransfer = form.type === 'virement' || form.type === 'investissement';
+  const isTransfer = isInternalMoveType(form.type);
 
   const save = async () => {
     const keepsMember = Boolean(memberLabel && form.memberId);
@@ -107,7 +109,7 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
             ]}
           />
         </Field>
-        {(form.type === 'virement' || form.type === 'investissement') && (
+        {isTransfer && (
           <Field
             label="Vers le compte"
             hint="Livret, assurance-vie, courtier… Sans compte : virement vers l’extérieur (autre banque, une personne)."
@@ -153,11 +155,11 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
                   .filter((member) => member.salaryOnCommon || member.id === form.memberId)
                   .map((member) => ({
                     value: `revenu:${member.id}`,
-                    label: `Revenu de ${member.name || 'Sans prénom'}`,
+                    label: `Revenu de ${memberName(members, member.id)}`,
                   })),
                 ...members.map((member) => ({
                   value: `charge:${member.id}`,
-                  label: `Reçu pour ${member.name || 'Sans prénom'} (remboursement à lui reverser)`,
+                  label: `Reçu pour ${memberName(members, member.id)} (remboursement à lui reverser)`,
                 })),
               ]}
             />
@@ -170,7 +172,7 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
               onChange={(value) => update({ memberId: value || null })}
               options={[
                 { value: '', label: 'Le commun' },
-                ...members.map((member) => ({ value: member.id, label: member.name || 'Sans prénom' })),
+                ...members.map((member) => ({ value: member.id, label: memberName(members, member.id) })),
               ]}
             />
           </Field>
@@ -196,8 +198,10 @@ const ImportRulesCard = () => {
   const categoryName = (id: string | null) => dataset.categories.find((category) => category.id === id)?.name;
   const accountName = (id: string | null | undefined) =>
     dataset.accounts.find((account) => account.id === id)?.name;
-  const memberName = (id: string | null) =>
-    dataset.settings.household?.members.find((member) => member.id === id)?.name;
+  const members = membersOf(dataset);
+  /** Membre visé par une règle : son nom affiché, ou rien si la règle n'en vise pas (ou plus). */
+  const ruleMember = (id: string | null) =>
+    id !== null && members.some((member) => member.id === id) ? memberName(members, id) : null;
 
   return (
     <Card
@@ -226,8 +230,8 @@ const ImportRulesCard = () => {
                 {accountName(rule.counterpartAccountId) && (
                   <Badge>{`Vers ${accountName(rule.counterpartAccountId)}`}</Badge>
                 )}
-                {memberName(rule.memberId) && (
-                  <Badge>{`${rule.receivedFor ? 'Reçu pour' : rule.type === 'revenu' ? 'De' : 'Pour'} ${memberName(rule.memberId)}`}</Badge>
+                {ruleMember(rule.memberId) && (
+                  <Badge>{`${rule.receivedFor ? 'Reçu pour' : rule.type === 'revenu' ? 'De' : 'Pour'} ${ruleMember(rule.memberId)}`}</Badge>
                 )}
               </div>
               <div className="flex shrink-0 items-center">

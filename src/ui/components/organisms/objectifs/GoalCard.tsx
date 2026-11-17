@@ -19,7 +19,15 @@ import {
   plannedContributionsOf,
 } from '@/core/patrimoine/goalTracking';
 import { addMonths, monthEnd, monthKeyOf, monthsBetween } from '@/core/shared/dates';
-import { capitalize, formatDateFr, formatEuros, monthLabel, monthShortLabel } from '@/core/shared/format';
+import {
+  capitalize,
+  formatDateFr,
+  formatEuros,
+  formatRate,
+  monthLabel,
+  monthShortLabel,
+  rateInput,
+} from '@/core/shared/format';
 import type { Cents, Goal, MonthKey } from '@/core/shared/model';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
@@ -40,7 +48,7 @@ const rateLabel = (rate: number): string => {
   if (rate === 0) {
     return 'Sans rendement (prudent)';
   }
-  return `Hypothèse ${String(rate * 100).replace('.', ',')} %/an`;
+  return `Hypothèse ${rateInput(rate)} %/an`;
 };
 
 const ACTUAL = 'Réel';
@@ -85,7 +93,7 @@ const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
         <Text variant="small">Apports prévus hors comptes · prévisionnel</Text>
         <Text variant="small">
           avec eux : <Amount cents={withPlanned} className="font-medium text-ink-strong" /> ·{' '}
-          {String(percentWith).replace('.', ',')} %
+          {formatRate(percentWith / 100)}
         </Text>
       </div>
       <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
@@ -182,7 +190,7 @@ const GoalCard = ({ goal, onEdit, onDelete }: GoalCardProps) => {
         <Text variant="muted">
           <Amount cents={current} className="text-lg font-semibold text-ink-strong" /> constitués
         </Text>
-        <Text variant="strong">{String(progress.percent).replace('.', ',')} %</Text>
+        <Text variant="strong">{formatRate(progress.percent / 100)}</Text>
       </div>
       <ProgressBar
         value={progress.percent / 100}
