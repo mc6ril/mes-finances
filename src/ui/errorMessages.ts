@@ -47,6 +47,10 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
     'Cet espace a été modifié avec une version plus récente de l’application. Recharge la page pour la mettre à jour.',
   'invalid-date': () => 'Date illisible',
   'invalid-amount': () => 'Montant illisible',
+  'transaction-date-invalid': () => 'Date invalide',
+  'transaction-label-empty': () => 'Le libellé est obligatoire',
+  'transaction-amount-invalid': () => 'Montant invalide (ex. 45,90)',
+  'transaction-counterpart-invalid': () => 'Choisis un compte de destination différent',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
   'auth-not-configured': () =>
     'La connexion n’est pas configurée : renseigne les variables VITE_FIREBASE_* (voir .env.example).',
