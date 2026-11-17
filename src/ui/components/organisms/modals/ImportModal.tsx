@@ -1,25 +1,9 @@
-import type { TransactionDraft } from '@/core/usecases/transactions';
 import { FileUp, TriangleAlert } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useDataset, useFileUseCases, useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
-import { membersOf } from '@/core/commun/household';
-import {
-  findDuplicates,
-  guessMapping,
-  findHeaderRow,
-  deferredCardTotals,
-  mapRows,
-  suggestCategory,
-  type ColumnMapping,
-  type ImportDraft,
-  type ImportError,
-} from '@/core/comptes/csvImport';
+import { useMemo } from 'react';
+import { useDataset } from '@/hooks/useFinance';
+import { useCsvImport } from '@/hooks/compte/useCsvImport';
+import type { ColumnMapping } from '@/core/comptes/csvImport';
 import { formatDateFr } from '@/core/shared/format';
-import { categoryFromBankLabel } from '@/core/comptes/bankCategories';
-import { savingsCategoryFor } from '@/core/budget/budget';
-import { findImportRule, imputationFromRule } from '@/core/comptes/importRules';
-import type { Imputation, TransactionType } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
@@ -31,8 +15,6 @@ import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
 import { categoriesForType } from '@/core/comptes/transactionDraft';
 
-type Step = 'file' | 'mapping' | 'review';
-
 const MAPPING_FIELDS: { key: keyof ColumnMapping; label: string; required: boolean }[] = [
   { key: 'date', label: 'Date', required: true },
   { key: 'label', label: 'Libellé', required: true },
@@ -42,41 +24,24 @@ const MAPPING_FIELDS: { key: keyof ColumnMapping; label: string; required: boole
   { key: 'category', label: 'Catégorie (facultatif)', required: false },
 ];
 
-type ReviewRow = {
-  draft: ImportDraft;
-  include: boolean;
-  duplicate: boolean;
-  categoryId: string;
-  type: TransactionType;
-  imputation?: Imputation;
-  counterpartAccountId: string | null;
-  rule: string | null;
-  cardTotal: boolean;
-};
-
 type ImportModalProps = { accountId: string; onClose: () => void };
 
 const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
   const dataset = useDataset();
-  const finance = useFinanceUseCases();
-  const report = useReport();
-  const files = useFileUseCases();
-  const [step, setStep] = useState<Step>('file');
-  const [error, setError] = useState<string | null>(null);
-  const [fileName, setFileName] = useState('');
-  const [rows, setRows] = useState<string[][]>([]);
-  const [hasHeader, setHasHeader] = useState(true);
-  const [mapping, setMapping] = useState<ColumnMapping>({
-    date: null,
-    label: null,
-    amount: null,
-    debit: null,
-    credit: null,
-    category: null,
-  });
-  const [review, setReview] = useState<ReviewRow[]>([]);
-  const [lineErrors, setLineErrors] = useState<ImportError[]>([]);
-  const columnCount = Math.max(0, ...rows.slice(0, 20).map((row) => row.length));
+  const {
+    state,
+    included,
+    columnCount,
+    mappingComplete,
+    readFile,
+    prepareReview,
+    confirm,
+    setHasHeader,
+    mapColumn,
+    back,
+    updateRow,
+  } = useCsvImport(accountId, onClose);
+  const { step, error, fileName, rows, hasHeader, mapping, review, lineErrors } = state;
   const columnOptions = [
     { value: '', label: '— Ignorer —' },
     ...Array.from({ length: columnCount }, (_, index) => ({
@@ -84,93 +49,6 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
       label: `Colonne ${index + 1}${hasHeader && rows[0]?.[index] ? ` · ${rows[0][index]}` : ''}`,
     })),
   ];
-
-  const onFile = async (file: File) => {
-    setError(null);
-    const parsed = await files.readCsvRows(file);
-    if (!parsed.ok) {
-      setError(errorMessage(parsed.error));
-      return;
-    }
-    setFileName(file.name);
-    // Les lignes d'informations au-dessus du tableau (Crédit Agricole) sont ignorées.
-    const table = parsed.value.slice(findHeaderRow(parsed.value));
-    setRows(table);
-    setMapping(guessMapping(table[0] ?? []));
-    setStep('mapping');
-  };
-
-  const mappingValid =
-    mapping.date !== null &&
-    mapping.label !== null &&
-    (mapping.amount !== null || mapping.debit !== null || mapping.credit !== null);
-
-  const rules = dataset.settings.importRules ?? [];
-  const accountName = (id: string) => dataset.accounts.find((account) => account.id === id)?.name;
-  const members = membersOf(dataset);
-
-  const prepareReview = () => {
-    const { drafts, errors } = mapRows(rows, mapping, { accountId, hasHeader });
-    const duplicates = new Set(findDuplicates(drafts, dataset.transactions));
-    const cardTotals = new Set(deferredCardTotals(drafts, rows));
-    setLineErrors(errors);
-    setReview(
-      drafts.map((draft, index) => {
-        const rule = findImportRule(draft.label, rules);
-        const guessed =
-          suggestCategory(draft.label, dataset.transactions) ??
-          categoryFromBankLabel(draft.categoryLabel, dataset.categories) ??
-          '';
-        const imputation = rule ? imputationFromRule(rule, members) : undefined;
-        return {
-          draft,
-          include: !duplicates.has(index) && !cardTotals.has(index),
-          duplicate: duplicates.has(index),
-          cardTotal: cardTotals.has(index),
-          type: rule?.type ?? draft.type,
-          categoryId: rule
-            ? (rule.categoryId ??
-              savingsCategoryFor(rule.counterpartAccountId ?? null, accountName, dataset.categories) ??
-              '')
-            : guessed,
-          ...(imputation ? { imputation } : {}),
-          counterpartAccountId: rule?.counterpartAccountId ?? null,
-          rule: rule?.match ?? null,
-        };
-      }),
-    );
-    setStep('review');
-  };
-
-  const included = review.filter((row) => row.include);
-
-  const confirm = async () => {
-    const transactions: TransactionDraft[] = included.map((row) => ({
-      date: row.draft.date,
-      label: row.draft.label,
-      amount: row.draft.amount,
-      accountId: row.draft.accountId,
-      counterpartAccountId: row.counterpartAccountId,
-      categoryId: row.categoryId || null,
-      type: row.type,
-      status: row.draft.status,
-      ...(row.imputation ? { imputation: row.imputation } : {}),
-      paymentMethod: '',
-      comment: `Import ${fileName}`,
-      imported: true,
-    }));
-    if (
-      await report(
-        finance.importTransactions(transactions),
-        (count) => `${count} opération${count > 1 ? 's importées' : ' importée'}`,
-      )
-    ) {
-      onClose();
-    }
-  };
-
-  const updateRow = (index: number, patch: Partial<ReviewRow>) =>
-    setReview((current) => current.map((row, position) => (position === index ? { ...row, ...patch } : row)));
 
   const preview = useMemo(() => rows.slice(0, 6), [rows]);
 
@@ -183,13 +61,13 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
         <>
           <Button onClick={onClose}>Annuler</Button>
           {step === 'mapping' && (
-            <Button variant="primary" disabled={!mappingValid} onClick={prepareReview}>
+            <Button variant="primary" disabled={!mappingComplete} onClick={prepareReview}>
               Vérifier les opérations
             </Button>
           )}
           {step === 'review' && (
             <>
-              <Button onClick={() => setStep('mapping')}>Retour</Button>
+              <Button onClick={back}>Retour</Button>
               <Button variant="primary" disabled={included.length === 0} onClick={() => void confirm()}>
                 Importer {included.length} opération{included.length > 1 ? 's' : ''}
               </Button>
@@ -217,7 +95,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) {
-                  void onFile(file);
+                  void readFile(file);
                 }
               }}
             />
@@ -240,12 +118,7 @@ const ImportModal = ({ accountId, onClose }: ImportModalProps) => {
               <Field key={field.key} label={`${field.label}${field.required ? ' *' : ''}`}>
                 <Select
                   value={mapping[field.key] === null ? '' : String(mapping[field.key])}
-                  onChange={(value) =>
-                    setMapping((current) => ({
-                      ...current,
-                      [field.key]: value === '' ? null : Number(value),
-                    }))
-                  }
+                  onChange={(value) => mapColumn(field.key, value === '' ? null : Number(value))}
                   options={columnOptions}
                 />
               </Field>

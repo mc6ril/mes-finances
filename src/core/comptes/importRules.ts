@@ -1,4 +1,5 @@
 import type { HouseholdMember, Imputation, ImportRule, TransactionType } from '@/core/shared/model';
+import { isInternalMoveType } from './balances';
 
 const words = (text: string): string[] =>
   text
@@ -40,3 +41,26 @@ export const imputationFromRule = (rule: ImportRule, members: HouseholdMember[])
 };
 
 export const RULE_TYPES: TransactionType[] = ['depense', 'revenu', 'virement', 'investissement'];
+
+/** Saisie d'une règle d'import : sans identifiant tant qu'elle n'est pas enregistrée. */
+export type ImportRuleForm = Omit<ImportRule, 'id'> & { id?: string };
+
+/**
+ * Règle nettoyée avant enregistrement : un virement ou un investissement garde son compte de
+ * destination (sa catégorie d'épargne suit le compte crédité, à l'import) ; une dépense ou un
+ * revenu garde sa catégorie. Le membre n'a de sens que dans un espace commun, pour une dépense
+ * ou un revenu ; « reçu pour » seulement pour un revenu ; le remboursement seulement pour une dépense.
+ */
+export const normalizeRule = (form: ImportRuleForm, isCommon: boolean): ImportRuleForm => {
+  const isTransfer = isInternalMoveType(form.type);
+  const keepsMember =
+    isCommon && (form.type === 'depense' || form.type === 'revenu') && Boolean(form.memberId);
+  return {
+    ...form,
+    memberId: keepsMember ? form.memberId : null,
+    receivedFor: keepsMember && form.type === 'revenu' && form.receivedFor === true,
+    counterpartAccountId: isTransfer ? (form.counterpartAccountId ?? null) : null,
+    categoryId: isTransfer ? null : form.categoryId,
+    refund: form.type === 'depense' && form.refund === true,
+  };
+};
