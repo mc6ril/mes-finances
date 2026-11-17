@@ -43,10 +43,31 @@ npm run preview        # http://127.0.0.1:4173
 
 1. Créer un projet sur https://console.firebase.google.com, puis une application **Web** (Paramètres du projet → Vos applications).
 2. Authentication → Sign-in method : activer **E-mail/Mot de passe** et **Google**.
-3. Authentication → Settings → Domaines autorisés : ajouter `127.0.0.1` (le serveur local écoute sur cette adresse ; seul `localhost` est présent par défaut) le domaine Firebase Hosting (`mes-finances-271ea.web.app`, en principe présent par défaut) et celui de Netlify pour les aperçus.
-4. Copier `.env.example` en `.env.local` et y reporter la configuration web (apiKey, authDomain, projectId, appId). Sur Netlify (aperçus) et dans l'environnement GitHub `release` (secrets `VITE_FIREBASE_*`, pour le déploiement), déclarer les mêmes variables.
+3. Authentication → Settings → Domaines autorisés : ajouter `127.0.0.1` (le serveur local écoute sur cette adresse ; seul `localhost` est présent par défaut) et le domaine Firebase Hosting (`mes-finances-271ea.web.app`, en principe présent par défaut).
+4. Copier `.env.example` en `.env.local` et y reporter la configuration web (apiKey, authDomain, projectId, appId). Dans l'environnement GitHub `release` (secrets `VITE_FIREBASE_*`, pour le déploiement), déclarer les mêmes variables.
 
 Sans ces variables, l'application affiche « Connexion indisponible ».
+
+### Liens des e-mails (confirmation d'adresse, mot de passe oublié)
+
+Les liens des e-mails envoyés par Firebase ouvrent l'application, qui les traite elle-même (`AuthActionPage`), au lieu de la page générique `…firebaseapp.com/__/auth/action`.
+
+- **Confirmation d'adresse** : « Confirmation de ton adresse… », puis le tableau de bord si la personne est connectée dans ce navigateur, sinon la connexion avec « Adresse confirmée, connecte-toi ».
+- **Mot de passe oublié** : formulaire « Nouveau mot de passe » (avec confirmation), puis la connexion avec l'adresse préremplie et un message de succès.
+- **Changement d'adresse annulé** (`recoverEmail`) : l'ancienne adresse est rétablie, avec un message.
+- **Lien expiré, déjà utilisé ou invalide** : message explicite et solution possible (renvoyer l'e-mail de confirmation à la personne connectée, redemander un lien de réinitialisation, ou aller à la connexion). Une erreur passagère (réseau) propose de réessayer.
+- Sur « Confirme ton adresse », la confirmation est revérifiée automatiquement au retour sur l'onglet.
+
+Fonctionnement : Firebase ajoute ses paramètres (`mode`, `oobCode`, `apiKey`, `continueUrl`, `lang`) **avant** le `#` du routage. `main.tsx` les lit au démarrage (`adapters/browser/authActionUrl.ts`, lecture dans `core/auth/actionLink.ts`), avant le routage et quel que soit l'état de la session, puis les retire de l'adresse (`history.replaceState`) : un rechargement ne retraite pas le lien.
+
+Réglage de la console, **après le déploiement** de cette version (fait avant, les liens mèneraient vers une version qui ne sait pas les traiter) :
+
+1. Authentication → Templates.
+2. Pour chaque modèle, cliquer sur le crayon, puis sur « Personnaliser l'URL d'action ».
+3. Saisir `https://mes-finances-271ea.web.app/`.
+4. Vérifier que la langue des modèles est le français.
+
+L'URL d'action vaut pour tous les modèles et tout le projet : les liens envoyés depuis le poste local mènent aussi vers la version en ligne. Le parcours complet se teste donc sur l'app déployée.
 
 ## Base de données (Firestore)
 
@@ -93,13 +114,15 @@ src/
     workspaces.ts       Espaces de suivi indépendants (personnels ou communs)
     <domaine>/interface.ts  Ports propres à un domaine (store, espaces, sauvegarde, auth, partage, sync)
     ports.ts            Ports transverses (lecture / enregistrement de fichiers, CSV, ids, horloge)
-    auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur)
+    auth/               model (utilisateur), validation (formulaires), interface (port du fournisseur),
+                        actionLink (lecture des liens reçus par e-mail)
     store/AuthSession   Session observable (vérification, adresse à confirmer, connecté, déconnecté)
     store/FinanceStore  Espace affiché, écoute des changements venus d'ailleurs
     partage/            Invitation (validité, statut), ports du partage
     sync/               État d'envoi (hors ligne, en attente), ports des données de l'utilisateur
     usecases/auth       Inscription, connexion, Google, déconnexion, mot de passe oublié,
-                        confirmation d'adresse, suppression du compte (données comprises)
+                        confirmation d'adresse, liens des e-mails (confirmation, nouveau mot de
+                        passe, adresse rétablie), suppression du compte (données comprises)
     usecases/sharing    Inviter, rejoindre, retirer l'accès, quitter
     usecases/dataSession  Données ouvertes à la connexion, effacées à la déconnexion
   adapters/             Secondary adapters
@@ -115,6 +138,7 @@ src/
       (racine)          Connexion par utilisateur, cache navigateur, traduction des erreurs (codes sync-*)
     storage/            Effacement des données locales, lien d'invitation en attente
     files/              Lecture de fichiers, CSV (PapaParse), téléchargements
+    browser/            Lien d'e-mail lu dans l'adresse au démarrage, puis retiré
   app/                  Primary adapters : store, actions, sélecteurs, thème
   hooks/                Hooks partagés (useFinance, usePeriod, useInlineName…)
     <domaine>/          Hooks d'un écran et leur logique pure (useLedger + ledgerState, useBilan…)
@@ -180,8 +204,7 @@ Le schéma est versionné (`SCHEMA_VERSION` dans `core/shared/model.ts`). Toute 
 ## Sécurité et déploiement
 
 - `firestore.rules` : tout est refusé sauf ce qui est explicitement permis, adresse confirmée obligatoire. Testées sur l'émulateur (propriétaire, invité, autre compte, invitation expirée ou déjà utilisée, adresse non confirmée) en CI.
-- `firebase.json` (hébergement) : l'app est en ligne sur Firebase Hosting (`https://mes-finances-271ea.web.app`), déployée par le workflow Release (job `deploy`, compte de service dans l'environnement `release`), qui publie d'abord les règles Firestore (`firestore.rules`) : le compte de service a besoin des rôles Hosting et « Administrateur Firebase Rules ». En-têtes de sécurité identiques à `netlify.toml` ; `index.html` sans cache, fichiers de `assets/` en cache permanent (noms versionnés). Déploiement manuel : `npx firebase deploy --only firestore:rules --project mes-finances-271ea`, puis `npm run build && npx firebase deploy --only hosting --project mes-finances-271ea`.
-- `netlify.toml` : aperçus des pull requests sur Netlify, mêmes en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google ») et aux données (`firestore.googleapis.com`).
+- `firebase.json` (hébergement) : l'app est en ligne sur Firebase Hosting (`https://mes-finances-271ea.web.app`), déployée par le workflow Release (job `deploy`, compte de service dans l'environnement `release`), qui publie d'abord les règles Firestore (`firestore.rules`) : le compte de service a besoin des rôles Hosting et « Administrateur Firebase Rules ». En-têtes de sécurité : la CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (`identitytoolkit.googleapis.com` et `securetoken.googleapis.com` pour l'API Firebase Auth, y compris les liens des e-mails ; `apis.google.com` et `*.firebaseapp.com` pour la fenêtre « Continuer avec Google ») et aux données (`firestore.googleapis.com`) ; COOP `same-origin-allow-popups`, sans lequel la fenêtre Google ne peut pas renvoyer son résultat. `index.html` sans cache, fichiers de `assets/` en cache permanent (noms versionnés). Déploiement manuel : `npx firebase deploy --only firestore:rules --project mes-finances-271ea`, puis `npm run build && npx firebase deploy --only hosting --project mes-finances-271ea`.
 - `overrides` dans `package.json` : force une version corrigée de `@grpc/grpc-js` (dépendance Node de Firestore, absente du bundle navigateur) pour que `npm audit` reste propre.
 - `.github/dependabot.yml` : mises à jour hebdomadaires des dépendances npm (et mensuelles des GitHub Actions), proposées en pull requests.
 - `.github/workflows/ci.yml` : typecheck, tests, build et `npm audit` à chaque push sur `main` et sur chaque pull request ; tests des règles et de l'adapter sur l'émulateur Firestore.

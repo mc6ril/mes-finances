@@ -1,4 +1,6 @@
 import {
+  applyActionCode,
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   deleteUser,
   EmailAuthProvider,
@@ -13,6 +15,7 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  verifyPasswordResetCode,
   type Auth,
   type User,
 } from 'firebase/auth';
@@ -42,6 +45,8 @@ const ERROR_CODES: Record<string, AppErrorCode> = {
   'auth/unauthorized-domain': 'auth-unauthorized-domain',
   'auth/requires-recent-login': 'auth-requires-recent-login',
   'auth/user-mismatch': 'auth-user-mismatch',
+  'auth/expired-action-code': 'auth-action-expired',
+  'auth/invalid-action-code': 'auth-action-invalid',
 };
 
 const PROVIDERS: Record<string, AuthProviderId> = { password: 'password', 'google.com': 'google' };
@@ -160,6 +165,18 @@ export class FirebaseAuthGateway implements AuthGatewayInterface {
       await user.getIdToken(true);
     });
     return reloaded.ok ? ok(toAuthUser(user)) : reloaded;
+  }
+
+  applyActionCode(code: string): Promise<Result<void>> {
+    return attempt(() => applyActionCode(this.#auth, code));
+  }
+
+  verifyPasswordResetCode(code: string): Promise<Result<string>> {
+    return attempt(() => verifyPasswordResetCode(this.#auth, code));
+  }
+
+  confirmPasswordReset(code: string, password: string): Promise<Result<void>> {
+    return attempt(() => confirmPasswordReset(this.#auth, code, password));
   }
 
   async reauthenticate(reauthentication: Reauthentication): Promise<Result<void>> {

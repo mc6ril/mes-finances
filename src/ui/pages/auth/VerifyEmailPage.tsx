@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuthAction, useAuthUseCases, useCurrentUser } from '@/hooks/useAuth';
 import Button from '@/ui/components/atoms/Button';
 import Notice from '@/ui/components/molecules/feedback/Notice';
+import { AuthTextButton } from '@/ui/components/molecules/auth/AuthTextButton';
 import Text from '@/ui/components/atoms/Text';
 import AuthLayout from '@/ui/components/templates/AuthLayout';
 
@@ -44,14 +45,9 @@ const VerifyEmailPage = () => {
       title="Confirme ton adresse"
       subtitle="Une dernière étape pour protéger tes comptes."
       footer={
-        <button
-          type="button"
-          onClick={switchAccount}
-          disabled={busy}
-          className="font-medium text-accent-ink underline-offset-2 hover:underline focus:outline-hidden focus-visible:underline disabled:opacity-60"
-        >
+        <AuthTextButton onClick={switchAccount} disabled={busy}>
           Utiliser un autre compte
-        </button>
+        </AuthTextButton>
       }
     >
       <div className="flex flex-col gap-5">

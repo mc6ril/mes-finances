@@ -10,6 +10,9 @@ export type AuthCall =
   | { kind: 'sendPasswordReset'; email: string }
   | { kind: 'sendEmailVerification' }
   | { kind: 'reloadUser' }
+  | { kind: 'applyActionCode'; code: string }
+  | { kind: 'verifyPasswordResetCode'; code: string }
+  | { kind: 'confirmPasswordReset'; code: string; password: string }
   | { kind: 'reauthenticate'; reauthentication: Reauthentication }
   | { kind: 'deleteAccount' };
 
@@ -30,6 +33,9 @@ type Answers = Partial<{
   sendPasswordReset: Result<void>;
   sendEmailVerification: Result<void>;
   reloadUser: Result<AuthUser | null>;
+  applyActionCode: Result<void>;
+  verifyPasswordResetCode: Result<string>;
+  confirmPasswordReset: Result<void>;
   reauthenticate: Result<void>;
   deleteAccount: Result<void>;
 }>;
@@ -70,6 +76,18 @@ export const fakeAuthGateway = (answers: Answers = {}) => {
     reloadUser: async () => {
       calls.push({ kind: 'reloadUser' });
       return answers.reloadUser ?? ok(aUser());
+    },
+    applyActionCode: async (code) => {
+      calls.push({ kind: 'applyActionCode', code });
+      return answers.applyActionCode ?? ok(undefined);
+    },
+    verifyPasswordResetCode: async (code) => {
+      calls.push({ kind: 'verifyPasswordResetCode', code });
+      return answers.verifyPasswordResetCode ?? ok('jean.d@example.com');
+    },
+    confirmPasswordReset: async (code, password) => {
+      calls.push({ kind: 'confirmPasswordReset', code, password });
+      return answers.confirmPasswordReset ?? ok(undefined);
     },
     reauthenticate: async (reauthentication) => {
       calls.push({ kind: 'reauthenticate', reauthentication });

@@ -5,7 +5,13 @@ import {
   type SignInForm,
   type SignUpForm,
 } from '../auth/model';
-import { validateEmail, validateReauthentication, validateSignIn, validateSignUp } from '../auth/validation';
+import {
+  validateEmail,
+  validateNewPassword,
+  validateReauthentication,
+  validateSignIn,
+  validateSignUp,
+} from '../auth/validation';
 import { fail, ok, type Result } from '../shared/errors';
 import type { AccountDataInterface, AuthGatewayInterface } from '../auth/interface';
 import type { SyncGatewayInterface } from '../sync/interface';
@@ -78,6 +84,46 @@ export const createAuthUseCases = ({ gateway, sync, accountData }: AuthPorts) =>
     return needsEmailVerification(reloaded.value) ? fail('auth-email-not-verified') : ok(reloaded.value);
   };
 
+  /**
+   * Lien de confirmation reçu par e-mail. Renvoie l'utilisateur connecté dans ce navigateur, relu pour
+   * refléter la confirmation, ou null (personne de connecté, ou relecture impossible : l'adresse reste
+   * confirmée et la session la verra au prochain retour sur l'onglet).
+   */
+  const confirmEmail = async (code: string): Promise<Result<AuthUser | null>> => {
+    const applied = await gateway.applyActionCode(code);
+    if (!applied.ok) {
+      return applied;
+    }
+    const reloaded = await gateway.reloadUser();
+    return ok(reloaded.ok ? reloaded.value : null);
+  };
+
+  /** Lien « ce n'était pas moi » reçu après un changement d'adresse : l'ancienne adresse est rétablie. */
+  const recoverEmail = async (code: string): Promise<Result<void>> => {
+    const applied = await gateway.applyActionCode(code);
+    if (!applied.ok) {
+      return applied;
+    }
+    await gateway.reloadUser();
+    return ok(undefined);
+  };
+
+  /** Vérifie le lien de réinitialisation avant d'afficher le formulaire ; renvoie l'adresse du compte. */
+  const verifyPasswordReset = (code: string): Promise<Result<string>> =>
+    gateway.verifyPasswordResetCode(code);
+
+  const resetPassword = async (
+    code: string,
+    password: string,
+    confirmation: string,
+  ): Promise<Result<void>> => {
+    const valid = validateNewPassword({ password, confirmation });
+    if (!valid.ok) {
+      return valid;
+    }
+    return gateway.confirmPasswordReset(code, valid.value);
+  };
+
   /** Les données en ligne sont effacées avant le compte : si elles ne peuvent pas l'être, le compte reste. */
   const deleteAccount = async (reauthentication: Reauthentication): Promise<Result<void>> => {
     const valid = validateReauthentication(reauthentication);
@@ -103,6 +149,10 @@ export const createAuthUseCases = ({ gateway, sync, accountData }: AuthPorts) =>
     requestPasswordReset,
     resendEmailVerification,
     confirmEmailVerified,
+    confirmEmail,
+    recoverEmail,
+    verifyPasswordReset,
+    resetPassword,
     deleteAccount,
   };
 };

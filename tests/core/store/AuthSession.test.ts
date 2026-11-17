@@ -97,6 +97,29 @@ describe('session d’authentification', () => {
     });
   });
 
+  describe('liens reçus par e-mail', () => {
+    it('transmet les codes au fournisseur', async () => {
+      const { gateway, calls } = fakeAuthGateway({ verifyPasswordResetCode: ok('jean.d@example.com') });
+      const session = new AuthSession(gateway);
+      expect(await session.applyActionCode('A')).toEqual(ok(undefined));
+      expect(await session.verifyPasswordResetCode('B')).toEqual(ok('jean.d@example.com'));
+      expect(await session.confirmPasswordReset('C', 'nouveaumdp')).toEqual(ok(undefined));
+      expect(calls).toEqual([
+        { kind: 'applyActionCode', code: 'A' },
+        { kind: 'verifyPasswordResetCode', code: 'B' },
+        { kind: 'confirmPasswordReset', code: 'C', password: 'nouveaumdp' },
+      ]);
+    });
+
+    it('échoue proprement sans fournisseur configuré', async () => {
+      const session = new AuthSession(null);
+      const notConfigured = fail('auth-not-configured');
+      expect(await session.applyActionCode('A')).toEqual(notConfigured);
+      expect(await session.verifyPasswordResetCode('B')).toEqual(notConfigured);
+      expect(await session.confirmPasswordReset('C', 'nouveaumdp')).toEqual(notConfigured);
+    });
+  });
+
   describe('suppression du compte', () => {
     it('déconnecte une fois le compte supprimé', async () => {
       const { gateway, emit } = fakeAuthGateway();

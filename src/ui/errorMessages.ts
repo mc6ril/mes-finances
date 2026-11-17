@@ -78,6 +78,9 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
     'Ton adresse n’est pas encore confirmée. Clique sur le lien reçu par e-mail, puis réessaie.',
   'auth-requires-recent-login': () => 'Par sécurité, reconnecte-toi avant de faire cette action.',
   'auth-user-mismatch': () => 'Ce n’est pas le compte Google connecté. Choisis le même compte.',
+  'auth-action-expired': () => 'Ce lien a expiré. Demande un nouvel e-mail.',
+  'auth-action-invalid': () =>
+    'Ce lien n’est plus valable : il a déjà servi, ou il est incomplet. Demande un nouvel e-mail si besoin.',
   'auth-failed': () => 'La connexion a échoué. Réessaie dans un instant.',
   'sync-offline': () =>
     'Connexion Internet indisponible et données pas encore présentes sur cet appareil. Réessaie une fois en ligne.',

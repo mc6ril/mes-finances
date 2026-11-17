@@ -3,6 +3,7 @@ import {
   normalizeEmail,
   validateReauthentication,
   validateEmail,
+  validateNewPassword,
   validateSignIn,
   validateSignUp,
 } from '@/core/auth/validation';
@@ -112,5 +113,29 @@ describe('validation de la ré-authentification', () => {
 
   it('accepte Google sans saisie', () => {
     expect(validateReauthentication({ method: 'google' })).toEqual({ ok: true, value: { method: 'google' } });
+  });
+});
+
+describe('validation d’un nouveau mot de passe', () => {
+  it('refuse un mot de passe trop court', () => {
+    const short = 'a'.repeat(MIN_PASSWORD_LENGTH - 1);
+    expect(validateNewPassword({ password: short, confirmation: short })).toEqual({
+      ok: false,
+      error: { code: 'auth-password-too-short' },
+    });
+  });
+
+  it('refuse une confirmation différente', () => {
+    expect(validateNewPassword({ password: 'motdepasse', confirmation: 'motdepassf' })).toEqual({
+      ok: false,
+      error: { code: 'auth-password-mismatch' },
+    });
+  });
+
+  it('renvoie le mot de passe tel quel', () => {
+    expect(validateNewPassword({ password: ' motdepasse ', confirmation: ' motdepasse ' })).toEqual({
+      ok: true,
+      value: ' motdepasse ',
+    });
   });
 });

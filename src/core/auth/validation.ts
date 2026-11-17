@@ -1,5 +1,5 @@
 import { fail, ok, type Result } from '../shared/errors';
-import type { Reauthentication, SignInForm, SignUpCredentials, SignUpForm } from './model';
+import type { NewPasswordForm, Reauthentication, SignInForm, SignUpCredentials, SignUpForm } from './model';
 
 export const MIN_PASSWORD_LENGTH = 8;
 
@@ -23,6 +23,17 @@ export const validateSignIn = ({ email, password }: SignInForm): Result<SignInFo
   return ok({ email: validEmail.value, password });
 };
 
+/** Mot de passe choisi (inscription, réinitialisation) : longueur minimale et confirmation identique. */
+export const validateNewPassword = ({ password, confirmation }: NewPasswordForm): Result<string> => {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return fail('auth-password-too-short');
+  }
+  if (password !== confirmation) {
+    return fail('auth-password-mismatch');
+  }
+  return ok(password);
+};
+
 export const validateSignUp = (form: SignUpForm): Result<SignUpCredentials> => {
   const displayName = form.displayName.trim();
   if (!displayName) {
@@ -32,13 +43,11 @@ export const validateSignUp = (form: SignUpForm): Result<SignUpCredentials> => {
   if (!validEmail.ok) {
     return validEmail;
   }
-  if (form.password.length < MIN_PASSWORD_LENGTH) {
-    return fail('auth-password-too-short');
+  const password = validateNewPassword(form);
+  if (!password.ok) {
+    return password;
   }
-  if (form.password !== form.confirmation) {
-    return fail('auth-password-mismatch');
-  }
-  return ok({ displayName, email: validEmail.value, password: form.password });
+  return ok({ displayName, email: validEmail.value, password: password.value });
 };
 
 export const validateReauthentication = (reauthentication: Reauthentication): Result<Reauthentication> => {

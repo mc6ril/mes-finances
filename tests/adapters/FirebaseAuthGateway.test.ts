@@ -1,5 +1,7 @@
 import type { Auth, User } from 'firebase/auth';
 import {
+  applyActionCode,
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   deleteUser,
   EmailAuthProvider,
@@ -13,11 +15,15 @@ import {
   signInWithPopup,
   signOut,
   updateProfile,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
 import { authErrorCode, FirebaseAuthGateway } from '@/adapters/auth/FirebaseAuthGateway';
 import { readFirebaseConfig } from '@/adapters/firebase/firebaseConfig';
 
 vi.mock('firebase/auth', () => ({
+  applyActionCode: vi.fn(),
+  confirmPasswordReset: vi.fn(),
+  verifyPasswordResetCode: vi.fn(),
   EmailAuthProvider: { credential: vi.fn((email: string, password: string) => ({ email, password })) },
   deleteUser: vi.fn(),
   reauthenticateWithCredential: vi.fn(),
@@ -84,6 +90,8 @@ describe('traduction des erreurs Firebase', () => {
     ['auth/unauthorized-domain', 'auth-unauthorized-domain'],
     ['auth/requires-recent-login', 'auth-requires-recent-login'],
     ['auth/user-mismatch', 'auth-user-mismatch'],
+    ['auth/expired-action-code', 'auth-action-expired'],
+    ['auth/invalid-action-code', 'auth-action-invalid'],
     ['auth/inconnu', 'auth-failed'],
   ])('%s → %s', (code, expected) => {
     expect(authErrorCode(firebaseError(code))).toBe(expected);
@@ -283,6 +291,53 @@ describe('rechargement de l’utilisateur', () => {
     expect(await setup(firebaseUser()).gateway.reloadUser()).toEqual({
       ok: false,
       error: { code: 'auth-network' },
+    });
+  });
+});
+
+describe('liens reçus par e-mail', () => {
+  it('applique un code de confirmation d’adresse', async () => {
+    vi.mocked(applyActionCode).mockResolvedValue();
+    const { auth, gateway } = setup();
+    expect(await gateway.applyActionCode('CODE')).toEqual({ ok: true, value: undefined });
+    expect(applyActionCode).toHaveBeenCalledWith(auth, 'CODE');
+  });
+
+  it('traduit un lien expiré', async () => {
+    vi.mocked(applyActionCode).mockRejectedValue(firebaseError('auth/expired-action-code'));
+    expect(await setup().gateway.applyActionCode('CODE')).toEqual({
+      ok: false,
+      error: { code: 'auth-action-expired' },
+    });
+  });
+
+  it('vérifie un code de réinitialisation et renvoie l’adresse du compte', async () => {
+    vi.mocked(verifyPasswordResetCode).mockResolvedValue('jean.d@example.com');
+    const { auth, gateway } = setup();
+    expect(await gateway.verifyPasswordResetCode('CODE')).toEqual({ ok: true, value: 'jean.d@example.com' });
+    expect(verifyPasswordResetCode).toHaveBeenCalledWith(auth, 'CODE');
+  });
+
+  it('traduit un code de réinitialisation déjà utilisé', async () => {
+    vi.mocked(verifyPasswordResetCode).mockRejectedValue(firebaseError('auth/invalid-action-code'));
+    expect(await setup().gateway.verifyPasswordResetCode('CODE')).toEqual({
+      ok: false,
+      error: { code: 'auth-action-invalid' },
+    });
+  });
+
+  it('enregistre le nouveau mot de passe', async () => {
+    vi.mocked(confirmPasswordReset).mockResolvedValue();
+    const { auth, gateway } = setup();
+    expect(await gateway.confirmPasswordReset('CODE', 'nouveaumdp')).toEqual({ ok: true, value: undefined });
+    expect(confirmPasswordReset).toHaveBeenCalledWith(auth, 'CODE', 'nouveaumdp');
+  });
+
+  it('traduit un compte désactivé', async () => {
+    vi.mocked(confirmPasswordReset).mockRejectedValue(firebaseError('auth/user-disabled'));
+    expect(await setup().gateway.confirmPasswordReset('CODE', 'nouveaumdp')).toEqual({
+      ok: false,
+      error: { code: 'auth-user-disabled' },
     });
   });
 });

@@ -56,6 +56,8 @@ export const APP_ERROR_CODES = [
   'auth-email-not-verified',
   'auth-requires-recent-login',
   'auth-user-mismatch',
+  'auth-action-expired',
+  'auth-action-invalid',
   'auth-failed',
   'sync-offline',
   'sync-permission-denied',

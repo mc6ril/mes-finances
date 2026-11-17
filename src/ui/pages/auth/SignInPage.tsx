@@ -7,7 +7,8 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { PasswordInput } from '@/ui/components/atoms/form/PasswordInput';
 import Notice from '@/ui/components/molecules/feedback/Notice';
 import AuthLayout from '@/ui/components/templates/AuthLayout';
-import { AUTH_PATHS, emailFrom } from '@/ui/routing/authPaths';
+import { AUTH_PATHS, emailFrom, noticeFrom } from '@/ui/routing/authPaths';
+import { AUTH_NOTICE_MESSAGES } from '@/hooks/auth/authActionLink';
 import { AuthLink } from '@/ui/components/molecules/auth/AuthLink';
 import { Divider } from '@/ui/components/atoms/Divider';
 import GoogleButton from '@/ui/components/molecules/auth/GoogleButton';
@@ -17,6 +18,7 @@ const SignInPage = () => {
   const location = useLocation();
   const [email, setEmail] = useState(() => emailFrom(location.state));
   const [password, setPassword] = useState('');
+  const notice = noticeFrom(location.state);
   const form = useAuthAction();
   const google = useAuthAction();
   const busy = form.pending || google.pending;
@@ -46,6 +48,7 @@ const SignInPage = () => {
       }
     >
       <div className="flex flex-col gap-5">
+        {notice && <Notice tone="success">{AUTH_NOTICE_MESSAGES[notice].signedOut}</Notice>}
         <GoogleButton onClick={signInWithGoogle} loading={google.pending} disabled={busy} />
         <Divider />
         <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
