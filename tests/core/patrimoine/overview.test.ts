@@ -1,4 +1,4 @@
-import { monthsForRange } from '@/core/patrimoine/overview';
+import { evolutionPoints, monthsForRange, periodChange } from '@/core/patrimoine/overview';
 
 describe('mois affichés selon la période', () => {
   it('prend le mois courant et les N mois précédents', () => {
@@ -11,5 +11,28 @@ describe('mois affichés selon la période', () => {
   it('« Année » va de janvier au mois courant', () => {
     expect(monthsForRange('annee', '2026-03')).toEqual(['2026-01', '2026-02', '2026-03']);
     expect(monthsForRange('annee', '2026-01')).toEqual(['2026-01']);
+  });
+});
+
+describe('points de la courbe d’évolution', () => {
+  const series = [
+    { month: '2026-01', personalTotal: 100000, contributions: 90000 },
+    { month: '2026-02', personalTotal: 112000, contributions: 95000 },
+  ];
+
+  it('donne la valeur totale, le versé cumulé et l’écart (performance)', () => {
+    expect(evolutionPoints(series)).toEqual([
+      { month: '2026-01', patrimoine: 100000, verse: 90000, gains: 10000 },
+      { month: '2026-02', patrimoine: 112000, verse: 95000, gains: 17000 },
+    ]);
+  });
+
+  it('mesure l’évolution entre le premier et le dernier point', () => {
+    expect(periodChange(evolutionPoints(series))).toEqual({ patrimoine: 12000, verse: 5000 });
+  });
+
+  it('ne voit aucune évolution sur un seul point ou sans point', () => {
+    expect(periodChange(evolutionPoints(series.slice(0, 1)))).toEqual({ patrimoine: 0, verse: 0 });
+    expect(periodChange([])).toEqual({ patrimoine: 0, verse: 0 });
   });
 });
