@@ -1,5 +1,6 @@
 import { goalStartFor } from '../patrimoine/goalTracking';
 import type {
+  Adjustment,
   BudgetPeriod,
   Category,
   Dataset,
@@ -286,6 +287,48 @@ const toVersion13 = (dataset: Dataset): Dataset => {
   };
 };
 
+/**
+ * v14 : une dépense « à la charge de X, réglé hors compte » n'est pas une opération du compte
+ * mais une dette entre le membre et le commun : elle devient un ajustement du mois du commun.
+ */
+const toVersion14 = (dataset: Dataset): Dataset => {
+  const isOutsideCharge = (transaction: Transaction) =>
+    transaction.imputation?.kind === 'charge' && transaction.imputation.outside === true;
+  const moved = dataset.transactions.filter(isOutsideCharge);
+  if (moved.length === 0) {
+    return dataset;
+  }
+  const byMonth = new Map<string, Adjustment[]>();
+  for (const transaction of moved) {
+    const month = transaction.date.slice(0, 7);
+    byMonth.set(month, [
+      ...(byMonth.get(month) ?? []),
+      {
+        id: `mig14-${transaction.id}`,
+        memberId: transaction.imputation!.memberId,
+        label: transaction.label,
+        amount: transaction.amount,
+      },
+    ]);
+  }
+  const existing = new Set(dataset.commonMonths.map((entry) => entry.month));
+  const commonMonths = [
+    ...dataset.commonMonths.map((entry) => {
+      const added = byMonth.get(entry.month);
+      return added ? { ...entry, adjustments: [...(entry.adjustments ?? []), ...added] } : entry;
+    }),
+    ...[...byMonth]
+      .filter(([month]) => !existing.has(month))
+      .map(([month, adjustments]) => ({ month, envelope: null, savingsRates: null, adjustments })),
+  ];
+  const removed = new Set(moved.map((transaction) => transaction.id));
+  return {
+    ...dataset,
+    commonMonths,
+    transactions: dataset.transactions.filter((transaction) => !removed.has(transaction.id)),
+  };
+};
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -300,6 +343,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 11, apply: toVersion11 },
   { version: 12, apply: toVersion12 },
   { version: 13, apply: toVersion13 },
+  { version: 14, apply: toVersion14 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

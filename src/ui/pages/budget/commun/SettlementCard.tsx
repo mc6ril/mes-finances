@@ -1,4 +1,4 @@
-import { Check, Plus, Undo2 } from 'lucide-react';
+import { Check, Plus, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { memberLabel, memberSettlement, membersOf, settlementCandidates } from '@/core/commun/household';
 import { formatDateFr, formatEuros, monthLabel } from '@/core/shared/format';
@@ -6,7 +6,9 @@ import type { HouseholdMember, MonthKey, Settlement } from '@/core/shared/model'
 import type { SettlementLine } from '@/core/commun/household';
 import { monthEnd } from '@/core/shared/dates';
 import TransactionModal from '@/ui/pages/compte/TransactionModal';
-import { Checkbox } from '@/ui/design-system/Field';
+import { Checkbox, Field, Input } from '@/ui/design-system/Field';
+import MoneyInput from '@/ui/design-system/MoneyInput';
+import Segmented from '@/ui/design-system/Segmented';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
@@ -101,6 +103,64 @@ const LinkTransferModal = ({ member, month, onClose }: LinkModalProps) => {
   );
 };
 
+type Direction = 'owes' | 'owed';
+
+/** Dette entre un membre et le commun, réglée hors compte : elle ne compte que dans le règlement. */
+const AdjustmentModal = ({ member, month, onClose }: LinkModalProps) => {
+  const dataset = useDataset();
+  const finance = useFinanceUseCases();
+  const report = useReport();
+  const name = memberLabel(dataset, member.id);
+  const [label, setLabel] = useState('');
+  const [cents, setCents] = useState(0);
+  const [direction, setDirection] = useState<Direction>('owes');
+  const valid = label.trim() !== '' && cents > 0;
+  const save = async () => {
+    const amount = direction === 'owes' ? -cents : cents;
+    const saved = finance.addAdjustment(month, { memberId: member.id, label: label.trim(), amount });
+    if (await report(saved, 'Ajustement ajouté')) {
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      title={`Ajustement · ${name} · ${monthLabel(month)}`}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Annuler</Button>
+          <Button variant="primary" disabled={!valid} onClick={() => void save()}>
+            Ajouter
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <Text variant="small">
+          Une somme que {name} doit au commun, ou l’inverse, sans mouvement sur le compte commun. Elle compte
+          seulement dans le règlement du mois, pas dans les opérations ni dans le budget.
+        </Text>
+        <Segmented<Direction>
+          label="Sens de l’ajustement"
+          value={direction}
+          onChange={setDirection}
+          options={[
+            { value: 'owes', label: `${name} doit au commun` },
+            { value: 'owed', label: `Le commun doit à ${name}` },
+          ]}
+        />
+        <Field label="Libellé">
+          <Input value={label} onChange={setLabel} placeholder="Abonnement, part d’un achat…" autoFocus />
+        </Field>
+        <Field label="Montant">
+          <MoneyInput cents={cents} onCommit={setCents} label="Montant de l’ajustement" />
+        </Field>
+      </div>
+    </Modal>
+  );
+};
+
 type Group = { key: string; label: string; lines: SettlementLine[]; always: boolean; detailed: boolean };
 
 /**
@@ -114,11 +174,13 @@ const SettlementLines = ({
   lines,
   owes,
   carriedOver,
+  onRemoveAdjustment,
 }: {
   name: string;
   lines: SettlementLine[];
   owes: boolean;
   carriedOver: number;
+  onRemoveAdjustment: (line: SettlementLine) => void;
 }) => {
   const sign = owes ? -1 : 1;
   const of = (kind: SettlementLine['kind'], keep: (line: SettlementLine) => boolean = () => true) =>
@@ -166,6 +228,13 @@ const SettlementLines = ({
       always: false,
       detailed: true,
     },
+    {
+      key: 'adjustment',
+      label: 'Ajustements hors compte',
+      lines: of('adjustment'),
+      always: false,
+      detailed: true,
+    },
   ];
   return (
     <>
@@ -182,12 +251,25 @@ const SettlementLines = ({
               {group.detailed &&
                 group.lines.map((line, index) => (
                   <Text
-                    key={line.transactionId ?? index}
+                    key={line.transactionId ?? line.adjustmentId ?? index}
                     variant="small"
                     as="span"
-                    className="flex justify-between gap-2 pl-3"
+                    className="flex items-center justify-between gap-2 pl-3"
                   >
-                    <span className="min-w-0 truncate">{line.label}</span>
+                    <span className="flex min-w-0 items-center gap-1">
+                      <span className="min-w-0 truncate">{line.label}</span>
+                      {line.adjustmentId && (
+                        <button
+                          type="button"
+                          aria-label={`Supprimer l’ajustement ${line.label}`}
+                          title="Supprimer l’ajustement"
+                          onClick={() => onRemoveAdjustment(line)}
+                          className="shrink-0 rounded-sm text-stone-400 hover:text-red-600 focus-visible:outline-2 focus-visible:outline-brand-500 dark:hover:text-red-400"
+                        >
+                          <Trash2 className="h-3 w-3" aria-hidden />
+                        </button>
+                      )}
+                    </span>
                     <Amount cents={sign * line.amount} signed />
                   </Text>
                 ))}
@@ -212,6 +294,8 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
   const report = useReport();
   const [confirming, setConfirming] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
+  const [toRemove, setToRemove] = useState<SettlementLine | null>(null);
   const { today } = usePeriod();
   const owes = !member.salaryOnCommon;
   const [toCancel, setToCancel] = useState<Settlement | null>(null);
@@ -241,6 +325,7 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           lines={settlement.lines}
           owes={owes}
           carriedOver={settlement.carriedOver}
+          onRemoveAdjustment={setToRemove}
         />
         {done.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-2">
@@ -274,14 +359,37 @@ const MemberBlock = ({ member, month }: MemberBlockProps) => {
           </Button>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => setAdding(true)}
-        className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
-      >
-        <Plus className="h-3.5 w-3.5" aria-hidden />
-        Ajouter une dépense payée par {name}
-      </button>
+      <div className="flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          Ajouter une dépense payée par {name}
+        </button>
+        <button
+          type="button"
+          onClick={() => setAdjusting(true)}
+          className="inline-flex items-center gap-1.5 self-start text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200"
+        >
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          Ajouter un ajustement hors compte
+        </button>
+      </div>
+      {adjusting && <AdjustmentModal member={member} month={month} onClose={() => setAdjusting(false)} />}
+      {toRemove?.adjustmentId && (
+        <ConfirmDialog
+          title="Supprimer cet ajustement ?"
+          message={`« ${toRemove.label} » ne comptera plus dans le règlement de ${monthLabel(month)}.`}
+          confirmLabel="Supprimer"
+          onCancel={() => setToRemove(null)}
+          onConfirm={() => {
+            void report(finance.removeAdjustment(month, toRemove.adjustmentId!), 'Ajustement supprimé');
+            setToRemove(null);
+          }}
+        />
+      )}
       {adding && (
         <TransactionModal
           transaction={null}
@@ -315,7 +423,7 @@ const SettlementCard = ({ month }: { month: MonthKey }) => {
   return (
     <Card
       title="Règlement de fin de mois"
-      subtitle="Revenus arrivés sur le commun − part de chacun − dépenses à sa charge + dépenses avancées"
+      subtitle="Revenus arrivés sur le commun − part de chacun − dépenses à sa charge + dépenses avancées ± ajustements"
     >
       <div className="grid gap-3 md:grid-cols-2">
         {membersOf(dataset).map((member) => (

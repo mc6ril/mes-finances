@@ -168,7 +168,15 @@ export type CommonMonth = {
    * du commun ; un membre absent reprend le montant du mois précédent.
    */
   outsideIncomes?: Record<string, Cents>;
+  /** Ajustements du règlement entre un membre et le commun : aucun mouvement sur le compte. */
+  adjustments?: Adjustment[];
 };
+
+/**
+ * Dette entre un membre et le commun, réglée hors compte (abonnement perso, part d'un achat…) :
+ * compte seulement dans le règlement du mois. Positif = le commun doit au membre.
+ */
+export type Adjustment = { id: string; memberId: string; label: string; amount: Cents };
 
 /** Règlement de fin de mois effectué : positif = versé par le commun au membre. */
 export type Settlement = {
@@ -228,4 +236,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;

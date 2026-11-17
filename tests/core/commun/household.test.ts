@@ -191,6 +191,42 @@ describe('règlement de fin de mois', () => {
     expect(after.toSettle - memberSettlement(base, '2026-10', 'm1').toSettle).toBe(-5000);
   });
 
+  it('compte un ajustement hors compte dans le règlement, sans toucher au compte ni au budget', () => {
+    const base = dataset();
+    const withAdjustment = dataset({
+      commonMonths: [
+        {
+          ...october,
+          adjustments: [
+            { id: 'adj-1', memberId: 'm1', label: 'Abonnement', amount: -4108 },
+            { id: 'adj-2', memberId: 'm2', label: 'Part billetterie', amount: 15400 },
+          ],
+        },
+        november,
+      ],
+    });
+    const after = memberSettlement(withAdjustment, '2026-10', 'm1');
+    expect(after.lines.at(-1)).toEqual({
+      kind: 'adjustment',
+      label: 'Abonnement',
+      amount: -4108,
+      adjustmentId: 'adj-1',
+    });
+    expect(after.toSettle - memberSettlement(base, '2026-10', 'm1').toSettle).toBe(-4108);
+    expect(
+      memberSettlement(withAdjustment, '2026-10', 'm2').toSettle -
+        memberSettlement(base, '2026-10', 'm2').toSettle,
+    ).toBe(15400);
+    expect(commonMonthSummary(withAdjustment, '2026-10')).toEqual(commonMonthSummary(base, '2026-10'));
+    const account = base.accounts.find((candidate) => candidate.id === 'acc-courant')!;
+    expect(accountBalanceAt(account, withAdjustment.transactions, '2026-10-31')).toBe(
+      accountBalanceAt(account, base.transactions, '2026-10-31'),
+    );
+    expect(memberSettlement(withAdjustment, '2026-11', 'm1').carriedOver).toBe(
+      memberSettlement(base, '2026-11', 'm1').carriedOver - 4108,
+    );
+  });
+
   it('reporte ce qui n’a pas été réglé le mois précédent', () => {
     const data = dataset({
       settlements: [

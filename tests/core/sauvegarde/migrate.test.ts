@@ -416,3 +416,53 @@ describe('migrateDataset v12 → v13', () => {
     expect(read.ok && read.value.dataset).not.toHaveProperty('recurrings');
   });
 });
+
+describe('migrateDataset v13 → v14', () => {
+  const current = createInitialDataset('2026-11-05', ids);
+  const operation = (id: string, date: string, amount: number, imputation?: object) => ({
+    ...current.transactions[0],
+    id,
+    date,
+    label: id,
+    amount,
+    accountId: 'acc-courant',
+    counterpartAccountId: null,
+    categoryId: null,
+    type: 'depense' as const,
+    status: 'realise' as const,
+    paymentMethod: '',
+    comment: '',
+    createdAt: '',
+    updatedAt: '',
+    ...(imputation ? { imputation } : {}),
+  });
+
+  it('fait des dépenses « réglé hors compte » des ajustements du mois du commun', () => {
+    const migrated = migrateDataset({
+      ...current,
+      schemaVersion: 13,
+      commonMonths: [{ month: '2026-10', envelope: 300000, savingsRates: null }],
+      transactions: [
+        operation('Ajustement', '2026-10-31', -4108, { kind: 'charge', memberId: 'm1', outside: true }),
+        operation('Billetterie', '2026-09-30', -15400, { kind: 'charge', memberId: 'm2', outside: true }),
+        operation('Navigo', '2026-10-12', -255, { kind: 'charge', memberId: 'm1' }),
+        operation('Essence', '2026-10-13', -10000, { kind: 'avance', memberId: 'm1' }),
+      ],
+    } as never);
+    expect(migrated.transactions.map((transaction) => transaction.id)).toEqual(['Navigo', 'Essence']);
+    expect(migrated.commonMonths).toEqual([
+      {
+        month: '2026-10',
+        envelope: 300000,
+        savingsRates: null,
+        adjustments: [{ id: 'mig14-Ajustement', memberId: 'm1', label: 'Ajustement', amount: -4108 }],
+      },
+      {
+        month: '2026-09',
+        envelope: null,
+        savingsRates: null,
+        adjustments: [{ id: 'mig14-Billetterie', memberId: 'm2', label: 'Billetterie', amount: -15400 }],
+      },
+    ]);
+  });
+});
