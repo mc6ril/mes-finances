@@ -2,6 +2,7 @@ import { CheckCheck, Tag, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
+import { categoriesForSelection, markVerified, recategorize } from '@/core/comptes/transactionDraft';
 import type { Category, Transaction } from '@/core/shared/model';
 import Button from '@/ui/components/atoms/Button';
 import { Select } from '@/ui/components/atoms/form/Select';
@@ -24,6 +25,9 @@ const BulkBar = ({ selected, categories, onClear, onDelete, onRecategorized }: B
   if (selected.length === 0) {
     return null;
   }
+  const compatible = categoriesForSelection(categories, selected);
+  // La sélection a pu changer depuis le choix : une catégorie devenue incompatible ne s'applique plus.
+  const applicable = compatible.some((category) => category.id === categoryId);
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl bg-accent-soft px-3 py-2">
       <Text variant="strong" as="span">
@@ -34,10 +38,7 @@ const BulkBar = ({ selected, categories, onClear, onDelete, onRecategorized }: B
         icon={CheckCheck}
         onClick={() =>
           void report(
-            finance.updateTransactions(
-              selected.map((transaction) => ({ ...transaction, status: 'realise', verified: true })),
-              'Opérations vérifiées',
-            ),
+            finance.updateTransactions(markVerified(selected), 'Opérations vérifiées'),
             'Opérations vérifiées sur le relevé',
           ).then(onClear)
         }
@@ -52,17 +53,19 @@ const BulkBar = ({ selected, categories, onClear, onDelete, onRecategorized }: B
           className="h-8 w-48 text-xs"
           options={[
             { value: '', label: 'Changer de catégorie…' },
-            ...categories
-              .filter((category) => !category.archived)
-              .map((category) => ({ value: category.id, label: category.name })),
+            // Seules les catégories compatibles avec toute la sélection (jamais une dépense pour un virement).
+            ...compatible.map((category) => ({
+              value: category.id,
+              label: category.name,
+            })),
           ]}
         />
         <Button
           size="sm"
           icon={Tag}
-          disabled={!categoryId}
+          disabled={!applicable}
           onClick={() => {
-            const changes = selected.map((before) => ({ before, after: { ...before, categoryId } }));
+            const changes = recategorize(selected, categoryId, categories);
             void report(
               finance.updateTransactions(
                 changes.map((change) => change.after),
