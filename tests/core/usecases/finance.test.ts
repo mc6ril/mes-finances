@@ -138,6 +138,37 @@ describe('budgets', () => {
 });
 
 describe('comptes, catégories et objectifs', () => {
+  it('donne un identifiant aux apports prévus ajoutés dans le formulaire', async () => {
+    const { useCases, calls } = setup();
+    await useCases.saveGoal({
+      id: 'g1',
+      name: 'Apport',
+      targetAmount: 1500000,
+      targetDate: '2028-12-31',
+      initialAmount: 0,
+      monthlyContribution: 20000,
+      linkedAccountIds: [],
+      startDate: '2026-11-01',
+      startAmount: 0,
+      plannedContributions: [
+        { id: 'p1', label: 'Famille', amount: 500000 },
+        { id: '', label: 'Prime', amount: 100000 },
+      ],
+    });
+    expect(calls[0]).toMatchObject({
+      collection: 'goals',
+      items: [
+        {
+          id: 'g1',
+          plannedContributions: [
+            { id: 'p1', label: 'Famille' },
+            { id: 'id-1', label: 'Prime' },
+          ],
+        },
+      ],
+    });
+  });
+
   it('crée une catégorie à partir d’un brouillon sans identifiant', async () => {
     const { useCases, calls } = setup();
     await useCases.saveCategory({ name: 'Sport', group: 'plaisir', period: 'mensuel', archived: false });
