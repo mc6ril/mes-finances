@@ -1,4 +1,4 @@
-import { findImportRule, imputationFromRule, ruleMatches } from '@/core/comptes/importRules';
+import { findImportRule, imputationFromRule, normalizeRule, ruleMatches } from '@/core/comptes/importRules';
 import type { HouseholdMember, ImportRule } from '@/core/shared/model';
 
 const rule = (partial: Partial<ImportRule>): ImportRule => ({
@@ -72,5 +72,61 @@ describe('imputationFromRule', () => {
   it('n’impute ni un virement ni un membre inconnu', () => {
     expect(imputationFromRule(rule({ type: 'virement', memberId: 'm1' }), members)).toBeUndefined();
     expect(imputationFromRule(rule({ type: 'revenu', memberId: 'x' }), members)).toBeUndefined();
+  });
+});
+
+describe('règle nettoyée avant enregistrement', () => {
+  const form = (partial: Partial<ImportRule>) => ({ ...rule(partial), id: undefined });
+
+  it('virement ou investissement : garde le compte, retire catégorie, membre et remboursement', () => {
+    expect(
+      normalizeRule(
+        form({
+          type: 'virement',
+          counterpartAccountId: 'livret',
+          categoryId: 'x',
+          memberId: 'm',
+          refund: true,
+        }),
+        true,
+      ),
+    ).toMatchObject({
+      type: 'virement',
+      counterpartAccountId: 'livret',
+      categoryId: null,
+      memberId: null,
+      receivedFor: false,
+      refund: false,
+    });
+    expect(normalizeRule(form({ type: 'investissement' }), false).counterpartAccountId).toBeNull();
+  });
+
+  it('dépense ou revenu : retire le compte, garde la catégorie et le remboursement de dépense', () => {
+    expect(
+      normalizeRule(
+        form({ type: 'depense', categoryId: 'c', counterpartAccountId: 'livret', refund: true }),
+        false,
+      ),
+    ).toMatchObject({ categoryId: 'c', counterpartAccountId: null, refund: true, memberId: null });
+    expect(normalizeRule(form({ type: 'revenu', refund: true }), false).refund).toBe(false);
+  });
+
+  it('ne garde le membre que dans un espace commun, et « reçu pour » seulement pour un revenu', () => {
+    expect(normalizeRule(form({ type: 'depense', memberId: 'm' }), false).memberId).toBeNull();
+    expect(normalizeRule(form({ type: 'depense', memberId: 'm', receivedFor: true }), true)).toMatchObject({
+      memberId: 'm',
+      receivedFor: false,
+    });
+    expect(normalizeRule(form({ type: 'revenu', memberId: 'm', receivedFor: true }), true)).toMatchObject({
+      memberId: 'm',
+      receivedFor: true,
+    });
+    expect(normalizeRule(form({ type: 'revenu', memberId: null, receivedFor: true }), true).receivedFor).toBe(
+      false,
+    );
+  });
+
+  it('conserve l’identifiant d’une règle existante', () => {
+    expect(normalizeRule({ ...rule({ id: 'r9' }) }, false).id).toBe('r9');
   });
 });
