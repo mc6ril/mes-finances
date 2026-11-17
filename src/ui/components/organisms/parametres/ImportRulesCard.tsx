@@ -1,6 +1,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { memberName, membersOf } from '@/core/commun/household';
+import { imputationChoices } from '@/core/commun/imputation';
 import { isInternalMoveType } from '@/core/comptes/balances';
 import { TYPE_LABELS } from '@/core/comptes/csvImport';
 import { RULE_TYPES } from '@/core/comptes/importRules';
@@ -39,6 +40,8 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
   const report = useReport();
   const [form, setForm] = useState<RuleForm>(initial);
   const members = membersOf(dataset);
+  // Le revenu déjà choisi d'un membre payé ailleurs reste proposé.
+  const incomeChoices = imputationChoices(members, 'revenu', form.memberId ? `revenu:${form.memberId}` : '');
   const memberLabel =
     dataset.settings.kind === 'commun' ? memberLabelFor(form.type, form.refund === true) : null;
   const update = (patch: Partial<RuleForm>) => setForm((current) => ({ ...current, ...patch }));
@@ -151,16 +154,19 @@ const RuleModal = ({ initial, onClose }: RuleModalProps) => {
               }}
               options={[
                 { value: '', label: 'Commun (intérêts, retrait d’épargne…)' },
-                ...members
-                  .filter((member) => member.salaryOnCommon || member.id === form.memberId)
-                  .map((member) => ({
-                    value: `revenu:${member.id}`,
-                    label: `Revenu de ${memberName(members, member.id)}`,
+                // Revenus d'abord, puis sommes reçues pour un membre.
+                ...incomeChoices
+                  .filter((choice) => choice.kind === 'revenu')
+                  .map((choice) => ({
+                    value: choice.value,
+                    label: `Revenu de ${memberName(members, choice.memberId ?? '')}`,
                   })),
-                ...members.map((member) => ({
-                  value: `charge:${member.id}`,
-                  label: `Reçu pour ${memberName(members, member.id)} (remboursement à lui reverser)`,
-                })),
+                ...incomeChoices
+                  .filter((choice) => choice.kind === 'charge')
+                  .map((choice) => ({
+                    value: choice.value,
+                    label: `Reçu pour ${memberName(members, choice.memberId ?? '')} (remboursement à lui reverser)`,
+                  })),
               ]}
             />
           </Field>

@@ -8,13 +8,8 @@ import {
   Wallet,
   WalletCards,
 } from 'lucide-react';
-import {
-  commonMonthOf,
-  commonMonthSummary,
-  memberLabel,
-  memberSettlement,
-  membersOf,
-} from '@/core/commun/household';
+import { commonMonthOf, commonMonthSummary, memberLabel, membersOf } from '@/core/commun/household';
+import { pendingSettlements } from '@/core/commun/settlement';
 import type { MonthOverview } from '@/core/budget/overview';
 import { formatEuros, formatEurosRounded, formatRate } from '@/core/shared/format';
 import type { Dataset, MonthKey } from '@/core/shared/model';
@@ -30,9 +25,7 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
   const rate = dataset.settings.household?.contributionRate ?? 0;
   const transferred = commonMonthOf(dataset, month).savingsTransfer;
   const savingsValue = overview.patrimoine.byGroup.securise + overview.patrimoine.byGroup.investissement;
-  const pending = members
-    .map((member) => ({ member, amount: memberSettlement(dataset, month, member.id).toSettle }))
-    .filter((entry) => entry.amount !== 0);
+  const pending = pendingSettlements(dataset, month);
 
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -112,10 +105,10 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
           pending.length === 0
             ? 'Aucun virement en attente'
             : pending
-                .map(({ member, amount }) =>
+                .map(({ memberId, amount }) =>
                   amount > 0
-                    ? `Commun → ${memberLabel(dataset, member.id)} ${formatEuros(amount)}`
-                    : `${memberLabel(dataset, member.id)} → commun ${formatEuros(-amount)}`,
+                    ? `Commun → ${memberLabel(dataset, memberId)} ${formatEuros(amount)}`
+                    : `${memberLabel(dataset, memberId)} → commun ${formatEuros(-amount)}`,
                 )
                 .join(' · ')
         }

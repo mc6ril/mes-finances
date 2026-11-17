@@ -1,4 +1,5 @@
 import { memberLabel, membersOf } from '@/core/commun/household';
+import { imputationChoices, type ImputationChoice } from '@/core/commun/imputation';
 import { useState } from 'react';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -65,6 +66,28 @@ const EXPENSE_FOR_HINT =
 const REFUND_FOR_HINT =
   'Remboursement pour : arrivé sur le commun pour une dépense qu’il a payée lui-même, reversé à lui. Reçu par : arrivé sur son compte pour une dépense du commun, il le doit au commun.';
 
+/** Libellé d'un choix « Pour qui » d'une dépense (ou d'un remboursement). */
+const expenseChoiceLabel = (choice: ImputationChoice, isRefund: boolean, name: string): string => {
+  if (choice.kind === 'charge') {
+    return isRefund ? `Remboursement pour ${name}` : `À la charge de ${name}`;
+  }
+  if (choice.kind === 'avance') {
+    return isRefund ? `Reçu par ${name} sur son compte` : `Avancé par ${name}`;
+  }
+  return isRefund ? 'Pour le commun' : 'Commun';
+};
+
+/** Libellé d'un choix « De qui » d'un revenu. */
+const incomeChoiceLabel = (choice: ImputationChoice, name: string): string => {
+  if (choice.kind === 'charge') {
+    return `Reçu pour ${name} (remboursement à lui reverser)`;
+  }
+  if (choice.kind === 'revenu') {
+    return `Revenu de ${name}`;
+  }
+  return 'Commun (intérêts, retrait d’épargne…)';
+};
+
 const modalTitle = (transaction: Transaction | null, template: Transaction | null): string => {
   if (transaction) {
     return 'Modifier l’opération';
@@ -96,6 +119,8 @@ const TransactionModal = ({
   const accounts = dataset.accounts.filter((account) => !account.archived);
   const isCommon = dataset.settings.kind === 'commun';
   const members = membersOf(dataset);
+  const memberOf = (choice: ImputationChoice) =>
+    choice.memberId ? memberLabel(dataset, choice.memberId) : '';
   const accountOptions = accounts.map((account) => ({ value: account.id, label: account.name }));
   const categoryOptions = [
     { value: '', label: 'Sans catégorie' },
@@ -213,21 +238,10 @@ const TransactionModal = ({
             <Select
               value={form.imputation}
               onChange={(imputation) => update({ imputation })}
-              options={[
-                { value: '', label: form.isRefund ? 'Pour le commun' : 'Commun' },
-                ...members.map((member) => ({
-                  value: `charge:${member.id}`,
-                  label: form.isRefund
-                    ? `Remboursement pour ${memberLabel(dataset, member.id)}`
-                    : `À la charge de ${memberLabel(dataset, member.id)}`,
-                })),
-                ...members.map((member) => ({
-                  value: `avance:${member.id}`,
-                  label: form.isRefund
-                    ? `Reçu par ${memberLabel(dataset, member.id)} sur son compte`
-                    : `Avancé par ${memberLabel(dataset, member.id)}`,
-                })),
-              ]}
+              options={imputationChoices(members, 'depense').map((choice) => ({
+                value: choice.value,
+                label: expenseChoiceLabel(choice, form.isRefund, memberOf(choice)),
+              }))}
             />
           </Field>
         )}
@@ -236,20 +250,11 @@ const TransactionModal = ({
             <Select
               value={form.imputation}
               onChange={(imputation) => update({ imputation })}
-              options={[
-                { value: '', label: 'Commun (intérêts, retrait d’épargne…)' },
-                ...members.map((member) => ({
-                  value: `charge:${member.id}`,
-                  label: `Reçu pour ${memberLabel(dataset, member.id)} (remboursement à lui reverser)`,
-                })),
-                // Le salaire versé hors du commun se saisit dans le mois du commun (Budget).
-                ...members
-                  .filter((member) => member.salaryOnCommon || form.imputation === `revenu:${member.id}`)
-                  .map((member) => ({
-                    value: `revenu:${member.id}`,
-                    label: `Revenu de ${memberLabel(dataset, member.id)}`,
-                  })),
-              ]}
+              // Le salaire versé hors du commun se saisit dans le mois du commun (Budget).
+              options={imputationChoices(members, 'revenu', form.imputation).map((choice) => ({
+                value: choice.value,
+                label: incomeChoiceLabel(choice, memberOf(choice)),
+              }))}
             />
           </Field>
         )}
