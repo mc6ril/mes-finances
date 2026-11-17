@@ -1,5 +1,6 @@
 import {
   accountBalanceAt,
+  isInternalMoveType,
   balanceSeries,
   cashflowSummary,
   isCounted,
@@ -148,5 +149,14 @@ describe('livePosition', () => {
 
   it('renvoie zéro avant la date de suivi du compte', () => {
     expect(livePosition(compte, novembre, '2026-10-01', '2026-10-31').projected).toBe(0);
+  });
+});
+
+describe('virement ou investissement', () => {
+  it('reconnaît les types qui déplacent l’argent entre deux comptes', () => {
+    expect(isInternalMoveType('virement')).toBe(true);
+    expect(isInternalMoveType('investissement')).toBe(true);
+    expect(isInternalMoveType('depense')).toBe(false);
+    expect(isInternalMoveType('revenu')).toBe(false);
   });
 });
