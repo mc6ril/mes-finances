@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import Text from '@/ui/design-system/Text';
 
 export const AUTH_PATHS = {
   signIn: '/connexion',
@@ -18,7 +19,9 @@ export const emailFrom = (state: unknown): string =>
 export const Divider = () => (
   <div className="flex items-center gap-3" role="separator">
     <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
-    <span className="text-xs text-stone-400 dark:text-stone-500">ou</span>
+    <Text variant="small" as="span">
+      ou
+    </Text>
     <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
   </div>
 );

@@ -49,6 +49,7 @@ import PageHeader from '@/ui/layout/PageHeader';
 import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
 import ImportModal from './ImportModal';
 import TransactionModal from './TransactionModal';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
 
 type SortKey = 'date' | 'label' | 'amount' | 'category';
 type SortState = { key: SortKey; direction: 1 | -1 };
@@ -612,7 +613,7 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
                     <td className="text-right font-medium">
                       {isOutsideAccount(row) ? (
                         <span title="Hors du compte : ne change pas le solde">
-                          <Amount cents={row.amount} className="text-stone-400" />
+                          <Amount cents={row.amount} className={MUTED_TEXT} />
                         </span>
                       ) : (
                         <Amount cents={signedEffectOn(account.id, row)} colored />

@@ -1,4 +1,6 @@
 import { formatEuros } from '@/core/shared/format';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { cx } from '@/ui/design-system/cx';
 
 type TooltipEntry = {
   name?: string | number;
@@ -26,7 +28,7 @@ const ChartTooltip = ({ active, payload, label, labelFormatter }: ChartTooltipPr
       <ul className="flex flex-col gap-1">
         {payload.map((entry) => (
           <li key={String(entry.dataKey ?? entry.name)} className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-stone-500 dark:text-stone-400">
+            <span className={cx('flex items-center gap-1.5', MUTED_TEXT)}>
               <span className="h-2 w-2 rounded-full" style={{ background: entry.color }} aria-hidden />
               {entry.name}
             </span>

@@ -33,6 +33,8 @@ import Text from '@/ui/design-system/Text';
 import ChartTooltip from '@/ui/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/charts/axis';
 import Legend from '@/ui/charts/Legend';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { cx } from '@/ui/design-system/cx';
 
 const NO_RETURNS = [0];
 
@@ -87,9 +89,7 @@ const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
   return (
     <div className="mt-3 rounded-xl border border-dashed border-stone-200 px-3 py-2.5 dark:border-stone-700">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <Text variant="small">
-          Apports prévus hors comptes <span className="text-stone-400">· prévisionnel</span>
-        </Text>
+        <Text variant="small">Apports prévus hors comptes · prévisionnel</Text>
         <Text variant="small">
           avec eux : <Amount cents={withPlanned} className="font-medium text-stone-900 dark:text-stone-50" />{' '}
           · {String(percentWith).replace('.', ',')} %
@@ -97,7 +97,7 @@ const PlannedContributions = ({ goal, current, total }: PlannedProps) => {
       </div>
       <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
         {(goal.plannedContributions ?? []).map((line) => (
-          <li key={line.id} className="text-xs text-stone-500 dark:text-stone-400">
+          <li key={line.id} className={cx('text-xs', MUTED_TEXT)}>
             {line.label} <Amount cents={line.amount} rounded className="text-stone-700 dark:text-stone-200" />
           </li>
         ))}

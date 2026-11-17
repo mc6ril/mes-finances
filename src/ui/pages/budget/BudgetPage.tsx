@@ -24,6 +24,8 @@ import MonthNote, { MonthNoteButton } from '@/ui/common/MonthNote';
 import CommonMonthCard from './commun/CommonMonthCard';
 import SettlementCard from './commun/SettlementCard';
 import AnnualBudgetCard from './AnnualBudgetCard';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
+import { cx } from '@/ui/design-system/cx';
 
 const STATUS_TONE: Record<LineStatus, ProgressTone> = {
   ok: 'good',
@@ -66,13 +68,7 @@ const Trend = ({ line }: TrendProps) => {
       </Text>
     );
   }
-  return (
-    <Amount
-      cents={line.actual - line.previousActual}
-      signed
-      className="text-xs text-stone-500 dark:text-stone-400"
-    />
-  );
+  return <Amount cents={line.actual - line.previousActual} signed className={cx('text-xs', MUTED_TEXT)} />;
 };
 
 type GroupTableProps = { group: CategoryGroup; lines: BudgetLine[]; month: string };
@@ -249,7 +245,9 @@ const BudgetFigure = ({ label, actual, budget, progress }: BudgetFigureProps) =>
     <Text variant="label">{label}</Text>
     <div className="flex flex-wrap items-baseline gap-x-1.5">
       <span className="text-xl font-semibold">{actual}</span>
-      <span className="text-sm text-stone-400 dark:text-stone-500">/ {budget}</span>
+      <Text variant="muted" as="span">
+        / {budget}
+      </Text>
     </div>
     {progress && (
       <ProgressBar

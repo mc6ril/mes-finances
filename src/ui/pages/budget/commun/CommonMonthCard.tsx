@@ -16,6 +16,9 @@ import Amount from '@/ui/design-system/Amount';
 import { cx } from '@/ui/design-system/cx';
 import { Input, Select } from '@/ui/design-system/Field';
 import MoneyInput from '@/ui/design-system/MoneyInput';
+import Text from '@/ui/design-system/Text';
+import Title from '@/ui/design-system/Title';
+import { MUTED_TEXT } from '@/ui/design-system/textColors';
 
 const percent = (rate: number): string => `${String(Math.round(rate * 1000) / 10).replace('.', ',')} %`;
 
@@ -45,7 +48,9 @@ const RatePercent = ({ rate, onCommit, label }: RatePercentProps) => {
         inputMode="decimal"
         className="h-8 pr-7 text-right text-sm"
       />
-      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-400">
+      <span
+        className={cx('pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs', MUTED_TEXT)}
+      >
         %
       </span>
     </span>
@@ -84,9 +89,13 @@ const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
       title="Renommer"
       className="min-w-0 flex-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-stone-100 dark:hover:bg-stone-800"
     >
-      <span className="block text-sm text-stone-700 dark:text-stone-200">{name}</span>
+      <Text as="span" className="block">
+        {name}
+      </Text>
       {accountName && accountName !== name && (
-        <span className="block text-xs text-stone-400">sur {accountName}</span>
+        <Text variant="small" as="span" className="block">
+          sur {accountName}
+        </Text>
       )}
     </button>
   );
@@ -109,8 +118,12 @@ const Heading = ({ icon: Icon, tone, title, hint }: HeadingProps) => (
       <Icon className="h-4 w-4" aria-hidden />
     </span>
     <div className="min-w-0 pt-1">
-      <h3 className="text-sm font-semibold text-stone-800 dark:text-stone-100">{title}</h3>
-      {hint && <p className="mt-0.5 text-xs leading-relaxed text-stone-500 dark:text-stone-400">{hint}</p>}
+      <Title level={3}>{title}</Title>
+      {hint && (
+        <Text variant="small" className="mt-0.5 leading-relaxed">
+          {hint}
+        </Text>
+      )}
     </div>
   </div>
 );
@@ -132,9 +145,9 @@ type RecapLineProps = {
 const RecapLine = ({ label, amount, detail, sign, dot, strong = false, input }: RecapLineProps) => (
   <div className="flex items-baseline justify-between gap-4 py-1.5">
     <div className="flex min-w-0 items-baseline gap-2">
-      <span className="flex w-3 shrink-0 justify-center text-xs text-stone-400">
+      <Text variant="small" as="span" className="flex w-3 shrink-0 justify-center">
         {dot ? <span className="h-2 w-2 -translate-y-px rounded-full" style={{ background: dot }} /> : sign}
-      </span>
+      </Text>
       <span>
         <span
           className={cx(
@@ -144,7 +157,11 @@ const RecapLine = ({ label, amount, detail, sign, dot, strong = false, input }: 
         >
           {label}
         </span>
-        {detail && <span className="block text-xs text-stone-400">{detail}</span>}
+        {detail && (
+          <Text variant="small" as="span" className="block">
+            {detail}
+          </Text>
+        )}
       </span>
     </div>
     {input ?? (
@@ -190,10 +207,10 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
   return (
     <section className="rounded-2xl border border-stone-200/80 bg-white shadow-card dark:border-stone-800 dark:bg-[#1c1c1b] dark:shadow-none">
       <header className="border-b border-stone-100 px-5 py-4 dark:border-stone-800 sm:px-6">
-        <h2 className="text-base font-semibold text-stone-900 dark:text-stone-50">Le mois du commun</h2>
-        <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+        <Title level={2}>Le mois du commun</Title>
+        <Text variant="small" className="mt-0.5">
           Enveloppe, épargne et reste du mois
-        </p>
+        </Text>
       </header>
 
       <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -230,10 +247,10 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                 )}
               </div>
               {summary.totalIncome === 0 && (
-                <p className="mt-2 text-xs text-stone-400">
+                <Text variant="small" className="mt-2">
                   Aucun revenu ce mois-ci : un salaire versé sur le commun vient des opérations (type Revenu,
                   « De qui ») ; un salaire versé ailleurs se saisit dans le récapitulatif.
-                </p>
+                </Text>
               )}
             </Indented>
           </div>
@@ -314,9 +331,9 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                 </div>
               )}
               {entry.savingsRates === null && savingsRates.length > 0 && (
-                <p className="mt-2 text-xs text-stone-400">
+                <Text variant="small" className="mt-2">
                   Taux repris du mois précédent. Une modification ne vaut qu’à partir de ce mois.
-                </p>
+                </Text>
               )}
               {summary.savingsTotal > 0 && (
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-emerald-50/60 px-3 py-2.5 dark:bg-emerald-500/5">
@@ -422,10 +439,10 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
             <span className="text-sm font-medium">Reste du mois</span>
             <Amount cents={summary.balance} className="text-base font-semibold" />
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-stone-400">
+          <Text variant="small" className="mt-3 leading-relaxed">
             Salaire versé sur le commun : opérations de type Revenu. Salaire versé ailleurs : saisi ici,
             repris le mois suivant. Le reste est reporté sur le mois suivant, à l’euro près.
-          </p>
+          </Text>
         </aside>
       </div>
     </section>

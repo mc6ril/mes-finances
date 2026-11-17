@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react';
 import { cx } from './cx';
+import { MUTED_TEXT } from './textColors';
 
 type TextVariant = 'body' | 'muted' | 'small' | 'label' | 'strong' | 'caption';
 
 const VARIANTS: Record<TextVariant, string> = {
   body: 'text-sm text-stone-700 dark:text-stone-200',
-  muted: 'text-sm text-stone-500 dark:text-stone-400',
-  small: 'text-xs text-stone-500 dark:text-stone-400',
-  label: 'text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400',
+  muted: `text-sm ${MUTED_TEXT}`,
+  small: `text-xs ${MUTED_TEXT}`,
+  label: `text-xs font-medium uppercase tracking-wide ${MUTED_TEXT}`,
   strong: 'text-sm font-semibold text-stone-900 dark:text-stone-50',
-  caption: 'text-[11px] text-stone-400 dark:text-stone-500',
+  caption: `text-[11px] ${MUTED_TEXT}`,
 };
 
 type TextProps = {

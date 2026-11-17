@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from 'lucide-react';
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cx } from './cx';
+import Text from './Text';
 
 const CONTROL =
   'h-10 w-full rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-900 placeholder:text-stone-400 focus:border-brand-500 focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100';
@@ -17,7 +18,11 @@ export const Field = ({ label, children, hint, error, className }: FieldProps) =
   <label className={cx('flex flex-col gap-1.5', className)}>
     <span className="text-xs font-medium text-stone-600 dark:text-stone-300">{label}</span>
     {children}
-    {hint && !error && <span className="text-[11px] text-stone-400">{hint}</span>}
+    {hint && !error && (
+      <Text variant="caption" as="span">
+        {hint}
+      </Text>
+    )}
     {error && <span className="text-[11px] text-red-600 dark:text-red-400">{error}</span>}
   </label>
 );

@@ -43,7 +43,11 @@ const StatCard = ({
     <div className="text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-50 sm:text-[22px]">
       {value}
     </div>
-    {hint && <div className="text-xs text-stone-500 dark:text-stone-400">{hint}</div>}
+    {hint && (
+      <Text variant="small" as="div">
+        {hint}
+      </Text>
+    )}
   </div>
 );
 
