@@ -9,6 +9,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  type Firestore,
   getDoc,
   getDocs,
   query,
@@ -18,7 +19,6 @@ import {
   updateDoc,
   where,
   writeBatch,
-  type Firestore,
 } from 'firebase/firestore';
 
 /**

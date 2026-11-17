@@ -1,5 +1,5 @@
-import type { AuditAction, CollectionName, Dataset, Settings } from '../shared/model';
 import type { Result } from '../shared/errors';
+import type { AuditAction, CollectionName, Dataset, Settings } from '../shared/model';
 
 export type CollectionItem<C extends CollectionName> = Dataset[C][number];
 

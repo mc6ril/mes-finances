@@ -1,19 +1,19 @@
 import { Menu, X } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
-import { APP_VERSION } from '@/ui/constants';
+import Brand from '@/ui/components/atoms/Brand';
 import Button from '@/ui/components/atoms/Button';
 import Text from '@/ui/components/atoms/Text';
-import { cx } from '@/ui/design-system/cx';
 import AccountMenu from '@/ui/components/organisms/layout/AccountMenu';
-import Brand from '@/ui/components/atoms/Brand';
-import { NAV_ITEMS, navItemOf } from '@/ui/routing/navigation';
-import PeriodPicker from '@/ui/components/organisms/layout/PeriodPicker';
-import WorkspaceSwitcher from '@/ui/components/organisms/layout/WorkspaceSwitcher';
-import OfflineBanner from '@/ui/components/organisms/layout/OfflineBanner';
 import BackupReminderBanner from '@/ui/components/organisms/layout/BackupReminderBanner';
+import OfflineBanner from '@/ui/components/organisms/layout/OfflineBanner';
+import PeriodPicker from '@/ui/components/organisms/layout/PeriodPicker';
 import Toasts from '@/ui/components/organisms/layout/Toasts';
+import WorkspaceSwitcher from '@/ui/components/organisms/layout/WorkspaceSwitcher';
+import { APP_VERSION } from '@/ui/constants';
+import { cx } from '@/ui/design-system/cx';
+import { NAV_ITEMS, navItemOf } from '@/ui/routing/navigation';
 
 type NavListProps = { onNavigate?: () => void };
 
@@ -58,6 +58,7 @@ const AppShell = ({ children }: AppShellProps) => {
   const location = useLocation();
   useSyncErrorNotice();
   const current = navItemOf(location.pathname);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: on remonte en haut de page à chaque changement de page.
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [location.pathname]);

@@ -1,4 +1,10 @@
 import { useCallback, useMemo, useReducer } from 'react';
+import { isMainWorkspace } from '@/core/espaces/workspaces';
+import { type RestoreRequest, restoreRequest, settingsSource } from '@/core/sauvegarde/backupContent';
+import { mergeSettings } from '@/core/sauvegarde/settingsMerge';
+import { todayIso } from '@/core/shared/dates';
+import type { Dataset } from '@/core/shared/model';
+import type { UserFile } from '@/core/shared/ports';
 import {
   useDataset,
   useFileUseCases,
@@ -8,14 +14,8 @@ import {
 } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import { useToast } from '@/hooks/useToast';
-import { restoreRequest, settingsSource, type RestoreRequest } from '@/core/sauvegarde/backupContent';
-import { mergeSettings } from '@/core/sauvegarde/settingsMerge';
-import { isMainWorkspace } from '@/core/espaces/workspaces';
-import { todayIso } from '@/core/shared/dates';
-import type { UserFile } from '@/core/shared/ports';
-import type { Dataset } from '@/core/shared/model';
 import { errorMessage } from '@/ui/errorMessages';
-import { backupDialogsReducer, NO_BACKUP_DIALOG, type BackupDialog, type FilePurpose } from './backupDialogs';
+import { type BackupDialog, backupDialogsReducer, type FilePurpose, NO_BACKUP_DIALOG } from './backupDialogs';
 import { restoreMessage, settingsMessage } from './backupMessages';
 
 /**

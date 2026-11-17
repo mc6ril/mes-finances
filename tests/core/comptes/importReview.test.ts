@@ -1,12 +1,12 @@
 import {
-  importDraftsFrom,
-  isMappingComplete,
-  reviewImport,
-  rulesForAccount,
   type ColumnMapping,
   type ImportDraft,
   type ImportReviewContext,
   type ImportReviewRow,
+  importDraftsFrom,
+  isMappingComplete,
+  reviewImport,
+  rulesForAccount,
 } from '@/core/comptes/csvImport';
 import type { HouseholdMember, ImportRule } from '@/core/shared/model';
 import { aCategory, anAccount, aTransaction } from '../fixtures';

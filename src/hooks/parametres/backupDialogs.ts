@@ -1,6 +1,6 @@
 import type { RestoreRequest } from '@/core/sauvegarde/backupContent';
-import type { UserFile } from '@/core/shared/ports';
 import type { Dataset } from '@/core/shared/model';
+import type { UserFile } from '@/core/shared/ports';
 
 /** Usage du fichier choisi : restaurer une sauvegarde complète, ou n'en importer que les réglages. */
 export type FilePurpose = 'restore' | 'settings';

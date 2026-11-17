@@ -1,6 +1,6 @@
 import { goalChartRows, projectionHorizon } from '@/core/patrimoine/goalChart';
-import { plannedAmountAt } from '@/core/patrimoine/goalTracking';
 import type { ProjectionScenario } from '@/core/patrimoine/goals';
+import { plannedAmountAt } from '@/core/patrimoine/goalTracking';
 import type { Goal } from '@/core/shared/model';
 
 const goal: Goal = {

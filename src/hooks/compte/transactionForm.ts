@@ -1,6 +1,6 @@
-import { centsToInput } from '@/core/shared/money';
-import type { Transaction } from '@/core/shared/model';
 import type { TransactionForm } from '@/core/comptes/transactionDraft';
+import type { Transaction } from '@/core/shared/model';
+import { centsToInput } from '@/core/shared/money';
 
 /** État du formulaire d'une opération (textes saisis) ; les règles de saisie sont dans core/comptes/transactionDraft. */
 export type TransactionFormState = TransactionForm;

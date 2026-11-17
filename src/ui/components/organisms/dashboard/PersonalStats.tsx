@@ -12,9 +12,9 @@ import {
 import type { MonthTotals } from '@/core/budget/budget';
 import type { DashboardContent, DashboardFigures, MonthOverview } from '@/core/budget/overview';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { groupLabel } from '@/ui/constants';
 import Amount from '@/ui/components/atoms/Amount';
 import StatCard from '@/ui/components/molecules/cards/StatCard';
+import { groupLabel } from '@/ui/constants';
 
 const patrimoineHint = (hasJointAccount: boolean, shareMissing: boolean): string => {
   if (!hasJointAccount) {

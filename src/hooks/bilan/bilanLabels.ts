@@ -1,7 +1,7 @@
+import { PATRIMOINE_START_KEY, type PatrimoineEvolution } from '@/core/patrimoine/patrimoine';
 import { monthKeyOf } from '@/core/shared/dates';
 import { formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
 import type { Cents, IsoDate } from '@/core/shared/model';
-import { PATRIMOINE_START_KEY, type PatrimoineEvolution } from '@/core/patrimoine/patrimoine';
 
 /** Période couverte par l'évolution du patrimoine (carte du bilan). */
 export const evolutionPeriod = (evolution: PatrimoineEvolution): string => {

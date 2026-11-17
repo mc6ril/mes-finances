@@ -1,17 +1,17 @@
 import {
   collection,
+  type DocumentReference,
   doc,
+  type Firestore,
   getDocsFromServer,
   query,
   updateDoc,
   where,
   writeBatch,
-  type DocumentReference,
-  type Firestore,
 } from 'firebase/firestore';
+import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 import type { AccountDataInterface } from '@/core/auth/interface';
 import { ok, type Result } from '@/core/shared/errors';
-import { toSyncFailure } from '@/adapters/firestore/firestoreErrors';
 
 type Membership = { ownerId: string; memberIds: string[] };
 

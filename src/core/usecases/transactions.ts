@@ -1,8 +1,8 @@
+import type { TransactionDraft } from '../comptes/transactionDraft';
 import { ok, type Result } from '../shared/errors';
 import { formatEuros } from '../shared/format';
 import type { Transaction } from '../shared/model';
-import type { TransactionDraft } from '../comptes/transactionDraft';
-import { agreed, loadedDataset, plural, type FinanceDeps } from './shared';
+import { agreed, type FinanceDeps, loadedDataset, plural } from './shared';
 
 export const createTransactionUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const saveTransaction = async (

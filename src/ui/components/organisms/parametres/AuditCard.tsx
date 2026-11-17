@@ -1,10 +1,10 @@
 import { History } from 'lucide-react';
 import { useMemo } from 'react';
-import { useDataset } from '@/hooks/useFinance';
 import { latestAuditEntries } from '@/core/shared/audit';
 import { formatDateFr } from '@/core/shared/format';
-import Card from '@/ui/components/molecules/cards/Card';
+import { useDataset } from '@/hooks/useFinance';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
 
 const AUDIT_LIMIT = 40;
 

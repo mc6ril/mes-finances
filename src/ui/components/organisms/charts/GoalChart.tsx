@@ -8,13 +8,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { scenarioKey, type GoalChartRow } from '@/core/patrimoine/goalChart';
+import { type GoalChartRow, scenarioKey } from '@/core/patrimoine/goalChart';
 import type { ProjectionScenario } from '@/core/patrimoine/goals';
 import { capitalize, monthLabel, monthShortLabel } from '@/core/shared/format';
 import type { Cents } from '@/core/shared/model';
 import { useChartTheme } from '@/hooks/useTheme';
-import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
+import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
 import Legend from '@/ui/components/molecules/charts/Legend';
 
 const ACTUAL = 'Réel';

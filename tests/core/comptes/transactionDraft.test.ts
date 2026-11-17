@@ -7,8 +7,8 @@ import {
   markVerified,
   moveCategoryId,
   recategorize,
-  typeChoiceOf,
   type TransactionForm,
+  typeChoiceOf,
 } from '@/core/comptes/transactionDraft';
 import type { HouseholdMember } from '@/core/shared/model';
 import { aCategory, anAccount, aTransaction } from '../fixtures';

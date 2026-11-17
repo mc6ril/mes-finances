@@ -1,20 +1,20 @@
 import { useMemo } from 'react';
-import { useDataset } from '@/hooks/useFinance';
-import { usePeriod } from '@/hooks/usePeriod';
-import { useChartTheme } from '@/hooks/useTheme';
 import { patrimoineContext, referenceDate } from '@/core/budget/overview';
 import {
-  allocation,
   ALLOCATION_GROUPS,
+  allocation,
   evolutionPoints,
   monthsForRange,
+  type PatrimoineRange,
   periodChange,
   positionsById,
   savingsComparison,
   splitAccounts,
-  type PatrimoineRange,
 } from '@/core/patrimoine/overview';
 import { monthsSinceTracking, patrimoineAt, patrimoineSeries } from '@/core/patrimoine/patrimoine';
+import { useDataset } from '@/hooks/useFinance';
+import { usePeriod } from '@/hooks/usePeriod';
+import { useChartTheme } from '@/hooks/useTheme';
 import { ACCOUNT_GROUP_LABELS } from '@/ui/constants';
 
 /**

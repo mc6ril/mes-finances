@@ -1,5 +1,5 @@
+import { type BudgetLine, overBudgetLines } from '@/core/budget/budget';
 import { budgetPrefill, isBudgetEmpty } from '@/core/budget/prefill';
-import { overBudgetLines, type BudgetLine } from '@/core/budget/budget';
 import type { Dataset } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
 import { aCategory, aTransaction } from '../fixtures';

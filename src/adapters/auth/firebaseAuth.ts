@@ -1,5 +1,5 @@
-import { getAuth } from 'firebase/auth';
 import type { FirebaseApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import type { AuthGatewayInterface } from '@/core/auth/interface';
 import { FirebaseAuthGateway } from './FirebaseAuthGateway';
 

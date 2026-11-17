@@ -1,34 +1,34 @@
 import { Check, Plus, Trash2, Undo2 } from 'lucide-react';
 import { useState } from 'react';
+import type { SettlementLine } from '@/core/commun/household';
 import { memberLabel, memberSettlement, membersOf, settlementCandidates } from '@/core/commun/household';
 import {
+  type AdjustmentDirection,
   adjustmentDraft,
   defaultSettlementSelection,
-  settlementSelection,
-  type AdjustmentDirection,
   type SettledPayment,
   type SettlementGroup,
   type SettlementGroupKey,
+  settlementSelection,
 } from '@/core/commun/settlement';
 import { formatDateFr, formatEuros, monthLabel } from '@/core/shared/format';
 import type { HouseholdMember, MonthKey } from '@/core/shared/model';
-import type { SettlementLine } from '@/core/commun/household';
 import { useMemberSettlement } from '@/hooks/commun/useMemberSettlement';
-import TransactionModal from '@/ui/components/organisms/modals/TransactionModal';
-import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
-import { Field } from '@/ui/components/molecules/form/Field';
-import { Input } from '@/ui/components/atoms/form/Input';
-import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
-import Segmented from '@/ui/components/molecules/Segmented';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
+import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
+import { Input } from '@/ui/components/atoms/form/Input';
+import Text from '@/ui/components/atoms/Text';
 import Card from '@/ui/components/molecules/cards/Card';
+import { Field } from '@/ui/components/molecules/form/Field';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import { Modal } from '@/ui/components/molecules/overlays/Modal';
-import Text from '@/ui/components/atoms/Text';
+import Segmented from '@/ui/components/molecules/Segmented';
+import TransactionModal from '@/ui/components/organisms/modals/TransactionModal';
 
 type LinkModalProps = { member: HouseholdMember; month: MonthKey; onClose: () => void };
 

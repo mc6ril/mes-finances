@@ -1,3 +1,4 @@
+import { yearSummary } from '@/core/budget/annual';
 import {
   annualLines,
   budgetLines,
@@ -6,7 +7,6 @@ import {
   plaisirSpent,
   provisionPerMonth,
 } from '@/core/budget/budget';
-import { yearSummary } from '@/core/budget/annual';
 import type { MonthBudget, YearBudget } from '@/core/shared/model';
 import { aTransaction, plaisirCategories } from '../fixtures';
 

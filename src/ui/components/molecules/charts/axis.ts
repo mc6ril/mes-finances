@@ -1,5 +1,5 @@
-import { NEUTRAL_MARK } from '@/ui/design-system/tokens';
 import { formatEurosRounded } from '@/core/shared/format';
+import { NEUTRAL_MARK } from '@/ui/design-system/tokens';
 
 const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 });
 

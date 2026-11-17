@@ -3,7 +3,7 @@ import { memberName, membersOf } from '@/core/commun/household';
 import { imputationChoices } from '@/core/commun/imputation';
 import { isInternalMoveType } from '@/core/comptes/balances';
 import { TYPE_LABELS } from '@/core/comptes/csvImport';
-import { normalizeRule, RULE_TYPES, type ImportRuleForm } from '@/core/comptes/importRules';
+import { type ImportRuleForm, normalizeRule, RULE_TYPES } from '@/core/comptes/importRules';
 import { categoriesForType } from '@/core/comptes/transactionDraft';
 import type { TransactionType } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';

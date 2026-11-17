@@ -1,4 +1,4 @@
-import type { HouseholdMember, Imputation, ImportRule, TransactionType } from '@/core/shared/model';
+import type { HouseholdMember, ImportRule, Imputation, TransactionType } from '@/core/shared/model';
 import { isInternalMoveType } from './balances';
 
 const words = (text: string): string[] =>

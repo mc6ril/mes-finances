@@ -1,7 +1,7 @@
 import { RefreshCw } from 'lucide-react';
+import type { LinkRecovery } from '@/hooks/auth/authActionLink';
 import Button from '@/ui/components/atoms/Button';
 import Notice from '@/ui/components/molecules/feedback/Notice';
-import type { LinkRecovery } from '@/hooks/auth/authActionLink';
 
 type AuthLinkProblemProps = {
   message: string;

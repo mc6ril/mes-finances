@@ -1,6 +1,6 @@
 import { yearSummary } from '@/core/budget/annual';
 import { accountPosition } from '@/core/patrimoine/patrimoine';
-import { anAccount, aMovement, aTransaction, plaisirCategories } from '../fixtures';
+import { aMovement, anAccount, aTransaction, plaisirCategories } from '../fixtures';
 
 const tradeRepublic = anAccount({
   id: 'tr',

@@ -1,12 +1,12 @@
+import type { LucideIcon } from 'lucide-react';
 import { ArrowRight, CircleAlert, Tags } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import type { LucideIcon } from 'lucide-react';
-import { overBudgetLines, type BudgetLine } from '@/core/budget/budget';
+import { type BudgetLine, overBudgetLines } from '@/core/budget/budget';
 import { toClassify } from '@/core/comptes/filters';
 import type { Dataset } from '@/core/shared/model';
-import { toClassifyPath } from '@/ui/routing/navigation';
 import { usePeriod } from '@/hooks/usePeriod';
+import { toClassifyPath } from '@/ui/routing/navigation';
 
 type ItemProps = { to: string; icon: LucideIcon; tone: string; children: string; onClick?: () => void };
 
@@ -33,7 +33,8 @@ const Attention = ({ dataset, lines }: AttentionProps) => {
     return null;
   }
   return (
-    <div className="flex flex-wrap gap-2" aria-label="À traiter">
+    // biome-ignore lint/a11y/useSemanticElements: simple groupe de liens nommé, un fieldset n’a pas de sens ici.
+    <div role="group" className="flex flex-wrap gap-2" aria-label="À traiter">
       {pending.count > 0 && pending.accountId && (
         <Item to={toClassifyPath(pending.accountId)} icon={Tags} tone="text-info">
           {`${pending.count} opération${pending.count > 1 ? 's' : ''} à classer`}

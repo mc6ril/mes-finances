@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { reauthenticationMethod, type AuthUser, type Reauthentication } from '@/core/auth/model';
+import { type AuthUser, type Reauthentication, reauthenticationMethod } from '@/core/auth/model';
 import { useAuthAction, useAuthUseCases } from '@/hooks/useAuth';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { PasswordInput } from '@/ui/components/atoms/form/PasswordInput';
-import { Modal } from '@/ui/components/molecules/overlays/Modal';
-import Notice from '@/ui/components/molecules/feedback/Notice';
 import Text from '@/ui/components/atoms/Text';
+import Notice from '@/ui/components/molecules/feedback/Notice';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
 
 type DeleteAccountModalProps = { user: AuthUser; onClose: () => void };
 

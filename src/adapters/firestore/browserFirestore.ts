@@ -1,13 +1,13 @@
+import type { FirebaseApp } from 'firebase/app';
 import {
   clearIndexedDbPersistence,
+  type Firestore,
   getFirestore,
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
   terminate,
-  type Firestore,
 } from 'firebase/firestore';
-import type { FirebaseApp } from 'firebase/app';
 
 /** Cache local persistant (IndexedDB), partagé entre onglets : la saisie continue hors ligne. */
 export const openBrowserFirestore = (app: FirebaseApp): Firestore => {

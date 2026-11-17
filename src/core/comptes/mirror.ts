@@ -1,6 +1,6 @@
-import { isCounted, isInternalMove } from './balances';
 import { daysBetween } from '../shared/dates';
 import type { Cents, IsoDate, SavingsMovementKind, Transaction } from '../shared/model';
+import { isCounted, isInternalMove } from './balances';
 
 export type MovementLike = { accountId: string; date: IsoDate; kind: SavingsMovementKind; amount: Cents };
 

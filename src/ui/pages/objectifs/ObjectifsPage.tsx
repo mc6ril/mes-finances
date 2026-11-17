@@ -7,8 +7,8 @@ import Button from '@/ui/components/atoms/Button';
 import EmptyState from '@/ui/components/molecules/feedback/EmptyState';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import PageHeader from '@/ui/components/molecules/PageHeader';
-import GoalCard from '@/ui/components/organisms/objectifs/GoalCard';
 import GoalModal from '@/ui/components/organisms/modals/GoalModal';
+import GoalCard from '@/ui/components/organisms/objectifs/GoalCard';
 
 const ObjectifsPage = () => {
   const dataset = useDataset();

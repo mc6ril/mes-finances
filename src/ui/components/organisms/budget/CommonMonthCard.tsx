@@ -1,17 +1,17 @@
-import { Check, PiggyBank, ReceiptText, RotateCcw, Wallet, X, type LucideIcon } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { Check, type LucideIcon, PiggyBank, ReceiptText, RotateCcw, Wallet, X } from 'lucide-react';
+import { type ReactNode, useRef, useState } from 'react';
 import { savingsLineName, savingsRename } from '@/core/commun/savingsRates';
 import { formatDateFr, formatEuros, formatRate, rateInput } from '@/core/shared/format';
-import { parsePercent } from '@/core/shared/money';
 import type { Cents, MonthKey } from '@/core/shared/model';
+import { parsePercent } from '@/core/shared/money';
 import { useCommonMonth } from '@/hooks/commun/useCommonMonth';
 import Amount from '@/ui/components/atoms/Amount';
-import { cx } from '@/ui/design-system/cx';
 import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
-import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 import Text from '@/ui/components/atoms/Text';
 import Title from '@/ui/components/atoms/Title';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
+import { cx } from '@/ui/design-system/cx';
 import { MEMBER_COLORS, NEUTRAL_MARK } from '@/ui/design-system/tokens';
 
 type RatePercentProps = { rate: number; onCommit: (rate: number) => void; label: string };

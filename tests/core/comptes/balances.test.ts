@@ -1,9 +1,9 @@
 import {
   accountBalanceAt,
-  isInternalMoveType,
   balanceSeries,
   cashflowSummary,
   isCounted,
+  isInternalMoveType,
   livePosition,
   periodPhase,
 } from '@/core/comptes/balances';

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
+import { collection, doc, type Firestore, getDoc, getDocs, setDoc, Timestamp } from 'firebase/firestore';
 import { FirestoreAccountData } from '@/adapters/firestore/auth/FirestoreAccountData';
 
 /** Suppression du compte de A (RGPD) : A possède un perso, deux communs, et est invité chez C. */

@@ -1,5 +1,5 @@
 import { accountPosition, patrimoineAt, patrimoineSeries } from '@/core/patrimoine/patrimoine';
-import { anAccount, aMovement, aTransaction, aValuation } from '../fixtures';
+import { aMovement, anAccount, aTransaction, aValuation } from '../fixtures';
 
 const courant = anAccount({ id: 'courant', openingBalance: 100000, openingDate: '2026-01-01' });
 const livret = anAccount({

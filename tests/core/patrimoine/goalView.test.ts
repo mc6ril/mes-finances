@@ -1,8 +1,8 @@
 import {
   GOAL_RATE_HYPOTHESES,
-  MAX_PROJECTION_YEARS,
   goalProgress,
   isOnPlan,
+  MAX_PROJECTION_YEARS,
   progressWithPlanned,
   savingsTarget,
   scenarioRates,

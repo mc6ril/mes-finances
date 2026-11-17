@@ -2,7 +2,7 @@ import { effectiveBudget, effectiveYearBudget, propagateBudgetLine } from '../bu
 import { ok, type Result } from '../shared/errors';
 import { formatEuros, monthLabel } from '../shared/format';
 import type { Cents, MonthKey } from '../shared/model';
-import { loadedDataset, plural, type FinanceDeps } from './shared';
+import { type FinanceDeps, loadedDataset, plural } from './shared';
 
 const followingMonths = (count: number): string =>
   count === 0 ? '' : ` et ${plural(count, 'mois suivant')}`;

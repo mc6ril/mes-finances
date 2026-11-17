@@ -1,20 +1,5 @@
-import { createInitialDataset } from '@/core/shared/seed';
-import { migrateDataset } from '@/core/sauvegarde/migrate';
-import { settleDuePlanned } from '@/core/budget/planned';
-import { todayIso } from '@/core/shared/dates';
-import type { AuditEntry, CollectionName, Dataset, Settings, WorkspaceKind } from '@/core/shared/model';
-import { SCHEMA_VERSION } from '@/core/shared/model';
 import { orderCategories } from '@/core/budget/categoryOrder';
-import { itemKey } from '@/core/shared/collections';
-import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
-import { planRestore } from '@/core/sauvegarde/restorePlan';
-import { fail, ok, type AppError, type Result } from '@/core/shared/errors';
-import {
-  type AuditLog,
-  type CollectionItem,
-  type FinanceGatewayInterface,
-  type FinanceRepositoryInterface,
-} from '@/core/store/interface';
+import { settleDuePlanned } from '@/core/budget/planned';
 import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
 import {
   activeIn,
@@ -25,6 +10,21 @@ import {
   sortWorkspaces,
   type Workspace,
 } from '@/core/espaces/workspaces';
+import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import { migrateDataset } from '@/core/sauvegarde/migrate';
+import { planRestore } from '@/core/sauvegarde/restorePlan';
+import { itemKey } from '@/core/shared/collections';
+import { todayIso } from '@/core/shared/dates';
+import { type AppError, fail, ok, type Result } from '@/core/shared/errors';
+import type { AuditEntry, CollectionName, Dataset, Settings, WorkspaceKind } from '@/core/shared/model';
+import { SCHEMA_VERSION } from '@/core/shared/model';
+import { createInitialDataset } from '@/core/shared/seed';
+import type {
+  AuditLog,
+  CollectionItem,
+  FinanceGatewayInterface,
+  FinanceRepositoryInterface,
+} from '@/core/store/interface';
 
 export type StoreStatus = 'loading' | 'ready' | 'error';
 

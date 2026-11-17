@@ -1,5 +1,5 @@
 import type { Cents, Dataset, MonthKey, Settlement, Transaction } from '../shared/model';
-import { memberSettlement, membersOf, settlementsOf, type SettlementLine } from './household';
+import { memberSettlement, membersOf, type SettlementLine, settlementsOf } from './household';
 
 export { settlementsOf };
 
@@ -50,7 +50,13 @@ export const adjustmentDraft = (
 export const displayedAmount = (amount: Cents, owes: boolean): Cents => (owes ? -amount : amount);
 
 export type SettlementGroupKey =
-  'income' | 'contribution' | 'savings' | 'avance' | 'charge' | 'received' | 'adjustment';
+  | 'income'
+  | 'contribution'
+  | 'savings'
+  | 'avance'
+  | 'charge'
+  | 'received'
+  | 'adjustment';
 
 export type SettlementGroup = {
   key: SettlementGroupKey;

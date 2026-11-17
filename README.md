@@ -30,14 +30,15 @@ npm run preview        # http://127.0.0.1:4173
 
 ## Commandes
 
-| Commande                       | Rôle                                                         |
-| ------------------------------ | ------------------------------------------------------------ |
-| `npm run dev`                  | Serveur de développement                                     |
-| `npm test`                     | Tests (Vitest), sans émulateur                               |
-| `npm run test:emulator`        | Règles Firestore et adapter sur l'émulateur (Java 21 requis) |
-| `npm run typecheck`            | Vérification TypeScript                                      |
-| `npm run build`                | Build de production dans `dist/`                             |
-| `npm run format -- <fichiers>` | Prettier sur les fichiers modifiés                           |
+| Commande                | Rôle                                                         |
+| ----------------------- | ------------------------------------------------------------ |
+| `npm run dev`           | Serveur de développement                                     |
+| `npm test`              | Tests (Vitest), sans émulateur                               |
+| `npm run test:emulator` | Règles Firestore et adapter sur l'émulateur (Java 21 requis) |
+| `npm run typecheck`     | Vérification TypeScript                                      |
+| `npm run build`         | Build de production dans `dist/`                             |
+| `npm run lint`          | Biome : formatage, imports triés et règles de lint           |
+| `npm run format`        | Biome : corrige ce qui peut l'être automatiquement           |
 
 ## Connexion (Firebase Authentication)
 

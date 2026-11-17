@@ -1,6 +1,6 @@
 import {
-  guessMapping,
   type ColumnMapping,
+  guessMapping,
   type ImportError,
   type ImportReviewRow,
 } from '@/core/comptes/csvImport';

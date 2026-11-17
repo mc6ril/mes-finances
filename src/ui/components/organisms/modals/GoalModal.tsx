@@ -1,15 +1,15 @@
 import { Plus, X } from 'lucide-react';
-import { formatEuros } from '@/core/shared/format';
-import { centsToInput } from '@/core/shared/money';
 import type { GoalForm } from '@/core/patrimoine/goalForm';
+import { formatEuros } from '@/core/shared/format';
 import type { Goal } from '@/core/shared/model';
+import { centsToInput } from '@/core/shared/money';
 import { useGoalForm } from '@/hooks/objectifs/useGoalForm';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { Input } from '@/ui/components/atoms/form/Input';
-import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
+import { Field } from '@/ui/components/molecules/form/Field';
+import { Modal } from '@/ui/components/molecules/overlays/Modal';
 
 type GoalModalProps = { goal: Goal | null; onClose: () => void };
 

@@ -1,6 +1,6 @@
 import { canInvite, type Workspace } from '../espaces/workspaces';
 import type { PendingInvitationInterface, SharingGatewayInterface } from '../partage/interface';
-import { invitationExpiry, invitationStatus, type Invitation, type NewInvitation } from '../partage/model';
+import { type Invitation, invitationExpiry, invitationStatus, type NewInvitation } from '../partage/model';
 import { fail, ok, type Result } from '../shared/errors';
 
 export type SharingPorts = {

@@ -1,8 +1,7 @@
 import { isSavingsAccount } from '../comptes/accounts';
 import { isCounted, isInternalMove } from '../comptes/balances';
-import { categoryActuals, inMonth, monthTotals, type MonthTotals } from './budget';
-import { monthKeyOf, monthsOfYear, parseMonthKey, yearOf } from '../shared/dates';
 import { isMirrored } from '../comptes/mirror';
+import { monthKeyOf, monthsOfYear, parseMonthKey, yearOf } from '../shared/dates';
 import type {
   Account,
   Category,
@@ -13,6 +12,7 @@ import type {
   SavingsMovement,
   Transaction,
 } from '../shared/model';
+import { categoryActuals, inMonth, type MonthTotals, monthTotals } from './budget';
 
 export type MonthSummary = { month: MonthKey; totals: MonthTotals; hasData: boolean };
 

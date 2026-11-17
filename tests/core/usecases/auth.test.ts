@@ -1,7 +1,7 @@
-import { SIGN_OUT_FLUSH_MS } from '@/core/sync/model';
-import { fakeSync } from '../sync/fakeSync';
 import { fail, ok, type Result } from '@/core/shared/errors';
+import { SIGN_OUT_FLUSH_MS } from '@/core/sync/model';
 import { createAuthUseCases } from '@/core/usecases/auth';
+import { fakeSync } from '../sync/fakeSync';
 import { aUser, fakeAuthGateway } from './fakeAuthGateway';
 
 const noAccountData = { erase: async (): Promise<Result<void>> => ok(undefined) };
@@ -263,7 +263,15 @@ describe('confirmation de l’adresse e-mail', () => {
 describe('suppression du compte', () => {
   const erasing = (result: Result<void> = ok(undefined)) => {
     const log: string[] = [];
-    return { log, accountData: { erase: async () => (log.push('erase'), result) } };
+    return {
+      log,
+      accountData: {
+        erase: async () => {
+          log.push('erase');
+          return result;
+        },
+      },
+    };
   };
 
   it('ré-authentifie, efface les données en ligne, puis supprime le compte', async () => {

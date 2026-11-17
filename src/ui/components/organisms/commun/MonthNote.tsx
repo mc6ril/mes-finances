@@ -6,8 +6,8 @@ import { useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import { useSavedNote } from '@/hooks/useSavedNote';
 import Button from '@/ui/components/atoms/Button';
-import { cx } from '@/ui/design-system/cx';
 import { Textarea } from '@/ui/components/atoms/form/Textarea';
+import { cx } from '@/ui/design-system/cx';
 
 type NoteButtonProps = { month: MonthKey; onClick: () => void };
 

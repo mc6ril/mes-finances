@@ -2,18 +2,18 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import type { Firestore } from 'firebase/firestore';
-import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
 import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
-import { readAnyBackup, type WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import { isCounted, isInternalMove } from '@/core/comptes/balances';
+import { isMirrored, mirroringTransfer } from '@/core/comptes/mirror';
 import { isMainWorkspace, mainWorkspaceId } from '@/core/espaces/workspaces';
+import { accountPosition, type PatrimoineContext } from '@/core/patrimoine/patrimoine';
+import { readAnyBackup, type WorkspaceData } from '@/core/sauvegarde/fullBackup';
 import { COLLECTION_NAMES, itemKey } from '@/core/shared/collections';
+import { addMonths, daysBetween, monthEnd, monthKeyOf, todayIso } from '@/core/shared/dates';
 import type { Dataset } from '@/core/shared/model';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import { isMirrored, mirroringTransfer } from '@/core/comptes/mirror';
-import { isCounted, isInternalMove } from '@/core/comptes/balances';
-import { accountPosition, type PatrimoineContext } from '@/core/patrimoine/patrimoine';
-import { addMonths, daysBetween, monthEnd, monthKeyOf, todayIso } from '@/core/shared/dates';
 
 /**
  * Vérifie localement qu'une vraie sauvegarde complète passe dans Firestore sans perte (émulateur).

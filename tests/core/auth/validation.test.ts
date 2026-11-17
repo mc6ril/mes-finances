@@ -1,9 +1,9 @@
 import {
   MIN_PASSWORD_LENGTH,
   normalizeEmail,
-  validateReauthentication,
   validateEmail,
   validateNewPassword,
+  validateReauthentication,
   validateSignIn,
   validateSignUp,
 } from '@/core/auth/validation';

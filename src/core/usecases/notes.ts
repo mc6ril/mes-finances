@@ -1,7 +1,7 @@
 import { ok, type Result } from '../shared/errors';
 import { monthLabel } from '../shared/format';
 import type { MonthKey } from '../shared/model';
-import { loadedDataset, type FinanceDeps } from './shared';
+import { type FinanceDeps, loadedDataset } from './shared';
 
 export const createNoteUseCases = ({ gateway }: FinanceDeps) => {
   /** Enregistre la note du mois ; un texte vide la supprime. */

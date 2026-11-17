@@ -1,7 +1,7 @@
+import { isCounted } from '../comptes/balances';
 import { addMonths } from '../shared/dates';
 import type { Cents, Dataset, MonthBudget, MonthKey } from '../shared/model';
 import { categoryActuals, inMonth, isMonthly } from './budget';
-import { isCounted } from '../comptes/balances';
 
 const PREFILL_MONTHS = 3;
 

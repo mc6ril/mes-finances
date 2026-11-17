@@ -1,21 +1,21 @@
 import type { Firestore } from 'firebase/firestore';
-import type { AccountDataInterface } from '@/core/auth/interface';
-import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
-import type { SharingGatewayInterface } from '@/core/partage/interface';
-import { fail, ok, type Result } from '@/core/shared/errors';
-import type { Dataset } from '@/core/shared/model';
-import type { FinanceRepositoryInterface } from '@/core/store/interface';
-import type { UserDataBackendInterface } from '@/core/sync/interface';
 import { FirestoreAccountData } from '@/adapters/firestore/auth/FirestoreAccountData';
-import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
-import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
 import {
   FirestoreWorkspaceRegistry,
   type KeyValueStorage,
 } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
-import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
 import { FirestoreBackupHistory } from '@/adapters/firestore/sauvegarde/FirestoreBackupHistory';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import type { AccountDataInterface } from '@/core/auth/interface';
+import type { WorkspaceRegistryInterface } from '@/core/espaces/interface';
+import type { SharingGatewayInterface } from '@/core/partage/interface';
 import type { BackupHistoryInterface } from '@/core/sauvegarde/interface';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { Dataset } from '@/core/shared/model';
+import type { FinanceRepositoryInterface } from '@/core/store/interface';
+import type { UserDataBackendInterface } from '@/core/sync/interface';
 
 export type FirestoreBackendDeps = {
   openFirestore: () => Firestore;

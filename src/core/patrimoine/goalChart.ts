@@ -1,7 +1,7 @@
 import { addMonths, monthEnd, monthKeyOf, monthsBetween } from '../shared/dates';
 import type { Goal, MonthKey } from '../shared/model';
-import { plannedAmountAt, type GoalHistoryPoint } from './goalTracking';
 import type { ProjectionScenario } from './goals';
+import { type GoalHistoryPoint, plannedAmountAt } from './goalTracking';
 
 /** Une ligne par mois : réel, trajectoire prévue et une colonne `r<taux>` par scénario. */
 export type GoalChartRow = { month: MonthKey } & Record<string, number | null | string>;

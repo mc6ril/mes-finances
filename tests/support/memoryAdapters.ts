@@ -1,7 +1,3 @@
-import { itemKey } from '@/core/shared/collections';
-import { fail, ok, type Result } from '@/core/shared/errors';
-import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
-import type { CollectionItem, DatasetListener, FinanceRepositoryInterface } from '@/core/store/interface';
 import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import {
   isMainWorkspace,
@@ -10,6 +6,10 @@ import {
   type Workspace,
   type WorkspaceRegistryState,
 } from '@/core/espaces/workspaces';
+import { itemKey } from '@/core/shared/collections';
+import { fail, ok, type Result } from '@/core/shared/errors';
+import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
+import type { CollectionItem, DatasetListener, FinanceRepositoryInterface } from '@/core/store/interface';
 
 /**
  * Base partagée entre plusieurs « appareils » de test : chaque dépôt créé dessus voit les écritures

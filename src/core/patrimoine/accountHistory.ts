@@ -1,6 +1,5 @@
 import { isInternalMove } from '../comptes/balances';
 import { monthEnd, parseFlexibleDate } from '../shared/dates';
-import { parseEuros } from '../shared/money';
 import type {
   Account,
   Cents,
@@ -11,7 +10,8 @@ import type {
   Transaction,
   Valuation,
 } from '../shared/model';
-import { accountPosition, transactionEffectOn, type PatrimoineContext } from './patrimoine';
+import { parseEuros } from '../shared/money';
+import { accountPosition, type PatrimoineContext, transactionEffectOn } from './patrimoine';
 
 /** Sens d'un mouvement saisi sur la valeur du compte. */
 export const MOVEMENT_SIGN: Record<SavingsMovementKind, 1 | -1> = {

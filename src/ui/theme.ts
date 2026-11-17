@@ -1,5 +1,5 @@
-import { CHART_INK, SERIES_DARK, SERIES_LIGHT } from '@/ui/design-system/tokens';
 import type { ThemePreference } from '@/core/shared/model';
+import { CHART_INK, SERIES_DARK, SERIES_LIGHT } from '@/ui/design-system/tokens';
 
 const QUERY = '(prefers-color-scheme: dark)';
 

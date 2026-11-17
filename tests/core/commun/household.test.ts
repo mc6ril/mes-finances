@@ -1,4 +1,3 @@
-import { accountBalanceAt } from '@/core/comptes/balances';
 import {
   commonMonthSummary,
   contributionsFor,
@@ -10,6 +9,7 @@ import {
   settlementCandidates,
   suggestedEnvelope,
 } from '@/core/commun/household';
+import { accountBalanceAt } from '@/core/comptes/balances';
 import type { CommonMonth, Dataset } from '@/core/shared/model';
 import { createInitialDataset, DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
 import { aCategory, anAccount, aTransaction } from '../fixtures';

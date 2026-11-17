@@ -1,14 +1,14 @@
+import { type BudgetLine, groupTotal, hasSpendingLimit } from '@/core/budget/budget';
+import type { CategoryGroup, Cents } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
-import { groupLabel } from '@/ui/constants';
-import { groupTotal, hasSpendingLimit, type BudgetLine } from '@/core/budget/budget';
-import type { CategoryGroup, Cents } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
 import Badge from '@/ui/components/atoms/Badge';
-import Card from '@/ui/components/molecules/cards/Card';
-import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
 import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
+import Card from '@/ui/components/molecules/cards/Card';
+import MoneyInput from '@/ui/components/molecules/form/MoneyInput';
+import { groupLabel } from '@/ui/constants';
 import { STATUS_BADGE, STATUS_TONE } from './budgetStatus';
 
 const progressTone = (line: BudgetLine): ProgressTone =>

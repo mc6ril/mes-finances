@@ -1,15 +1,15 @@
 import { ArrowLeft, MailCheck } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { type FormEvent, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuthAction, useAuthUseCases } from '@/hooks/useAuth';
 import Button from '@/ui/components/atoms/Button';
-import { Field } from '@/ui/components/molecules/form/Field';
 import { Input } from '@/ui/components/atoms/form/Input';
-import Notice from '@/ui/components/molecules/feedback/Notice';
 import Text from '@/ui/components/atoms/Text';
-import AuthLayout from '@/ui/components/templates/AuthLayout';
-import { AUTH_PATHS, emailFrom, type AuthLocationState } from '@/ui/routing/authPaths';
 import { AuthLink } from '@/ui/components/molecules/auth/AuthLink';
+import Notice from '@/ui/components/molecules/feedback/Notice';
+import { Field } from '@/ui/components/molecules/form/Field';
+import AuthLayout from '@/ui/components/templates/AuthLayout';
+import { AUTH_PATHS, type AuthLocationState, emailFrom } from '@/ui/routing/authPaths';
 
 const ForgotPasswordPage = () => {
   const auth = useAuthUseCases();

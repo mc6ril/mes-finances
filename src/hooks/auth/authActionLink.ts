@@ -1,5 +1,5 @@
 import type { AuthActionMode } from '@/core/auth/actionLink';
-import { needsEmailVerification, type AuthUser } from '@/core/auth/model';
+import { type AuthUser, needsEmailVerification } from '@/core/auth/model';
 import type { AppError, AppErrorCode } from '@/core/shared/errors';
 import type { AuthStatus } from '@/core/store/AuthSession';
 import { AUTH_PATHS, type AuthNotice } from '@/ui/routing/authPaths';

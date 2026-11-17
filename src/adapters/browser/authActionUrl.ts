@@ -1,4 +1,4 @@
-import { parseAuthAction, withoutAuthAction, type AuthActionLink } from '@/core/auth/actionLink';
+import { type AuthActionLink, parseAuthAction, withoutAuthAction } from '@/core/auth/actionLink';
 
 type BrowserLocation = Pick<Location, 'pathname' | 'search' | 'hash'>;
 type BrowserHistory = Pick<History, 'state' | 'replaceState'>;

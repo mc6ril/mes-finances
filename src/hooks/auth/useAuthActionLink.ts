@@ -8,12 +8,12 @@ import { AUTH_PATHS, type AuthLocationState } from '@/ui/routing/authPaths';
 import { useAuthAction, useAuthState, useAuthUseCases } from '../useAuth';
 import { useToast } from '../useToast';
 import {
-  afterAuthAction,
   AUTH_NOTICE_MESSAGES,
+  afterAuthAction,
   isLinkFailure,
+  type LinkRecovery,
   linkRecovery,
   statusAfterConfirmation,
-  type LinkRecovery,
 } from './authActionLink';
 
 export type AuthActionPhase =

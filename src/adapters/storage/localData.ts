@@ -17,7 +17,7 @@ const deleteDatabase = (factory: IDBFactory, name: string): Promise<void> =>
 
 const clearKeys = (storage: Storage): void => {
   const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index)).filter(
-    (key): key is string => key !== null && key.startsWith(APP_PREFIX),
+    (key): key is string => key?.startsWith(APP_PREFIX) ?? false,
   );
   keys.forEach((key) => storage.removeItem(key));
 };

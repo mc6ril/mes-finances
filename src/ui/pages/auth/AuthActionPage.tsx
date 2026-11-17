@@ -1,8 +1,8 @@
 import type { AuthActionLink, AuthActionMode } from '@/core/auth/actionLink';
 import { isLinkFailure } from '@/hooks/auth/authActionLink';
 import { useAuthActionLink } from '@/hooks/auth/useAuthActionLink';
-import PageLoader from '@/ui/components/atoms/PageLoader';
 import Button from '@/ui/components/atoms/Button';
+import PageLoader from '@/ui/components/atoms/PageLoader';
 import Text from '@/ui/components/atoms/Text';
 import { AuthTextButton } from '@/ui/components/molecules/auth/AuthTextButton';
 import Notice from '@/ui/components/molecules/feedback/Notice';

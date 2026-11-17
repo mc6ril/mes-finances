@@ -1,9 +1,9 @@
-import { fail, ok, type Result } from '@/core/shared/errors';
+import type { Workspace } from '@/core/espaces/workspaces';
 import type { PendingInvitationInterface, SharingGatewayInterface } from '@/core/partage/interface';
 import type { Invitation, NewInvitation } from '@/core/partage/model';
-import type { Workspace } from '@/core/espaces/workspaces';
-import { TEST_MAIN } from '../../support/memoryAdapters';
+import { fail, ok, type Result } from '@/core/shared/errors';
 import { createSharingUseCases } from '@/core/usecases/sharing';
+import { TEST_MAIN } from '../../support/memoryAdapters';
 
 const NOW = new Date('2026-11-14T10:00:00.000Z');
 const TOKEN = 'k3Jd9xQ2mZ7vN4pL8sT1wY6bR0cF5hGa';

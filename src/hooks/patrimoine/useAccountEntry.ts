@@ -4,7 +4,7 @@ import type { Account } from '@/core/shared/model';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
-import { accountEntryReducer, initialAccountEntry, type AccountEntryField } from './accountEntry';
+import { type AccountEntryField, accountEntryReducer, initialAccountEntry } from './accountEntry';
 
 /** Saisie d'un mouvement ou d'une valorisation dans un compte d'épargne, et son enregistrement. */
 export const useAccountEntry = (account: Account) => {

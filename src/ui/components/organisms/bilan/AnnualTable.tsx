@@ -2,9 +2,9 @@ import { pivotByGroup, visibleMonthIndex, type YearSummary } from '@/core/budget
 import { monthsOfYear } from '@/core/shared/dates';
 import { monthShortLabel } from '@/core/shared/format';
 import type { IsoDate, WorkspaceKind } from '@/core/shared/model';
-import { groupLabel } from '@/ui/constants';
 import Amount from '@/ui/components/atoms/Amount';
 import Card from '@/ui/components/molecules/cards/Card';
+import { groupLabel } from '@/ui/constants';
 
 const MONTH_COLUMN_WIDTH = 72;
 

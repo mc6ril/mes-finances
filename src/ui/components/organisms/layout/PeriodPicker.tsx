@@ -1,14 +1,14 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { usePeriod } from '@/hooks/usePeriod';
 import {
   isCurrentPeriod,
+  type PeriodMode,
   parseMonthKey,
   periodToday,
   stepPeriod,
-  type PeriodMode,
 } from '@/core/shared/dates';
 import { capitalize, monthLabel } from '@/core/shared/format';
 import type { MonthKey } from '@/core/shared/model';
+import { usePeriod } from '@/hooks/usePeriod';
 import Button from '@/ui/components/atoms/Button';
 
 const LABELS: Record<PeriodMode, (month: MonthKey) => string> = {

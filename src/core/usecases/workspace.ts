@@ -1,9 +1,9 @@
+import { mergeSettings } from '../sauvegarde/settingsMerge';
 import { todayIso } from '../shared/dates';
 import type { Result } from '../shared/errors';
 import type { Dataset, ImportRule, Settings } from '../shared/model';
 import { createInitialDataset } from '../shared/seed';
-import { mergeSettings } from '../sauvegarde/settingsMerge';
-import { loadedDataset, type FinanceDeps } from './shared';
+import { type FinanceDeps, loadedDataset } from './shared';
 
 export const createWorkspaceUseCases = ({ gateway, newId, now }: FinanceDeps) => {
   const updateSettings = (patch: Partial<Settings>, summary: string | null): Promise<Result<void>> =>

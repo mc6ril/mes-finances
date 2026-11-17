@@ -1,6 +1,6 @@
-import { BACKUP_APP_ID } from './backup';
-import { fail, ok, type Result } from '../shared/errors';
 import { isInteger, isObject, isString } from '@/core/shared/typeCheck';
+import { fail, ok, type Result } from '../shared/errors';
+import { BACKUP_APP_ID } from './backup';
 
 /**
  * Sauvegarde chiffrée par mot de passe, dans le navigateur : rien ne part vers un serveur.

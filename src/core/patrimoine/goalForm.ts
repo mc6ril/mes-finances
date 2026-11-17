@@ -1,7 +1,7 @@
-import { fail, ok, type Result } from '../shared/errors';
 import { parseFlexibleDate } from '../shared/dates';
-import { centsToInput, parseEuros } from '../shared/money';
+import { fail, ok, type Result } from '../shared/errors';
 import type { Account, Cents, Goal, IsoDate, PlannedContribution } from '../shared/model';
+import { centsToInput, parseEuros } from '../shared/money';
 import { linkedValueAt } from './goalTracking';
 import type { PatrimoineContext } from './patrimoine';
 

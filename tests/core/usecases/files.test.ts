@@ -1,6 +1,13 @@
+import { WebCryptoBackupCipher } from '@/adapters/crypto/WebCryptoBackupCipher';
+import type { Workspace } from '@/core/espaces/workspaces';
 import { createBackup } from '@/core/sauvegarde/backup';
-import { fail, ok, type Result } from '@/core/shared/errors';
 import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import type {
+  BackupHistory,
+  BackupHistoryInterface,
+  WorkspaceDataSourceInterface,
+} from '@/core/sauvegarde/interface';
+import { fail, ok, type Result } from '@/core/shared/errors';
 import type {
   CsvParserInterface,
   FileSaverInterface,
@@ -8,15 +15,8 @@ import type {
   TextFileReaderInterface,
   UserFile,
 } from '@/core/shared/ports';
-import type {
-  BackupHistory,
-  BackupHistoryInterface,
-  WorkspaceDataSourceInterface,
-} from '@/core/sauvegarde/interface';
 import { createInitialDataset } from '@/core/shared/seed';
 import { createFileUseCases } from '@/core/usecases/files';
-import { WebCryptoBackupCipher } from '@/adapters/crypto/WebCryptoBackupCipher';
-import type { Workspace } from '@/core/espaces/workspaces';
 import { TEST_MAIN } from '../../support/memoryAdapters';
 import { aTransaction } from '../fixtures';
 

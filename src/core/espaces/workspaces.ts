@@ -1,6 +1,6 @@
-import { fail, ok, type AppErrorCode, type Result } from '../shared/errors';
-import type { WorkspaceKind } from '../shared/model';
 import { isObject, isString } from '@/core/shared/typeCheck';
+import { type AppErrorCode, fail, ok, type Result } from '../shared/errors';
+import type { WorkspaceKind } from '../shared/model';
 
 /** Propriétaire : a créé l'espace (ou l'a reçu par transfert) ; invité : a rejoint un espace commun. */
 export type WorkspaceRole = 'owner' | 'guest';

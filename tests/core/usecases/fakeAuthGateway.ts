@@ -1,6 +1,6 @@
+import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
 import type { AuthUser, Reauthentication, SignUpCredentials } from '@/core/auth/model';
 import { ok, type Result } from '@/core/shared/errors';
-import type { AuthGatewayInterface, AuthListener } from '@/core/auth/interface';
 
 export type AuthCall =
   | { kind: 'signUp'; credentials: SignUpCredentials }

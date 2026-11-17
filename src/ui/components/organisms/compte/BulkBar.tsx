@@ -1,13 +1,13 @@
 import { CheckCheck, Tag, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
 import { categoriesForSelection, markVerified, recategorize } from '@/core/comptes/transactionDraft';
 import type { Category, Transaction } from '@/core/shared/model';
+import type { CategoryChange } from '@/hooks/compte/useLedger';
+import { useFinanceUseCases } from '@/hooks/useFinance';
+import { useReport } from '@/hooks/useReport';
 import Button from '@/ui/components/atoms/Button';
 import { Select } from '@/ui/components/atoms/form/Select';
 import Text from '@/ui/components/atoms/Text';
-import type { CategoryChange } from '@/hooks/compte/useLedger';
 
 type BulkBarProps = {
   selected: Transaction[];

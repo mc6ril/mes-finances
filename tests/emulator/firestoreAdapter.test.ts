@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, setDoc, Timestamp, type Firestore } from 'firebase/firestore';
-import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
+import { collection, doc, type Firestore, getDoc, getDocs, setDoc, Timestamp } from 'firebase/firestore';
 import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
-import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
+import { FirestoreFinanceRepository } from '@/adapters/firestore/store/FirestoreFinanceRepository';
 import { byteSize } from '@/adapters/firestore/store/sharding';
-import { FinanceStore } from '@/core/store/FinanceStore';
+import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { mainWorkspace } from '@/core/espaces/workspaces';
 import type { Dataset } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
+import { FinanceStore } from '@/core/store/FinanceStore';
 import { aTransaction } from '../core/fixtures';
 
 /** Adapter Firestore contre l'émulateur, avec les vraies règles. */
@@ -168,7 +168,7 @@ describe('dépôt d’un espace', () => {
     await repository.close();
 
     const meta = await getDoc(doc(dbOf(OWNER), `workspaces/${COMMON}`));
-    const count = (meta.data()?.layout as Record<string, number>).transactions ?? 0;
+    const count = (meta.data()?.layout as Record<string, number> | undefined)?.transactions ?? 0;
     expect(count).toBeGreaterThan(1);
     const shards = await getDocs(collection(dbOf(OWNER), `workspaces/${COMMON}/data`));
     shards.docs

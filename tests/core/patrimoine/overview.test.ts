@@ -1,6 +1,6 @@
 import {
-  allocation,
   ALLOCATION_GROUPS,
+  allocation,
   evolutionPoints,
   monthsForRange,
   periodChange,
