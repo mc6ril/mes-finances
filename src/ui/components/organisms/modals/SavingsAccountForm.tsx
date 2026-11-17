@@ -5,7 +5,7 @@ import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
 import { newAccountDraft, SAVINGS_KINDS, withKind } from '@/core/comptes/accounts';
 import { parseFlexibleDate } from '@/core/shared/dates';
-import { parseEuros } from '@/core/shared/money';
+import { centsToInput, parseEuros } from '@/core/shared/money';
 import type { Account, AccountKind } from '@/core/shared/model';
 import { ACCOUNT_KIND_LABELS } from '@/ui/constants';
 import Button from '@/ui/components/atoms/Button';
@@ -14,9 +14,6 @@ import { Input } from '@/ui/components/atoms/form/Input';
 import { Select } from '@/ui/components/atoms/form/Select';
 import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Text from '@/ui/components/atoms/Text';
-
-const centsToText = (cents: number): string =>
-  cents === 0 ? '' : (cents / 100).toFixed(2).replace('.', ',');
 
 type SavingsAccountFormProps = { account?: Account; onClose: () => void; onArchived?: () => void };
 
@@ -30,7 +27,7 @@ const SavingsAccountForm = ({ account, onClose, onArchived }: SavingsAccountForm
   const { today } = usePeriod();
   const [name, setName] = useState(account?.name ?? '');
   const [kind, setKind] = useState<AccountKind>(account?.kind ?? 'livret');
-  const [balance, setBalance] = useState(centsToText(account?.openingBalance ?? 0));
+  const [balance, setBalance] = useState(centsToInput(account?.openingBalance ?? 0, { blankZero: true }));
   const [date, setDate] = useState(account?.openingDate ?? today);
   const [error, setError] = useState<string | null>(null);
 

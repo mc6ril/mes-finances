@@ -10,7 +10,7 @@ import type {
   TransactionStatus,
   TransactionType,
 } from '../shared/model';
-import { parseEuros } from '../shared/money';
+import { centsToInput, parseEuros } from '../shared/money';
 
 export const normalizeLabel = (label: string): string =>
   label
@@ -273,8 +273,6 @@ const escapeCsv = (value: string): string => {
   return value;
 };
 
-const decimalFr = (cents: Cents): string => (cents / 100).toFixed(2).replace('.', ',');
-
 export const transactionsToCsv = (
   transactions: Transaction[],
   categories: Category[],
@@ -299,7 +297,7 @@ export const transactionsToCsv = (
       [
         formatDateFr(transaction.date),
         transaction.label,
-        decimalFr(transaction.amount),
+        centsToInput(transaction.amount),
         categoryNames.get(transaction.categoryId ?? '') ?? '',
         accountNames.get(transaction.accountId) ?? '',
         TYPE_LABELS[transaction.type],

@@ -4,7 +4,7 @@ import { patrimoineContext } from '@/core/budget/overview';
 import { linkedValueAt } from '@/core/patrimoine/goalTracking';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import { formatEuros } from '@/core/shared/format';
-import { parseEuros } from '@/core/shared/money';
+import { centsToInput, parseEuros } from '@/core/shared/money';
 import type { Cents, Goal } from '@/core/shared/model';
 import type { Draft } from '@/core/usecases/shared';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
@@ -30,7 +30,7 @@ type GoalForm = {
   planned: { id: string; label: string; amount: string }[];
 };
 
-const eurosInput = (cents: Cents): string => String(cents / 100).replace('.', ',');
+const eurosInput = (cents: Cents): string => centsToInput(cents, { compact: true });
 
 type GoalModalProps = { goal: Goal | null; onClose: () => void };
 

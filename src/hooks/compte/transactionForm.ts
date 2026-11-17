@@ -1,4 +1,4 @@
-import { parseEuros } from '@/core/shared/money';
+import { centsToInput, parseEuros } from '@/core/shared/money';
 import { parseFlexibleDate } from '@/core/shared/dates';
 import type {
   Category,
@@ -42,12 +42,10 @@ export const categoriesForType = (categories: Category[], type: TransactionType)
 export const needsCounterpart = (type: TransactionType): boolean =>
   type === 'virement' || type === 'investissement';
 
-const amountText = (cents: number): string => (Math.abs(cents) / 100).toFixed(2).replace('.', ',');
-
 export const formFromTransaction = (transaction: Transaction): TransactionFormState => ({
   date: transaction.date,
   label: transaction.label,
-  amount: amountText(transaction.amount),
+  amount: centsToInput(Math.abs(transaction.amount)),
   type: transaction.type,
   isRefund: transaction.type === 'depense' && transaction.amount > 0,
   categoryId: transaction.categoryId ?? '',

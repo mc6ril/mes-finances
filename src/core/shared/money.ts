@@ -71,3 +71,22 @@ export const ratio = (part: number, whole: number): number => {
   }
   return part / whole;
 };
+
+type CentsToInputOptions = {
+  /** Omet « ,00 » d'un montant rond (100 au lieu de 100,00). */
+  compact?: boolean;
+  /** Laisse le champ vide pour zéro. */
+  blankZero?: boolean;
+};
+
+/** Montant en centimes écrit pour un champ de saisie ou un export : « 12,50 », relu par parseEuros. */
+export const centsToInput = (
+  cents: Cents,
+  { compact = false, blankZero = false }: CentsToInputOptions = {},
+) => {
+  if (blankZero && cents === 0) {
+    return '';
+  }
+  const text = (cents / 100).toFixed(2).replace('.', ',');
+  return compact ? text.replace(/,00$/, '') : text;
+};
