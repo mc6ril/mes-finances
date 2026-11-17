@@ -29,6 +29,12 @@ export const monthStart = (month: MonthKey): IsoDate => `${month}-01`;
 
 export const monthEnd = (month: MonthKey): IsoDate => `${month}-${pad(daysInMonth(month))}`;
 
+/** La date du jour, ramenée au dernier jour du mois quand le mois est passé. */
+export const clampToMonth = (today: IsoDate, month: MonthKey): IsoDate => {
+  const last = monthEnd(month);
+  return today < last ? today : last;
+};
+
 export const addMonths = (month: MonthKey, count: number): MonthKey => {
   const parsed = parseMonthKey(month);
   const index = parsed.year * 12 + (parsed.month - 1) + count;

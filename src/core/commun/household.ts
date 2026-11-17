@@ -8,6 +8,7 @@ import type {
   HouseholdMember,
   MonthKey,
   SavingsRate,
+  Settlement,
   Transaction,
 } from '../shared/model';
 
@@ -272,10 +273,12 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
 const dueOf = (dataset: Dataset, month: MonthKey, member: HouseholdMember): Cents =>
   settlementLines(dataset, month, member).reduce((sum, line) => sum + line.amount, 0);
 
+/** Règlements faits pour un membre au titre d'un mois. */
+export const settlementsOf = (dataset: Dataset, month: MonthKey, memberId: string): Settlement[] =>
+  dataset.settlements.filter((settlement) => settlement.month === month && settlement.memberId === memberId);
+
 const settledIn = (dataset: Dataset, month: MonthKey, memberId: string): Cents =>
-  dataset.settlements
-    .filter((settlement) => settlement.month === month && settlement.memberId === memberId)
-    .reduce((sum, settlement) => sum + settlement.amount, 0);
+  settlementsOf(dataset, month, memberId).reduce((sum, settlement) => sum + settlement.amount, 0);
 
 export const memberSettlement = (dataset: Dataset, month: MonthKey, memberId: string): MemberSettlement => {
   const member = membersOf(dataset).find((candidate) => candidate.id === memberId);

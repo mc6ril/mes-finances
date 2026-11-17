@@ -1,19 +1,10 @@
 import { Check, PiggyBank, ReceiptText, RotateCcw, Wallet, X, type LucideIcon } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
-import {
-  commonMonthOf,
-  commonMonthSummary,
-  effectiveSavingsRates,
-  memberLabel,
-  membersOf,
-  savingsPayerOf,
-} from '@/core/commun/household';
-import { activeSavingsAccounts } from '@/core/comptes/accounts';
+import { useRef, useState, type ReactNode } from 'react';
+import { savingsLineName, savingsRename } from '@/core/commun/savingsRates';
 import { formatDateFr, formatEuros, formatRate, rateInput } from '@/core/shared/format';
 import { parsePercent } from '@/core/shared/money';
-import type { Cents, CommonMonth, MonthKey, SavingsRate } from '@/core/shared/model';
-import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
-import { useReport } from '@/hooks/useReport';
+import type { Cents, MonthKey } from '@/core/shared/model';
+import { useCommonMonth } from '@/hooks/commun/useCommonMonth';
 import Amount from '@/ui/components/atoms/Amount';
 import { cx } from '@/ui/design-system/cx';
 import { Input } from '@/ui/components/atoms/form/Input';
@@ -63,6 +54,8 @@ type SavingsNameProps = { name: string; accountName?: string; onRename: (label: 
 /** Nom de l'enveloppe d'épargne, modifiable d'un clic ; le compte apparaît dessous s'il diffère. */
 const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
   const [draft, setDraft] = useState<string | null>(null);
+  // Échap ferme le champ sans enregistrer : le blur qui peut suivre doit ignorer la saisie.
+  const cancelled = useRef(false);
   if (draft !== null) {
     return (
       <span className="min-w-0 flex-1">
@@ -73,12 +66,22 @@ const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
           label="Nom de l’épargne"
           className="h-8 text-sm"
           onBlur={() => {
-            if (draft.trim() !== name) {
-              onRename(draft.trim() === accountName ? '' : draft.trim());
+            const next = savingsRename(name, draft, accountName, { cancelled: cancelled.current });
+            cancelled.current = false;
+            if (next.kind === 'save') {
+              onRename(next.label);
             }
             setDraft(null);
           }}
-          onKeyDown={(key) => key === 'Enter' && (document.activeElement as HTMLElement | null)?.blur()}
+          onKeyDown={(key) => {
+            if (key === 'Enter') {
+              (document.activeElement as HTMLElement | null)?.blur();
+            }
+            if (key === 'Escape') {
+              cancelled.current = true;
+              setDraft(null);
+            }
+          }}
         />
       </span>
     );
@@ -86,7 +89,10 @@ const SavingsName = ({ name, accountName, onRename }: SavingsNameProps) => {
   return (
     <button
       type="button"
-      onClick={() => setDraft(name)}
+      onClick={() => {
+        cancelled.current = false;
+        setDraft(name);
+      }}
       title="Renommer"
       className="min-w-0 flex-1 rounded-md px-1 py-0.5 text-left transition-colors hover:bg-surface-muted"
     >
@@ -173,25 +179,16 @@ const Divider = () => <div className="my-2 border-t border-line-faint" />;
 
 /** Le mois du compte commun : enveloppe et épargne à gauche, récapitulatif du calcul à droite. */
 const CommonMonthCard = ({ month }: { month: MonthKey }) => {
-  const dataset = useDataset();
-  const finance = useFinanceUseCases();
-  const report = useReport();
-  const entry = commonMonthOf(dataset, month);
-  const summary = commonMonthSummary(dataset, month);
-  const members = membersOf(dataset);
-  const rate = dataset.settings.household?.contributionRate ?? 0;
-  const savingsRates = effectiveSavingsRates(dataset.commonMonths, month);
-  const savingsAccounts = activeSavingsAccounts(dataset.accounts);
-
-  const save = (patch: Partial<CommonMonth>) => void report(finance.saveCommonMonth({ ...entry, ...patch }));
-  const saveRates = (rates: SavingsRate[]) => save({ savingsRates: rates });
-  const accountOf = (accountId: string) => dataset.accounts.find((account) => account.id === accountId);
-  const shareOf = (memberId: string): string | undefined =>
-    summary.totalIncome > 0
-      ? `${formatRate((summary.incomes[memberId] ?? 0) / summary.totalIncome)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`
-      : undefined;
+  const common = useCommonMonth(month);
+  const { entry, summary, members, savingsRates, savingsAccounts, payerName, nameOf, accountOf } = common;
+  const rate = common.contributionRate;
+  const shareOf = (memberId: string): string | undefined => {
+    const share = common.shareOf(memberId);
+    return share === null
+      ? undefined
+      : `${formatRate(share)} · part ${formatEuros(summary.contributions[memberId] ?? 0)}`;
+  };
   const positive = summary.balance >= 0;
-  const payer = savingsPayerOf(dataset.settings.household);
 
   return (
     <section className="rounded-2xl border border-line-card bg-surface shadow-card dark:shadow-none">
@@ -218,7 +215,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   cents={summary.envelope}
                   label="Enveloppe du mois"
                   className="w-36"
-                  onCommit={(cents) => save({ envelope: cents === summary.suggestedEnvelope ? null : cents })}
+                  onCommit={common.setEnvelope}
                 />
                 {entry.envelope === null ? (
                   <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs text-accent-ink-medium">
@@ -227,7 +224,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => save({ envelope: null })}
+                    onClick={common.resetEnvelope}
                     className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-ink-subtle-fixed transition-colors hover:bg-surface-muted hover:text-ink-emphasis"
                   >
                     <RotateCcw className="h-3 w-3" aria-hidden />
@@ -255,7 +252,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               <ul className="flex flex-col">
                 {summary.savings.map((line, index) => {
                   const account = accountOf(line.accountId);
-                  const name = line.label?.trim() || account?.name || 'Compte supprimé';
+                  const name = savingsLineName(line, account);
                   return (
                     <li key={`${line.accountId}-${index}`} className="group flex items-center gap-3 py-1.5">
                       <span
@@ -267,31 +264,19 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                         key={`${month}-${index}-${name}`}
                         name={name}
                         accountName={account?.name}
-                        onRename={(label) =>
-                          saveRates(
-                            savingsRates.map((item, position) =>
-                              position === index ? { ...item, label: label || undefined } : item,
-                            ),
-                          )
-                        }
+                        onRename={(label) => common.renameRate(index, label)}
                       />
                       <RatePercent
                         key={`${month}-${line.accountId}-${line.rate}`}
                         rate={line.rate}
                         label={`Pourcentage pour ${name}`}
-                        onCommit={(next) =>
-                          saveRates(
-                            savingsRates.map((item, position) =>
-                              position === index ? { ...item, rate: next } : item,
-                            ),
-                          )
-                        }
+                        onCommit={(next) => common.setRate(index, next)}
                       />
                       <Amount cents={line.amount} className="w-24 text-right text-sm text-ink-body" />
                       <button
                         type="button"
                         aria-label={`Retirer ${name}`}
-                        onClick={() => saveRates(savingsRates.filter((_, position) => position !== index))}
+                        onClick={() => common.removeRate(index)}
                         className="rounded-md p-1 text-ink-ghost-fixed opacity-0 transition hover:bg-surface-muted hover:text-ink-secondary-fixed focus:opacity-100 group-hover:opacity-100"
                       >
                         <X className="h-3.5 w-3.5" aria-hidden />
@@ -306,9 +291,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                     value=""
                     label="Ajouter une épargne"
                     className="h-9 border-dashed text-sm text-ink-prompt"
-                    onChange={(accountId) =>
-                      accountId && saveRates([...savingsRates, { accountId, rate: 0.1 }])
-                    }
+                    onChange={(accountId) => accountId && common.addRate(accountId)}
                     options={[
                       { value: '', label: '+ Ajouter une épargne' },
                       ...savingsAccounts.map((account) => ({ value: account.id, label: account.name })),
@@ -327,15 +310,13 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                     <>
                       <span className="flex items-center gap-2 text-sm text-positive-ink-deep">
                         <Check className="h-4 w-4" aria-hidden />
-                        {payer
-                          ? `Épargne versée par ${memberLabel(dataset, payer)} le ${formatDateFr(entry.savingsTransfer.date)}`
+                        {payerName
+                          ? `Épargne versée par ${payerName} le ${formatDateFr(entry.savingsTransfer.date)}`
                           : `Épargne virée le ${formatDateFr(entry.savingsTransfer.date)}`}
                       </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          void report(finance.cancelSavingsTransfer(month), 'Virement d’épargne annulé')
-                        }
+                        onClick={common.cancelSavingsTransfer}
                         className="text-xs text-ink-subtle-fixed underline-offset-2 hover:text-ink-emphasis-soft hover:underline"
                       >
                         Annuler
@@ -344,25 +325,18 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                   ) : (
                     <>
                       <span className="text-sm text-ink-secondary">
-                        {payer
-                          ? `À verser par ${memberLabel(dataset, payer)} sur les livrets :`
+                        {payerName
+                          ? `À verser par ${payerName} sur les livrets :`
                           : 'À virer en fin de mois :'}{' '}
                         <Amount cents={summary.savingsTotal} className="font-medium" />
                       </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          void report(
-                            finance.transferSavings(month),
-                            payer
-                              ? 'Versements ajoutés aux livrets'
-                              : 'Virement d’épargne ajouté au compte commun',
-                          )
-                        }
+                        onClick={common.transferSavings}
                         className="inline-flex items-center gap-1.5 rounded-lg bg-surface-field px-3 py-1.5 text-xs font-medium text-positive-ink-strong shadow-xs ring-1 ring-positive-line-soft transition-colors hover:bg-positive-soft-fixed"
                       >
                         <Check className="h-3.5 w-3.5" aria-hidden />
-                        {payer ? 'Épargne versée' : 'Virement fait'}
+                        {payerName ? 'Épargne versée' : 'Virement fait'}
                       </button>
                     </>
                   )}
@@ -379,7 +353,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               member.salaryOnCommon ? (
                 <RecapLine
                   key={member.id}
-                  label={`Revenus ${memberLabel(dataset, member.id)}`}
+                  label={`Revenus ${nameOf(member.id)}`}
                   detail={shareOf(member.id)}
                   amount={summary.incomes[member.id] ?? 0}
                   dot={MEMBER_COLORS[index % MEMBER_COLORS.length]}
@@ -387,7 +361,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               ) : (
                 <RecapLine
                   key={member.id}
-                  label={`Revenus ${memberLabel(dataset, member.id)}`}
+                  label={`Revenus ${nameOf(member.id)}`}
                   detail={shareOf(member.id) ?? 'Versés sur son compte : à saisir'}
                   amount={summary.incomes[member.id] ?? 0}
                   dot={MEMBER_COLORS[index % MEMBER_COLORS.length]}
@@ -395,11 +369,9 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
                     <MoneyInput
                       key={`${month}-${member.id}-${summary.incomes[member.id] ?? 0}`}
                       cents={summary.incomes[member.id] ?? 0}
-                      label={`Revenus ${memberLabel(dataset, member.id)} du mois`}
+                      label={`Revenus ${nameOf(member.id)} du mois`}
                       className="w-28"
-                      onCommit={(cents) =>
-                        save({ outsideIncomes: { ...entry.outsideIncomes, [member.id]: cents } })
-                      }
+                      onCommit={(cents) => common.setOutsideIncome(member.id, cents)}
                     />
                   }
                 />
