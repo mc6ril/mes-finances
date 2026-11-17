@@ -88,6 +88,7 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'sync-local-data-not-cleared': () =>
     'Déconnexion faite, mais les données de cet appareil n’ont pas pu être effacées : ferme tous les onglets de l’application puis recharge la page.',
   'sync-failed': () => 'L’enregistrement en ligne a échoué. Réessaie dans un instant.',
+  'backup-password-mismatch': () => 'Les deux mots de passe ne correspondent pas.',
 };
 
 const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);

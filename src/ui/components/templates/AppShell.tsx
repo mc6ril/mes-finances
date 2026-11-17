@@ -1,23 +1,19 @@
-import { Archive, CloudOff, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
-import { useDataset, useFinanceState, useFinanceStore } from '@/hooks/useFinance';
-import { useBackupHistory } from '@/hooks/useBackupHistory';
-import { usePeriod } from '@/hooks/usePeriod';
-import { backupReminder } from '@/core/sauvegarde/reminder';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
-import { useSyncStatus } from '@/hooks/useSyncStatus';
-import { useToast } from '@/hooks/useToast';
-import { useReport } from '@/hooks/useReport';
 import { APP_VERSION } from '@/ui/constants';
 import Button from '@/ui/components/atoms/Button';
-import { Select } from '@/ui/components/atoms/form/Select';
 import Text from '@/ui/components/atoms/Text';
 import { cx } from '@/ui/design-system/cx';
 import AccountMenu from '@/ui/components/organisms/layout/AccountMenu';
 import Brand from '@/ui/components/atoms/Brand';
 import { NAV_ITEMS, navItemOf } from '@/ui/routing/navigation';
 import PeriodPicker from '@/ui/components/organisms/layout/PeriodPicker';
+import WorkspaceSwitcher from '@/ui/components/organisms/layout/WorkspaceSwitcher';
+import OfflineBanner from '@/ui/components/organisms/layout/OfflineBanner';
+import BackupReminderBanner from '@/ui/components/organisms/layout/BackupReminderBanner';
+import Toasts from '@/ui/components/organisms/layout/Toasts';
 
 type NavListProps = { onNavigate?: () => void };
 
@@ -54,109 +50,6 @@ const SidebarFooter = () => (
     </Text>
   </div>
 );
-
-const WorkspaceSwitcher = () => {
-  const { workspaces, workspace } = useFinanceState();
-  const store = useFinanceStore();
-  const report = useReport();
-  if (workspaces.length < 2) {
-    return null;
-  }
-  return (
-    <div className="flex flex-col gap-1.5 border-t border-line-card px-2 pt-4">
-      <Text variant="label" className="px-1">
-        Espace
-      </Text>
-      <Select
-        value={workspace.id}
-        onChange={(workspaceId) => void report(store.switchWorkspace(workspaceId))}
-        label="Espace affiché"
-        className="h-9"
-        options={workspaces.map((item) => ({
-          value: item.id,
-          label: item.name,
-        }))}
-      />
-    </div>
-  );
-};
-
-/** Hors ligne, la saisie continue : les modifications partent au retour du réseau. */
-const OfflineBanner = () => {
-  const { offline, pendingWrites } = useSyncStatus();
-  if (!offline) {
-    return null;
-  }
-  return (
-    <div
-      role="status"
-      className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-warning-soft-strong px-4 py-2 text-center text-xs font-medium text-warning-ink-deepest"
-    >
-      <CloudOff className="h-3.5 w-3.5" aria-hidden />
-      {pendingWrites > 0
-        ? `Hors ligne : ${pendingWrites} modification${pendingWrites > 1 ? 's' : ''} en attente, envoyée${pendingWrites > 1 ? 's' : ''} au retour du réseau.`
-        : 'Hors ligne : tu peux continuer, tes modifications seront envoyées au retour du réseau.'}
-    </div>
-  );
-};
-
-/** Rappel discret quand la dernière sauvegarde complète date de plus de 30 jours (ou n'existe pas). */
-const BackupReminderBanner = () => {
-  const { history, exportAll, hideReminder } = useBackupHistory();
-  const dataset = useDataset();
-  const { today } = usePeriod();
-  const reminder = history && backupReminder(history, dataset.transactions.length > 0, today);
-  if (!reminder) {
-    return null;
-  }
-  return (
-    <div
-      role="status"
-      className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-surface-muted-soft px-4 py-2 text-center text-xs text-ink-body"
-    >
-      <Archive className="h-3.5 w-3.5" aria-hidden />
-      {reminder.kind === 'never'
-        ? 'Tu n’as encore jamais exporté de sauvegarde complète.'
-        : `Ta dernière sauvegarde complète date de ${reminder.days} jours.`}
-      <button
-        type="button"
-        onClick={() => void exportAll()}
-        className="font-medium text-accent-ink-medium hover:underline"
-      >
-        Sauvegarder maintenant
-      </button>
-      <button type="button" onClick={hideReminder} className="text-ink-subtle hover:underline">
-        Masquer 7 jours
-      </button>
-    </div>
-  );
-};
-
-const Toasts = () => {
-  const { toasts, dismiss } = useToast();
-  return (
-    <div
-      className="pointer-events-none fixed bottom-4 right-4 z-60 flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2"
-      aria-live="polite"
-    >
-      {toasts.map((toast) => (
-        <button
-          type="button"
-          key={toast.id}
-          onClick={() => dismiss(toast.id)}
-          className={cx(
-            'pointer-events-auto animate-in rounded-xl px-4 py-3 text-left text-sm font-medium shadow-lg ring-1',
-            toast.tone === 'error' && 'bg-negative-banner text-negative-ink-deep ring-negative-line',
-            toast.tone === 'success' && 'bg-surface-raised text-ink-emphasis ring-line-field',
-            toast.tone === 'info' && 'bg-info-banner text-info-ink-deep ring-info-line',
-          )}
-        >
-          {toast.message}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 type AppShellProps = { children: ReactNode };
 

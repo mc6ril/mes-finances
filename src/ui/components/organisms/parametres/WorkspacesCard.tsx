@@ -1,9 +1,9 @@
 import { Check, LogOut, Pencil, Plus, Trash2, UserMinus, UserPlus, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { canDelete, canInvite, type Workspace } from '@/core/espaces/workspaces';
+import { canDelete, canInvite, workspaceRenameCommit, type Workspace } from '@/core/espaces/workspaces';
 import { useSharingUseCases } from '@/hooks/useSharing';
 import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
@@ -34,14 +34,19 @@ const WorkspaceRow = ({ workspace, isActive, onDelete, onSharing }: WorkspaceRow
   const store = useFinanceStore();
   const report = useReport();
   const [draft, setDraft] = useState<string | null>(null);
+  // Échap referme le champ ; s'il perd le focus dans la foulée, saveName() lirait encore la saisie.
+  // Ce drapeau lui dit de l'ignorer.
+  const cancelled = useRef(false);
 
   const saveName = async () => {
     if (draft === null) {
       return;
     }
+    const next = workspaceRenameCommit(workspace.name, draft, { cancelled: cancelled.current });
+    cancelled.current = false;
     if (
-      draft.trim() === workspace.name ||
-      (await report(store.renameWorkspace(workspace.id, draft), 'Espace renommé'))
+      next.kind === 'close' ||
+      (await report(store.renameWorkspace(workspace.id, next.name), 'Espace renommé'))
     ) {
       setDraft(null);
     }
@@ -52,6 +57,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete, onSharing }: WorkspaceRow
       void saveName();
     }
     if (key === 'Escape') {
+      cancelled.current = true;
       setDraft(null);
     }
   };
@@ -94,7 +100,10 @@ const WorkspaceRow = ({ workspace, isActive, onDelete, onSharing }: WorkspaceRow
             variant="ghost"
             icon={Pencil}
             label={`Renommer ${workspace.name}`}
-            onClick={() => setDraft(workspace.name)}
+            onClick={() => {
+              cancelled.current = false;
+              setDraft(workspace.name);
+            }}
           />
         ) : (
           <Button

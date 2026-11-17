@@ -1,49 +1,34 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePeriod } from '@/hooks/usePeriod';
-import { addMonths, parseMonthKey, toMonthKey } from '@/core/shared/dates';
+import {
+  isCurrentPeriod,
+  parseMonthKey,
+  periodToday,
+  stepPeriod,
+  type PeriodMode,
+} from '@/core/shared/dates';
 import { capitalize, monthLabel } from '@/core/shared/format';
 import type { MonthKey } from '@/core/shared/model';
 import Button from '@/ui/components/atoms/Button';
 
-type PickerMode = 'month' | 'year';
-
-type ModeBehaviour = {
-  step: number;
-  label: (month: MonthKey) => string;
-  isCurrent: (month: MonthKey, current: MonthKey) => boolean;
-  reset: (month: MonthKey, current: MonthKey) => MonthKey;
+const LABELS: Record<PeriodMode, (month: MonthKey) => string> = {
+  month: (month) => capitalize(monthLabel(month)),
+  year: (month) => String(parseMonthKey(month).year),
 };
 
-const BEHAVIOURS: Record<PickerMode, ModeBehaviour> = {
-  month: {
-    step: 1,
-    label: (month) => capitalize(monthLabel(month)),
-    isCurrent: (month, current) => month === current,
-    reset: (_, current) => current,
-  },
-  year: {
-    step: 12,
-    label: (month) => String(parseMonthKey(month).year),
-    isCurrent: (month, current) => parseMonthKey(month).year === parseMonthKey(current).year,
-    reset: (month, current) => toMonthKey(parseMonthKey(current).year, parseMonthKey(month).month),
-  },
-};
-
-type PeriodPickerProps = { mode: PickerMode };
+type PeriodPickerProps = { mode: PeriodMode };
 
 const PeriodPicker = ({ mode }: PeriodPickerProps) => {
   const { month, setMonth, currentMonth } = usePeriod();
-  const behaviour = BEHAVIOURS[mode];
-  const step = behaviour.step;
-  const label = behaviour.label(month);
-  const isCurrent = behaviour.isCurrent(month, currentMonth);
+  const label = LABELS[mode](month);
+  const isCurrent = isCurrentPeriod(month, currentMonth, mode);
   return (
     <div className="flex items-center gap-1">
       <Button
         variant="ghost"
         size="sm"
         icon={ChevronLeft}
-        onClick={() => setMonth(addMonths(month, -step))}
+        onClick={() => setMonth(stepPeriod(month, mode, -1))}
         label="Période précédente"
       />
       <label className="relative">
@@ -67,11 +52,15 @@ const PeriodPicker = ({ mode }: PeriodPickerProps) => {
         variant="ghost"
         size="sm"
         icon={ChevronRight}
-        onClick={() => setMonth(addMonths(month, step))}
+        onClick={() => setMonth(stepPeriod(month, mode, 1))}
         label="Période suivante"
       />
       {!isCurrent && (
-        <Button variant="secondary" size="sm" onClick={() => setMonth(behaviour.reset(month, currentMonth))}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => setMonth(periodToday(month, currentMonth, mode))}
+        >
           Aujourd’hui
         </Button>
       )}

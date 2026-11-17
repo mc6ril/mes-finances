@@ -33,6 +33,18 @@ export interface BackupCipherInterface {
 export const backupPasswordError = (password: string) =>
   password.length < MIN_BACKUP_PASSWORD_LENGTH ? ('backup-password-too-short' as const) : null;
 
+/** Mot de passe choisi pour un export : assez long, puis identique à sa confirmation. */
+export const validateBackupPassword = (
+  password: string,
+  confirmation: string,
+): 'backup-password-too-short' | 'backup-password-mismatch' | null => {
+  const tooShort = backupPasswordError(password);
+  if (tooShort) {
+    return tooShort;
+  }
+  return password === confirmation ? null : 'backup-password-mismatch';
+};
+
 export const createEncryptedBackup = (payload: EncryptedPayload): EncryptedBackup => ({
   app: BACKUP_APP_ID,
   kind: ENCRYPTED_BACKUP_KIND,

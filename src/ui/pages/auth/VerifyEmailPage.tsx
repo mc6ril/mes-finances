@@ -34,7 +34,7 @@ const VerifyEmailPage = () => {
     setResent((await resend.run(auth.resendEmailVerification)) !== null);
   };
 
-  const useAnotherAccount = () => {
+  const switchAccount = () => {
     clearErrors();
     void signOut.run(auth.signOut);
   };
@@ -46,7 +46,7 @@ const VerifyEmailPage = () => {
       footer={
         <button
           type="button"
-          onClick={useAnotherAccount}
+          onClick={switchAccount}
           disabled={busy}
           className="font-medium text-accent-ink underline-offset-2 hover:underline focus:outline-hidden focus-visible:underline disabled:opacity-60"
         >

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { MIN_BACKUP_PASSWORD_LENGTH } from '@/core/sauvegarde/encryptedBackup';
+import { MIN_BACKUP_PASSWORD_LENGTH, validateBackupPassword } from '@/core/sauvegarde/encryptedBackup';
+import { errorMessage } from '@/ui/errorMessages';
 import Button from '@/ui/components/atoms/Button';
 import { Field } from '@/ui/components/molecules/form/Field';
 import { PasswordInput } from '@/ui/components/atoms/form/PasswordInput';
@@ -23,18 +24,18 @@ const BackupPasswordDialog = ({ mode, onSubmit, onCancel }: BackupPasswordDialog
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (creating && password.length < MIN_BACKUP_PASSWORD_LENGTH) {
-      setError(`Au moins ${MIN_BACKUP_PASSWORD_LENGTH} caractères.`);
-      return;
-    }
-    if (creating && password !== confirmation) {
-      setError('Les deux mots de passe ne correspondent pas.');
+    const invalid = creating ? validateBackupPassword(password, confirmation) : null;
+    if (invalid) {
+      setError(errorMessage({ code: invalid }));
       return;
     }
     setPending(true);
-    const failure = await onSubmit(password);
-    setPending(false);
-    setError(failure);
+    try {
+      setError(await onSubmit(password));
+    } finally {
+      // Même si onSubmit lève une erreur, le bouton ne doit pas rester en chargement.
+      setPending(false);
+    }
   };
 
   return (

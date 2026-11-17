@@ -41,6 +41,23 @@ export const addMonths = (month: MonthKey, count: number): MonthKey => {
   return toMonthKey(Math.floor(index / 12), (index % 12) + 1);
 };
 
+/** Navigation entre périodes : mois par mois (budget, opérations) ou année par année (bilan). */
+export type PeriodMode = 'month' | 'year';
+
+const PERIOD_STEP: Record<PeriodMode, number> = { month: 1, year: 12 };
+
+/** Période précédente (-1) ou suivante (+1) ; en mode année, le mois affiché est conservé. */
+export const stepPeriod = (month: MonthKey, mode: PeriodMode, direction: 1 | -1): MonthKey =>
+  addMonths(month, PERIOD_STEP[mode] * direction);
+
+/** La période affichée contient-elle le mois courant ? */
+export const isCurrentPeriod = (month: MonthKey, current: MonthKey, mode: PeriodMode): boolean =>
+  mode === 'month' ? month === current : yearOf(month) === yearOf(current);
+
+/** Retour à « aujourd'hui » : le mois courant, ou en mode année l'année courante au même mois. */
+export const periodToday = (month: MonthKey, current: MonthKey, mode: PeriodMode): MonthKey =>
+  mode === 'month' ? current : toMonthKey(yearOf(current), parseMonthKey(month).month);
+
 export const monthsBetween = (from: MonthKey, to: MonthKey): number => {
   const start = parseMonthKey(from);
   const end = parseMonthKey(to);

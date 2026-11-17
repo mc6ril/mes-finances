@@ -40,6 +40,24 @@ export type WorkspaceNameError = Extract<AppErrorCode, 'workspace-name-empty' | 
 
 export const normalizeWorkspaceName = (name: string): string => name.trim().replace(/\s+/g, ' ');
 
+export type WorkspaceRenameCommit = { kind: 'save'; name: string } | { kind: 'close' };
+
+/**
+ * Suite à donner à la saisie d'un nouveau nom d'espace : refermer sans rien enregistrer si elle
+ * est annulée (Échap) ou si le nom ne change pas, sinon l'enregistrer. La validité (vide, déjà
+ * pris) est vérifiée à l'enregistrement, qui signale l'erreur en gardant le champ ouvert.
+ */
+export const workspaceRenameCommit = (
+  current: string,
+  draft: string,
+  { cancelled = false }: { cancelled?: boolean } = {},
+): WorkspaceRenameCommit => {
+  if (cancelled || normalizeWorkspaceName(draft) === current) {
+    return { kind: 'close' };
+  }
+  return { kind: 'save', name: draft };
+};
+
 export const workspaceNameError = (
   name: string,
   workspaces: Workspace[],

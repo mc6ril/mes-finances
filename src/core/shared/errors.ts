@@ -60,6 +60,7 @@ export const APP_ERROR_CODES = [
   'sync-pending-writes',
   'sync-local-data-not-cleared',
   'sync-failed',
+  'backup-password-mismatch',
 ] as const;
 
 export type AppErrorCode = (typeof APP_ERROR_CODES)[number];

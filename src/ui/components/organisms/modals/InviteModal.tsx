@@ -2,6 +2,8 @@ import { Copy, Link2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Workspace } from '@/core/espaces/workspaces';
 import { INVITATION_VALIDITY_DAYS } from '@/core/partage/model';
+import { todayIso } from '@/core/shared/dates';
+import { formatDateFr } from '@/core/shared/format';
 import { useReport } from '@/hooks/useReport';
 import { invitationLink, useWorkspaceInvitation } from '@/hooks/useSharing';
 import { useToast } from '@/hooks/useToast';
@@ -72,7 +74,7 @@ const InviteModal = ({ workspace, onClose }: InviteModalProps) => {
               </Button>
               <Text variant="small">
                 À usage unique, valable {INVITATION_VALIDITY_DAYS} jours (jusqu’au{' '}
-                {new Date(invitation.expiresAt).toLocaleDateString('fr-FR')}).
+                {formatDateFr(todayIso(new Date(invitation.expiresAt)))}).
               </Text>
             </div>
           </>
