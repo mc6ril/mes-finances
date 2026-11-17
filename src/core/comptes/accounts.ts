@@ -20,6 +20,10 @@ export const groupOfKind = (kind: AccountKind): AccountGroup => GROUP_BY_KIND[ki
  */
 export const isSavingsAccount = (account: Pick<Account, 'group'>): boolean => account.group !== 'courant';
 
+/** Comptes d'épargne et placements encore suivis (non archivés), comptes communs compris. */
+export const activeSavingsAccounts = (accounts: Account[]): Account[] =>
+  accounts.filter((account) => isSavingsAccount(account) && !account.archived);
+
 /** Change le type d'un compte : le groupe et le caractère commun en découlent. */
 export const withKind = (account: Account, kind: AccountKind): Account => ({
   ...account,

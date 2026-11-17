@@ -1,3 +1,4 @@
+import { isSavingsAccount } from '../comptes/accounts';
 import { isCounted } from '../comptes/balances';
 import { categoryActuals, inMonth, monthTotals, type MonthTotals } from './budget';
 import { monthKeyOf, monthsOfYear, parseMonthKey, yearOf } from '../shared/dates';
@@ -75,7 +76,7 @@ const buildPivot = (transactions: Transaction[], categories: Category[], months:
 };
 
 const savingsAccountIds = (accounts: Account[]): Set<string> =>
-  new Set(accounts.filter((account) => account.group !== 'courant').map((account) => account.id));
+  new Set(accounts.filter(isSavingsAccount).map((account) => account.id));
 
 /**
  * Virements sans catégorie d'épargne d'un compte courant vers un compte d'épargne ou un placement

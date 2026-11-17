@@ -40,7 +40,7 @@ describe('comptes d’épargne suivis', () => {
     const accounts = [
       anAccount({ id: 'courant' }),
       anAccount({ id: 'livret', kind: 'livret', group: 'securise' }),
-      anAccount({ id: 'pea', kind: 'pea', group: 'investissement' }),
+      anAccount({ id: 'pea', kind: 'bourse', group: 'investissement' }),
       anAccount({ id: 'immo', kind: 'commun-immo', group: 'securise', isJoint: true }),
       anAccount({ id: 'ancien', kind: 'livret', group: 'securise', archived: true }),
     ];

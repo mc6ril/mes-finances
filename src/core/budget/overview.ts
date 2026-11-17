@@ -1,3 +1,4 @@
+import { activeSavingsAccounts } from '@/core/comptes/accounts';
 import { accountBalanceAt } from '@/core/comptes/balances';
 import {
   budgetLines,
@@ -127,9 +128,7 @@ export type MonthOverview = ReturnType<typeof monthOverview>;
 export const dashboardContent = (dataset: Dataset) => {
   const groups = new Map(dataset.categories.map((category) => [category.id, category.group]));
   const expenses = dataset.transactions.filter((transaction) => transaction.type === 'depense');
-  const savingsAccounts = dataset.accounts.filter(
-    (account) => account.group !== 'courant' && !account.archived,
-  );
+  const savingsAccounts = activeSavingsAccounts(dataset.accounts);
   const hasAmount = (planned: Record<string, number>) => Object.values(planned).some((value) => value !== 0);
   return {
     isEmpty:

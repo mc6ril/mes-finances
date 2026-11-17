@@ -8,6 +8,7 @@ import {
   membersOf,
   savingsPayerOf,
 } from '@/core/commun/household';
+import { activeSavingsAccounts } from '@/core/comptes/accounts';
 import { formatDateFr, formatEuros, formatRate, rateInput } from '@/core/shared/format';
 import { parsePercent } from '@/core/shared/money';
 import type { Cents, CommonMonth, MonthKey, SavingsRate } from '@/core/shared/model';
@@ -180,9 +181,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
   const members = membersOf(dataset);
   const rate = dataset.settings.household?.contributionRate ?? 0;
   const savingsRates = effectiveSavingsRates(dataset.commonMonths, month);
-  const savingsAccounts = dataset.accounts.filter(
-    (account) => !account.archived && account.group !== 'courant',
-  );
+  const savingsAccounts = activeSavingsAccounts(dataset.accounts);
 
   const save = (patch: Partial<CommonMonth>) => void report(finance.saveCommonMonth({ ...entry, ...patch }));
   const saveRates = (rates: SavingsRate[]) => save({ savingsRates: rates });
