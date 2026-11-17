@@ -1,11 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { takeAuthActionLink } from './adapters/browser/authActionUrl';
 import { createContainer } from './app/container';
 import { bindUserData } from './core/usecases/dataSession';
 import './index.css';
 
 const root = document.getElementById('root');
+// Avant le routage : Firebase place les paramètres du lien avant le « # ».
+const authAction = takeAuthActionLink(window.location, window.history);
 const container = createContainer();
 container.session.start();
 // Données ouvertes une fois connecté (adresse confirmée), effacées de l'appareil à la déconnexion.
@@ -26,7 +29,7 @@ document.addEventListener('visibilitychange', () => {
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <App container={container} />
+      <App container={container} authAction={authAction} />
     </StrictMode>,
   );
 }

@@ -1,11 +1,12 @@
 import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import type { Container } from '@/app/container';
+import type { AuthActionLink } from '@/core/auth/actionLink';
 import FinanceProvider from '@/ui/providers/FinanceProvider';
 import PeriodProvider from '@/ui/providers/PeriodProvider';
 import BackupHistoryProvider from '@/ui/providers/BackupHistoryProvider';
 import ToastProvider from '@/ui/providers/ToastProvider';
-import { Suspense, type ReactNode } from 'react';
+import { Suspense, useCallback, useState, type ReactNode } from 'react';
 import { useAuthState } from '@/hooks/useAuth';
 import { useFinanceState, useFinanceStore } from '@/hooks/useFinance';
 import { INVITATION_PATH, usePendingInvitation } from '@/hooks/useSharing';
@@ -16,6 +17,7 @@ import Title from '@/ui/components/atoms/Title';
 import { errorMessage } from '@/ui/errorMessages';
 import AppShell from '@/ui/components/templates/AppShell';
 import { AUTH_PATHS } from '@/ui/routing/authPaths';
+import AuthActionPage from '@/ui/pages/auth/AuthActionPage';
 import ForgotPasswordPage from '@/ui/pages/auth/ForgotPasswordPage';
 import SignInPage from '@/ui/pages/auth/SignInPage';
 import SignUpPage from '@/ui/pages/auth/SignUpPage';
@@ -98,9 +100,17 @@ const Gate = () => {
   );
 };
 
-const AuthGate = () => {
+type AuthGateProps = { authAction: AuthActionLink | null };
+
+const AuthGate = ({ authAction }: AuthGateProps) => {
   const { status, error } = useAuthState();
+  const [link, setLink] = useState(authAction);
+  const linkDone = useCallback(() => setLink(null), []);
   useApplyTheme();
+  // Lien d'un e-mail d'authentification : traité avant tout, quel que soit l'état de la session.
+  if (link) {
+    return <AuthActionPage link={link} onDone={linkDone} />;
+  }
   if (status === 'checking') {
     return <FullScreenLoader />;
   }
@@ -116,14 +126,14 @@ const AuthGate = () => {
   return <Gate />;
 };
 
-type AppProps = { container: Container };
+type AppProps = { container: Container; authAction: AuthActionLink | null };
 
-const App = ({ container }: AppProps) => (
+const App = ({ container, authAction }: AppProps) => (
   <FinanceProvider container={container}>
     <ToastProvider>
       <PeriodProvider>
         <HashRouter>
-          <AuthGate />
+          <AuthGate authAction={authAction} />
         </HashRouter>
       </PeriodProvider>
     </ToastProvider>
