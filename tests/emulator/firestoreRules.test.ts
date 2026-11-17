@@ -249,6 +249,50 @@ describe('création et modification d’un espace', () => {
   });
 });
 
+/** Restauration d'un espace : paquets de données puis réglages, dans un même lot (replaceAll). */
+const restoreCommon = (db: Firestore) => {
+  const batch = writeBatch(db);
+  batch.set(doc(db, `workspaces/${COMMON}/data/transactions__0`), { items: { t1: { id: 't1' } } });
+  batch.update(doc(db, `workspaces/${COMMON}`), { settings: { kind: 'commun' }, schemaVersion: 10 });
+  return batch.commit();
+};
+
+describe('restauration de la sauvegarde de A', () => {
+  beforeEach(seedShared);
+
+  it('B, membre du commun, le restaure', async () => {
+    await assertSucceeds(restoreCommon(verified(PARTNER)));
+  });
+
+  it('C ne restaure ni le commun ni le perso de A, ni en recréant les espaces', async () => {
+    const db = verified(STRANGER);
+    await assertFails(restoreCommon(db));
+    await assertFails(
+      setDoc(doc(db, `workspaces/${COMMON}`), {
+        ...workspaceDoc(STRANGER, 'commun'),
+        createdAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(
+      setDoc(doc(db, `workspaces/${PERSO_A}`), {
+        ...workspaceDoc(STRANGER, 'perso'),
+        createdAt: serverTimestamp(),
+      }),
+    );
+    await assertFails(setDoc(doc(db, `workspaces/${PERSO_A}/data/transactions__0`), { items: {} }));
+  });
+
+  it('un espace « perso-<uid> » n’est créé que par <uid>, même absent de la base', async () => {
+    const db = verified(STRANGER);
+    const created = (id: string, kind: 'perso' | 'commun') =>
+      setDoc(doc(db, `workspaces/${id}`), { ...workspaceDoc(STRANGER, kind), createdAt: serverTimestamp() });
+    await assertFails(created('perso-compte-supprime', 'perso'));
+    await assertFails(created('perso-compte-supprime', 'commun'));
+    await assertSucceeds(created(`perso-${STRANGER}`, 'perso'));
+    await assertSucceeds(created('vacances', 'perso'));
+  });
+});
+
 describe('invitation', () => {
   beforeEach(() => seedBase());
 

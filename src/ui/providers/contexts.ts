@@ -29,7 +29,7 @@ export const ToastContext = createContext<ToastValue | null>(null);
 export type BackupHistoryValue = {
   /** null tant que la date n'est pas connue (chargement, ou hors ligne sans copie locale). */
   history: BackupHistory | null;
-  /** Exporte la sauvegarde complète puis met la date à jour. */
+  /** Demande le mot de passe, exporte la sauvegarde complète chiffrée puis met la date à jour. */
   exportAll: () => Promise<void>;
   hideReminder: () => void;
 };

@@ -3,6 +3,13 @@ import { transactionsToCsv } from '../comptes/csvImport';
 import { todayIso } from '../shared/dates';
 import { fail, ok, type Result } from '../shared/errors';
 import { createFullBackup, readAnyBackup, type AnyBackupContent } from '../sauvegarde/fullBackup';
+import {
+  backupPasswordError,
+  createEncryptedBackup,
+  isEncryptedBackup,
+  readEncryptedBackup,
+  type BackupCipherInterface,
+} from '../sauvegarde/encryptedBackup';
 import type { Account, Category, Transaction } from '../shared/model';
 import type {
   CsvParserInterface,
@@ -20,6 +27,7 @@ export type FilePorts = {
   saver: FileSaverInterface;
   workspaces: WorkspaceDataSourceInterface;
   backups: BackupHistoryInterface;
+  cipher: BackupCipherInterface;
 };
 
 export type OperationsExport = {
@@ -44,7 +52,7 @@ const UTF8_BOM = '﻿';
 
 const toJson = (value: unknown): string => JSON.stringify(value, null, 2);
 
-export const createFileUseCases = ({ reader, csv, saver, workspaces, backups }: FilePorts) => {
+export const createFileUseCases = ({ reader, csv, saver, workspaces, backups, cipher }: FilePorts) => {
   const readCsvRows = async (file: UserFile): Promise<Result<string[][]>> => {
     const text = await reader.read(file);
     if (!text.ok) {
@@ -53,7 +61,8 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces, backups }: 
     return csv.parse(text.value);
   };
 
-  const readBackupFile = async (file: UserFile): Promise<Result<AnyBackupContent>> => {
+  /** Sauvegarde chiffrée : `backup-password-required` tant que le mot de passe n'est pas fourni. */
+  const readBackupFile = async (file: UserFile, password?: string): Promise<Result<AnyBackupContent>> => {
     const text = await reader.read(file);
     if (!text.ok) {
       return text;
@@ -62,7 +71,25 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces, backups }: 
     if (!parsed.ok) {
       return parsed;
     }
-    return readAnyBackup(parsed.value);
+    if (!isEncryptedBackup(parsed.value)) {
+      return readAnyBackup(parsed.value);
+    }
+    if (password === undefined) {
+      return fail('backup-password-required');
+    }
+    const payload = readEncryptedBackup(parsed.value);
+    if (!payload.ok) {
+      return payload;
+    }
+    const decrypted = await cipher.decrypt(payload.value, password);
+    if (!decrypted.ok) {
+      return decrypted;
+    }
+    const content = parseJson(decrypted.value);
+    if (!content.ok) {
+      return fail('backup-corrupted', { detail: 'chiffrement' });
+    }
+    return readAnyBackup(content.value);
   };
 
   const readBrokerExport = async (file: UserFile): Promise<Result<BrokerExport>> => {
@@ -73,14 +100,24 @@ export const createFileUseCases = ({ reader, csv, saver, workspaces, backups }: 
     return parseBrokerExport(rows.value);
   };
 
-  const saveFullBackup = async (activeId: string, now: Date): Promise<Result<number>> => {
+  /** Exporte tous les espaces dans un fichier chiffré par le mot de passe (toujours obligatoire). */
+  const saveFullBackup = async (activeId: string, password: string, now: Date): Promise<Result<number>> => {
+    const weak = backupPasswordError(password);
+    if (weak) {
+      return fail(weak);
+    }
     const entries = await workspaces.allWorkspaceData();
     if (!entries.ok) {
       return entries;
     }
+    const plaintext = JSON.stringify(createFullBackup(entries.value, activeId, now.toISOString()));
+    const encrypted = await cipher.encrypt(plaintext, password);
+    if (!encrypted.ok) {
+      return encrypted;
+    }
     const saved = saver.save({
       name: `mes-finances-sauvegarde-complete-${todayIso(now)}.json`,
-      content: toJson(createFullBackup(entries.value, activeId, now.toISOString())),
+      content: toJson(createEncryptedBackup(encrypted.value)),
       mimeType: JSON_TYPE,
     });
     if (!saved.ok) {

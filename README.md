@@ -52,11 +52,11 @@ Sans ces variables, l'application affiche « Connexion indisponible ».
 
 1. Console Firebase → Firestore Database → Créer une base : édition **Standard**, emplacement européen (`europe-west9` Paris ou `eur3` ; **définitif**), démarrer en **mode production** (tout refusé, jamais le mode test).
 2. Déployer les règles et index versionnés : `npx firebase login`, puis `npx firebase deploy --only firestore --project <id-du-projet>`. À refaire à chaque modification de `firestore.rules`.
-3. Reprendre les données d'avant : se connecter, puis Paramètres → Sauvegardes → Restaurer, avec le fichier de sauvegarde complète. Chaque espace du fichier est recréé à son nom (le commun reçu par fichier compris).
+3. Reprendre les données d'avant : se connecter, puis Paramètres → Sauvegardes → Restaurer, avec le fichier de sauvegarde complète et son mot de passe. Le perso du fichier remplit l'espace principal du compte connecté (même recréé, avec un autre uid) ; un commun dont on n'est pas membre devient une copie à soi.
 
 Modèle (voir `firestore.rules`, testées dans `tests/emulator/firestoreRules.test.ts`) :
 
-- `workspaces/{id}` : `ownerId`, `memberIds` (un seul membre pour un perso, propriétaire + un invité pour un commun), `kind`, `name`, `settings`, `schemaVersion`, `layout`. L'espace principal d'un utilisateur est `perso-{uid}`.
+- `workspaces/{id}` : `ownerId`, `memberIds` (un seul membre pour un perso, propriétaire + un invité pour un commun), `kind`, `name`, `settings`, `schemaVersion`, `layout`. L'espace principal d'un utilisateur est `perso-{uid}`, y compris dans l'application et les sauvegardes complètes ; les règles n'acceptent la création d'un `perso-{uid}` que par `{uid}`. Une restauration n'écrit donc jamais chez un autre compte, quel que soit le fichier.
 - `workspaces/{id}/data/{collection}__{n}` : `{ items: { [clé]: élément } }`. Chaque collection est répartie en paquets (hash de la clé) : une ouverture coûte quelques dizaines de lectures au lieu d'une par opération, pour rester dans le quota gratuit (50 000 lectures/jour) sur la durée. Une collection est redécoupée automatiquement au-delà de 640 Ko par paquet (limite Firestore : 1 Mio).
 - `invitations/{token}` : lien à usage unique, valable 7 jours, lisible avec le lien, jamais listable.
 - `users/{uid}` : suivi des sauvegardes de l'utilisateur (date de la dernière sauvegarde complète, rappel masqué jusqu'à), lisible et modifiable par lui seul, effacé avec son compte. Il n'est pas rangé dans un espace : un espace commun est partagé, et le stockage local est effacé à chaque déconnexion.
@@ -162,7 +162,8 @@ Chaque espace (« Mon espace » à la création du compte, puis ceux que l'on aj
 - **Espaces perso** : visibles et modifiables uniquement par leur propriétaire.
 - **Partager un espace commun** : bouton « Inviter », puis envoyer le lien (usage unique, 7 jours) à la personne de son choix. Elle se connecte ou crée son compte, puis rejoint l'espace ; personne d'autre n'y a accès. Le propriétaire peut retirer l'accès, l'invité peut quitter l'espace.
 - **Temps réel et hors ligne** : une modification apparaît chez l'autre sans recharger ; sans réseau, la saisie continue et part au retour de la connexion (bandeau « Hors ligne »).
-- **Sauvegarder** : « Tout sauvegarder » exporte tous les espaces dans un seul fichier ; « Restaurer » ce fichier recrée tous les espaces (ceux rejoints comme invité ne sont pas touchés). Les anciens fichiers, y compris ceux d'un espace reçu par fichier, restent lisibles.
+- **Sauvegarder** : « Tout sauvegarder » exporte tous les espaces dans un seul fichier, **chiffré par un mot de passe** (obligatoire, 10 caractères minimum ; AES-GCM 256, clé PBKDF2-SHA-256 à 600 000 itérations, dans le navigateur). Mot de passe perdu = sauvegarde irrécupérable.
+- **Restaurer** (chez soi) : le perso du fichier remplit l'espace principal du compte connecté, un espace dont on est membre est remplacé, un autre (commun d'un autre compte, ou disparu) devient une copie à soi sous un nouvel identifiant. Les espaces absents du fichier ne sont jamais touchés. Les copies sont créées en un seul lot confirmé par le serveur avant toute écriture. Les fichiers non chiffrés restent lisibles ; le fichier d'un seul espace ne sert plus qu'à importer des réglages.
 
 ## Évolutions et compatibilité
 
@@ -171,7 +172,7 @@ Le schéma est versionné (`SCHEMA_VERSION` dans `core/shared/model.ts`). Toute 
 ## Sécurité et déploiement
 
 - `firestore.rules` : tout est refusé sauf ce qui est explicitement permis, adresse confirmée obligatoire. Testées sur l'émulateur (propriétaire, invité, autre compte, invitation expirée ou déjà utilisée, adresse non confirmée) en CI.
-- `firebase.json` (hébergement) : l'app est en ligne sur Firebase Hosting (`https://mes-finances-271ea.web.app`), déployée par le workflow Release (job `deploy`, compte de service dans l'environnement `release`). En-têtes de sécurité identiques à `netlify.toml` ; `index.html` sans cache, fichiers de `assets/` en cache permanent (noms versionnés). Déploiement manuel : `npm run build && npx firebase deploy --only hosting --project mes-finances-271ea`.
+- `firebase.json` (hébergement) : l'app est en ligne sur Firebase Hosting (`https://mes-finances-271ea.web.app`), déployée par le workflow Release (job `deploy`, compte de service dans l'environnement `release`), qui publie d'abord les règles Firestore (`firestore.rules`) : le compte de service a besoin des rôles Hosting et « Administrateur Firebase Rules ». En-têtes de sécurité identiques à `netlify.toml` ; `index.html` sans cache, fichiers de `assets/` en cache permanent (noms versionnés). Déploiement manuel : `npx firebase deploy --only firestore:rules --project mes-finances-271ea`, puis `npm run build && npx firebase deploy --only hosting --project mes-finances-271ea`.
 - `netlify.toml` : aperçus des pull requests sur Netlify, mêmes en-têtes de sécurité. La CSP limite chargements et envois au site lui-même, plus les seuls domaines Google nécessaires à la connexion (API Firebase Auth, fenêtre « Continuer avec Google ») et aux données (`firestore.googleapis.com`).
 - `overrides` dans `package.json` : force une version corrigée de `@grpc/grpc-js` (dépendance Node de Firestore, absente du bundle navigateur) pour que `npm audit` reste propre.
 - `.github/dependabot.yml` : mises à jour hebdomadaires des dépendances npm (et mensuelles des GitHub Actions), proposées en pull requests.

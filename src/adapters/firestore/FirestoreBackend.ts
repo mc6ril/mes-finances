@@ -16,7 +16,6 @@ import {
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { FirestoreBackupHistory } from '@/adapters/firestore/sauvegarde/FirestoreBackupHistory';
 import type { BackupHistoryInterface } from '@/core/sauvegarde/interface';
-import { toDocumentId } from '@/adapters/firestore/espaces/workspaceIds';
 
 export type FirestoreBackendDeps = {
   openFirestore: () => Firestore;
@@ -99,11 +98,7 @@ export class FirestoreBackend implements UserDataBackendInterface {
     if (!connection) {
       return DISCONNECTED_REPOSITORY;
     }
-    return new FirestoreFinanceRepository(
-      connection.db,
-      toDocumentId(workspaceId, connection.userId),
-      this.sync,
-    );
+    return new FirestoreFinanceRepository(connection.db, workspaceId, this.sync);
   };
 
   /** Données en ligne de l'utilisateur connecté, effacées avant la suppression de son compte. */
@@ -136,6 +131,7 @@ export class FirestoreBackend implements UserDataBackendInterface {
     load: () => this.#connection?.registry.load() ?? disconnected(),
     watch: (listener) => this.#connection?.registry.watch(listener) ?? NOT_WATCHED,
     create: (workspace) => this.#connection?.registry.create(workspace) ?? disconnected(),
+    createAll: (workspaces) => this.#connection?.registry.createAll(workspaces) ?? disconnected(),
     rename: (workspaceId, name) => this.#connection?.registry.rename(workspaceId, name) ?? disconnected(),
     remove: (workspaceId) => this.#connection?.registry.remove(workspaceId) ?? disconnected(),
     setActive: (workspaceId) => this.#connection?.registry.setActive(workspaceId) ?? ok(undefined),

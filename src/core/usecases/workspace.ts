@@ -9,13 +9,6 @@ export const createWorkspaceUseCases = ({ gateway, newId, now }: FinanceDeps) =>
   const updateSettings = (patch: Partial<Settings>, summary: string | null): Promise<Result<void>> =>
     gateway.updateSettings(patch, summary ? { action: 'modification', entity: 'Paramètres', summary } : null);
 
-  const restore = (dataset: Dataset): Promise<Result<void>> =>
-    gateway.restore(dataset, {
-      action: 'restauration',
-      entity: 'Sauvegarde',
-      summary: 'Restauration d’une sauvegarde',
-    });
-
   const resetWorkspace = (): Promise<Result<void>> =>
     gateway.restore(createInitialDataset(todayIso(now()), newId), {
       action: 'restauration',
@@ -63,5 +56,5 @@ export const createWorkspaceUseCases = ({ gateway, newId, now }: FinanceDeps) =>
     });
   };
 
-  return { updateSettings, restore, importSettings, resetWorkspace, saveImportRule, deleteImportRule };
+  return { updateSettings, importSettings, resetWorkspace, saveImportRule, deleteImportRule };
 };

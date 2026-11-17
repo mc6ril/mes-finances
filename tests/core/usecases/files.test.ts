@@ -15,12 +15,17 @@ import type {
 } from '@/core/sauvegarde/interface';
 import { createInitialDataset } from '@/core/shared/seed';
 import { createFileUseCases } from '@/core/usecases/files';
-import { DEFAULT_WORKSPACE, type Workspace } from '@/core/espaces/workspaces';
+import { WebCryptoBackupCipher } from '@/adapters/crypto/WebCryptoBackupCipher';
+import type { Workspace } from '@/core/espaces/workspaces';
+import { TEST_MAIN } from '../../support/memoryAdapters';
 import { aTransaction } from '../fixtures';
 
 const dataset = createInitialDataset('2026-11-08', () => 'audit');
 const commun: Workspace = { id: 'w1', name: 'Épargne commune', kind: 'perso', role: 'owner' };
 const file: UserFile = { name: 'fichier.json' };
+const PASSWORD = 'correct-horse-battery';
+/** Peu d'itérations : le test vérifie le format, pas le coût de dérivation. */
+const cipher = new WebCryptoBackupCipher({ iterations: 1000 });
 
 type Fakes = {
   text?: Result<string>;
@@ -44,7 +49,7 @@ const setup = (fakes: Fakes = {}) => {
     allWorkspaceData: async () =>
       fakes.entries ??
       ok([
-        { workspace: DEFAULT_WORKSPACE, dataset },
+        { workspace: TEST_MAIN, dataset },
         { workspace: commun, dataset },
       ]),
     workspaceData: async (workspaceId) => ok(workspaceId === 'w1' ? { workspace: commun, dataset } : null),
@@ -57,7 +62,7 @@ const setup = (fakes: Fakes = {}) => {
       return fakes.recordResult ?? ok(undefined);
     },
   };
-  const useCases = createFileUseCases({ reader, csv, saver, workspaces, backups });
+  const useCases = createFileUseCases({ reader, csv, saver, workspaces, backups, cipher });
   return { useCases, saved, history };
 };
 
@@ -110,18 +115,60 @@ describe('lecture d’un relevé CSV', () => {
 describe('sauvegarde complète', () => {
   it('enregistre tous les espaces dans un seul fichier daté', async () => {
     const { useCases, saved } = setup();
-    expect(await useCases.saveFullBackup('w1', now)).toEqual({ ok: true, value: 2 });
+    expect(await useCases.saveFullBackup('w1', PASSWORD, now)).toEqual({ ok: true, value: 2 });
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({
       name: 'mes-finances-sauvegarde-complete-2026-11-08.json',
       mimeType: 'application/json',
     });
-    expect(JSON.parse(saved[0]?.content ?? '')).toMatchObject({ kind: 'complete', activeId: 'w1' });
+    const content = saved[0]?.content ?? '';
+    expect(JSON.parse(content)).toMatchObject({ app: 'mes-finances', kind: 'encrypted', version: 1 });
+    expect(content).not.toContain('Épargne commune');
+  });
+
+  it('relit le fichier chiffré seulement avec le bon mot de passe', async () => {
+    const exported = setup();
+    await exported.useCases.saveFullBackup('w1', PASSWORD, now);
+    const { useCases } = setup({ text: ok(exported.saved[0]?.content ?? '') });
+    expect(await useCases.readBackupFile(file)).toEqual({
+      ok: false,
+      error: { code: 'backup-password-required' },
+    });
+    expect(await useCases.readBackupFile(file, 'mauvais-mot-de-passe')).toEqual({
+      ok: false,
+      error: { code: 'backup-wrong-password' },
+    });
+    const read = await useCases.readBackupFile(file, PASSWORD);
+    expect(read).toMatchObject({ ok: true, value: { kind: 'complete', activeId: 'w1' } });
+    expect(
+      read.ok && read.value.kind === 'complete' && read.value.entries.map((entry) => entry.workspace.name),
+    ).toEqual(['Mon espace', 'Épargne commune']);
+  });
+
+  it('refuse un mot de passe trop court, sans rien enregistrer', async () => {
+    const { useCases, saved } = setup();
+    expect(await useCases.saveFullBackup('w1', 'court', now)).toEqual({
+      ok: false,
+      error: { code: 'backup-password-too-short' },
+    });
+    expect(saved).toEqual([]);
+  });
+
+  it('refuse un fichier chiffré altéré comme un mauvais mot de passe', async () => {
+    const exported = setup();
+    await exported.useCases.saveFullBackup('w1', PASSWORD, now);
+    const envelope = JSON.parse(exported.saved[0]?.content ?? '{}') as { data: string };
+    const tampered = { ...envelope, data: `${envelope.data.slice(0, -4)}AAAA` };
+    const { useCases } = setup({ text: ok(JSON.stringify(tampered)) });
+    expect(await useCases.readBackupFile(file, PASSWORD)).toEqual({
+      ok: false,
+      error: { code: 'backup-wrong-password' },
+    });
   });
 
   it('n’enregistre rien si la lecture des espaces échoue', async () => {
     const { useCases, saved } = setup({ entries: fail('storage-unavailable') });
-    expect(await useCases.saveFullBackup('perso', now)).toEqual({
+    expect(await useCases.saveFullBackup('perso', PASSWORD, now)).toEqual({
       ok: false,
       error: { code: 'storage-unavailable' },
     });
@@ -153,14 +200,14 @@ describe('suivi des sauvegardes', () => {
   it('mémorise la date d’une sauvegarde complète exportée et réaffiche le rappel ensuite', async () => {
     const { useCases, history } = setup();
     history.reminderHiddenUntil = '2026-11-10';
-    expect(await useCases.saveFullBackup('perso', now)).toEqual({ ok: true, value: 2 });
+    expect(await useCases.saveFullBackup('perso', PASSWORD, now)).toEqual({ ok: true, value: 2 });
     expect(history).toEqual({ lastFullBackupAt: now.toISOString(), reminderHiddenUntil: null });
     expect(await useCases.backupHistory()).toEqual({ ok: true, value: history });
   });
 
   it('ne mémorise rien si le fichier n’a pas pu être enregistré', async () => {
     const { useCases, history } = setup({ saveResult: fail('file-save-failed') });
-    await useCases.saveFullBackup('perso', now);
+    await useCases.saveFullBackup('perso', PASSWORD, now);
     expect(history.lastFullBackupAt).toBeNull();
   });
 

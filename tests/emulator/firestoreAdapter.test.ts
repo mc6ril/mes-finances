@@ -6,7 +6,7 @@ import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/Firesto
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
 import { byteSize } from '@/adapters/firestore/store/sharding';
 import { FinanceStore } from '@/core/store/FinanceStore';
-import { DEFAULT_WORKSPACE } from '@/core/espaces/workspaces';
+import { mainWorkspace } from '@/core/espaces/workspaces';
 import type { Dataset } from '@/core/shared/model';
 import { createInitialDataset } from '@/core/shared/seed';
 import { aTransaction } from '../core/fixtures';
@@ -232,10 +232,18 @@ describe('liste des espaces', () => {
   it('crée l’espace principal à la première connexion', async () => {
     const { registry, monitor } = registryOf(OWNER);
     const loaded = await registry.load();
-    expect(loaded).toEqual({ ok: true, value: { workspaces: [DEFAULT_WORKSPACE], activeId: 'perso' } });
+    expect(loaded).toEqual({
+      ok: true,
+      value: { workspaces: [mainWorkspace(OWNER)], activeId: `perso-${OWNER}` },
+    });
     await monitor.flush(5000);
     const main = await getDoc(doc(dbOf(OWNER), `workspaces/perso-${OWNER}`));
-    expect(main.data()).toMatchObject({ ownerId: OWNER, memberIds: [OWNER], kind: 'perso', name: DEFAULT_WORKSPACE.name });
+    expect(main.data()).toMatchObject({
+      ownerId: OWNER,
+      memberIds: [OWNER],
+      kind: 'perso',
+      name: mainWorkspace(OWNER).name,
+    });
   });
 
   it('liste ses espaces avec leur rôle, sans ceux des autres', async () => {
@@ -245,13 +253,13 @@ describe('liste des espaces', () => {
     const partner = await registryOf(PARTNER).registry.load();
     expect(partner.ok && partner.value.workspaces).toEqual(
       expect.arrayContaining([
-        { id: 'perso', name: 'Perso', kind: 'perso', role: 'owner', shared: false },
+        { id: `perso-${PARTNER}`, name: 'Perso', kind: 'perso', role: 'owner', shared: false },
         { id: COMMON, name: 'Commun', kind: 'commun', role: 'guest', shared: true },
       ]),
     );
     expect(partner.ok && partner.value.workspaces).toHaveLength(2);
     const stranger = await registryOf(STRANGER).registry.load();
-    expect(stranger.ok && stranger.value.workspaces.map((item) => item.id)).toEqual(['perso']);
+    expect(stranger.ok && stranger.value.workspaces.map((item) => item.id)).toEqual([`perso-${STRANGER}`]);
   });
 
   it('crée, renomme et supprime un espace, et mémorise l’espace actif', async () => {
@@ -298,12 +306,7 @@ describe('store branché sur Firestore', () => {
   it('crée l’espace principal, enregistre une saisie et la montre sur un autre appareil', async () => {
     const monitor = new SyncMonitor();
     const deviceA = new FinanceStore(
-      (workspaceId) =>
-        new FirestoreFinanceRepository(
-          dbOf(OWNER),
-          workspaceId === 'perso' ? `perso-${OWNER}` : workspaceId,
-          monitor,
-        ),
+      (workspaceId) => new FirestoreFinanceRepository(dbOf(OWNER), workspaceId, monitor),
       new FirestoreWorkspaceRegistry(dbOf(OWNER), OWNER, monitor, memoryStorage()),
       () => `id-${Math.random().toString(36).slice(2)}`,
     );
@@ -317,12 +320,7 @@ describe('store branché sur Firestore', () => {
     await monitor.flush(5000);
 
     const deviceB = new FinanceStore(
-      (workspaceId) =>
-        new FirestoreFinanceRepository(
-          dbOf(OWNER),
-          workspaceId === 'perso' ? `perso-${OWNER}` : workspaceId,
-          monitor,
-        ),
+      (workspaceId) => new FirestoreFinanceRepository(dbOf(OWNER), workspaceId, monitor),
       new FirestoreWorkspaceRegistry(dbOf(OWNER), OWNER, monitor, memoryStorage()),
       () => `id-${Math.random().toString(36).slice(2)}`,
     );

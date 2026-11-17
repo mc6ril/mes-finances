@@ -32,7 +32,10 @@ import { GROUP_LABELS, groupLabel } from '@/ui/constants';
 import { isSavingsAccount } from '@/core/comptes/accounts';
 import Tabs from '@/ui/design-system/Tabs';
 import { SETTINGS_TABS, settingsPath, type SettingsTab } from '@/ui/layout/navigation';
-import type { WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import type { AnyBackupContent, WorkspaceData } from '@/core/sauvegarde/fullBackup';
+import BackupPasswordDialog from '@/ui/common/BackupPasswordDialog';
+import { restoreTargets, type RestoreContext, type RestoreTarget } from '@/core/sauvegarde/restorePlan';
+import { isMainWorkspace } from '@/core/espaces/workspaces';
 import { mergeSettings, type SettingsMergeSummary } from '@/core/sauvegarde/settingsMerge';
 import { parseFlexibleDate, todayIso } from '@/core/shared/dates';
 import { formatDateFr } from '@/core/shared/format';
@@ -506,15 +509,22 @@ const SettingRow = ({ icon: Icon, title, description, children }: SettingRowProp
   </li>
 );
 
-type PendingRestore =
-  { kind: 'workspace'; dataset: Dataset } | { kind: 'complete'; entries: WorkspaceData[]; activeId: string };
+type PendingRestore = { entries: WorkspaceData[]; activeId: string };
 
-const restoreMessage = (pending: PendingRestore, workspaceName: string): string => {
-  if (pending.kind === 'complete') {
-    const names = pending.entries.map((entry) => `« ${entry.workspace.name} »`).join(', ');
-    return `Tous les espaces actuels seront remplacés par ceux de la sauvegarde : ${names}. Tes espaces absents du fichier seront supprimés ; les espaces communs où tu es invité ne sont pas touchés.`;
-  }
-  return `Les données de l’espace « ${workspaceName} » seront remplacées par le fichier (${pending.dataset.transactions.length} opérations, ${pending.dataset.accounts.length} comptes). Tes autres espaces ne sont pas touchés.`;
+type FilePurpose = 'restore' | 'settings';
+
+const TARGET_LABELS: Record<RestoreTarget, string> = {
+  main: 'remplace ton espace principal',
+  replace: 'remplace l’espace du même nom',
+  copy: 'devient un nouvel espace à toi',
+};
+
+const restoreMessage = (pending: PendingRestore, context: RestoreContext): string => {
+  const targets = restoreTargets(pending.entries, context);
+  const lines = pending.entries
+    .map((entry, index) => `« ${entry.workspace.name} » ${TARGET_LABELS[targets[index] ?? 'copy']}`)
+    .join(' ; ');
+  return `${lines}. Tes autres espaces ne sont pas touchés.`;
 };
 
 const changes = (label: string, { added, updated }: { added: number; updated: number }): string | null =>
@@ -554,22 +564,58 @@ const BackupCard = () => {
   const [pending, setPending] = useState<PendingRestore | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [pendingSettings, setPendingSettings] = useState<Dataset | null>(null);
+  /** Sauvegarde protégée choisie : on attend son mot de passe avant de la lire. */
+  const [locked, setLocked] = useState<{ file: File; purpose: FilePurpose } | null>(null);
 
-  const onSettingsFile = async (file: File) => {
-    const result = await files.readBackupFile(file);
-    if (!result.ok) {
-      notify(errorMessage(result.error), 'error');
-      return;
-    }
+  const onSettingsContent = (content: AnyBackupContent) => {
     const incoming =
-      result.value.kind === 'workspace'
-        ? result.value.dataset
-        : result.value.entries.find((entry) => entry.workspace.id === workspace.id)?.dataset;
+      content.kind === 'workspace'
+        ? content.dataset
+        : content.entries.find((entry) =>
+            isMainWorkspace(workspace)
+              ? isMainWorkspace(entry.workspace)
+              : entry.workspace.id === workspace.id,
+          )?.dataset;
     if (!incoming) {
       notify('Aucun espace de ce nom dans la sauvegarde complète : choisis le fichier d’un espace.', 'error');
       return;
     }
     setPendingSettings(incoming);
+  };
+
+  const onRestoreContent = (content: AnyBackupContent) => {
+    // Seule une sauvegarde complète se restaure (l'ancien fichier d'un seul espace ne dit pas où aller).
+    if (content.kind !== 'complete') {
+      notify(errorMessage({ code: 'backup-not-complete' }), 'error');
+      return;
+    }
+    setPending({ entries: content.entries, activeId: content.activeId });
+  };
+
+  /** Lit le fichier (avec son mot de passe s'il est protégé) ; renvoie l'erreur à afficher. */
+  const openFile = async (file: File, purpose: FilePurpose, password?: string): Promise<string | null> => {
+    const result = await files.readBackupFile(file, password);
+    if (!result.ok) {
+      if (result.error.code === 'backup-password-required') {
+        setLocked({ file, purpose });
+        return null;
+      }
+      return errorMessage(result.error);
+    }
+    setLocked(null);
+    if (purpose === 'restore') {
+      onRestoreContent(result.value);
+    } else {
+      onSettingsContent(result.value);
+    }
+    return null;
+  };
+
+  const onFile = (purpose: FilePurpose) => async (file: File) => {
+    const failure = await openFile(file, purpose);
+    if (failure) {
+      notify(failure, 'error');
+    }
   };
 
   const { history, exportAll } = useBackupHistory();
@@ -587,25 +633,8 @@ const BackupCard = () => {
     }
   };
 
-  const onFile = async (file: File) => {
-    const result = await files.readBackupFile(file);
-    if (!result.ok) {
-      notify(errorMessage(result.error), 'error');
-      return;
-    }
-    if (result.value.kind === 'complete') {
-      setPending({ kind: 'complete', entries: result.value.entries, activeId: result.value.activeId });
-      return;
-    }
-    setPending({ kind: 'workspace', dataset: result.value.dataset });
-  };
-
   const confirmRestore = (restore: PendingRestore) => {
-    if (restore.kind === 'complete') {
-      void report(store.restoreAll(restore.entries, restore.activeId), 'Sauvegarde complète restaurée');
-      return;
-    }
-    void report(finance.restore(restore.dataset), 'Sauvegarde restaurée');
+    void report(store.restoreAll(restore.entries, restore.activeId), 'Sauvegarde complète restaurée');
   };
 
   return (
@@ -617,7 +646,7 @@ const BackupCard = () => {
         <SettingRow
           icon={Archive}
           title="Sauvegarde complète"
-          description={`Tous tes espaces : ${workspaces.map((item) => item.name).join(', ')} · ${lastBackupText(history)}`}
+          description={`Tous tes espaces, chiffrés par un mot de passe : ${workspaces.map((item) => item.name).join(', ')} · ${lastBackupText(history)}`}
         >
           <Button
             size="sm"
@@ -631,11 +660,11 @@ const BackupCard = () => {
         <SettingRow
           icon={ArchiveRestore}
           title="Restaurer"
-          description="Sauvegarde complète : remplace tous les espaces. Fichier d’un espace : remplace l’espace affiché."
+          description="Sauvegarde complète : remplace les espaces du fichier, chez toi ; les autres ne sont pas touchés."
         >
           <FilePickerButton
             label="Choisir un fichier à restaurer"
-            onFile={(file) => void onFile(file)}
+            onFile={(file) => void onFile('restore')(file)}
             iconOnly
           />
         </SettingRow>
@@ -646,7 +675,7 @@ const BackupCard = () => {
         >
           <FilePickerButton
             label="Choisir un fichier de réglages"
-            onFile={(file) => void onSettingsFile(file)}
+            onFile={(file) => void onFile('settings')(file)}
             iconOnly
           />
         </SettingRow>
@@ -675,16 +704,21 @@ const BackupCard = () => {
       </div>
       {pending && (
         <ConfirmDialog
-          title={
-            pending.kind === 'complete' ? 'Restaurer la sauvegarde complète ?' : 'Restaurer cet espace ?'
-          }
-          message={`${restoreMessage(pending, workspace.name)} Exporte d’abord une sauvegarde de l’état actuel si tu veux pouvoir revenir en arrière.`}
+          title="Restaurer la sauvegarde complète ?"
+          message={`${restoreMessage(pending, { main: workspaces.find(isMainWorkspace) ?? workspace, workspaces })} Exporte d’abord une sauvegarde de l’état actuel si tu veux pouvoir revenir en arrière.`}
           confirmLabel="Restaurer"
           onCancel={() => setPending(null)}
           onConfirm={() => {
             confirmRestore(pending);
             setPending(null);
           }}
+        />
+      )}
+      {locked && (
+        <BackupPasswordDialog
+          mode="unlock"
+          onSubmit={(password) => openFile(locked.file, locked.purpose, password)}
+          onCancel={() => setLocked(null)}
         />
       )}
       {pendingSettings && (

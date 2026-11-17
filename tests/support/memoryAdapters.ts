@@ -1,10 +1,11 @@
 import { itemKey } from '@/core/shared/collections';
-import { ok, type Result } from '@/core/shared/errors';
+import { fail, ok, type Result } from '@/core/shared/errors';
 import type { CollectionName, Dataset, Settings } from '@/core/shared/model';
 import type { CollectionItem, DatasetListener, FinanceRepositoryInterface } from '@/core/store/interface';
 import type { WorkspaceRegistryInterface, WorkspacesListener } from '@/core/espaces/interface';
 import {
-  DEFAULT_WORKSPACE,
+  isMainWorkspace,
+  mainWorkspace,
   resolveActiveId,
   type Workspace,
   type WorkspaceRegistryState,
@@ -122,14 +123,19 @@ class MemoryRepository implements FinanceRepositoryInterface {
   }
 }
 
-/** Liste des espaces en mémoire, dont la liste peut changer « ailleurs » (`remoteChange`). */
+/** Compte connecté des tests en mémoire, et son espace principal. */
+export const TEST_USER = 'user-test';
+export const TEST_MAIN = mainWorkspace(TEST_USER);
+
+/**
+ * Liste des espaces en mémoire, dont la liste peut changer « ailleurs » (`remoteChange`).
+ * Comme Firestore, refuse de créer l'espace principal d'un autre compte.
+ */
 export class MemoryWorkspaceRegistry implements WorkspaceRegistryInterface {
   #state: WorkspaceRegistryState;
   readonly #listeners = new Set<WorkspacesListener>();
 
-  constructor(
-    state: WorkspaceRegistryState = { workspaces: [DEFAULT_WORKSPACE], activeId: DEFAULT_WORKSPACE.id },
-  ) {
+  constructor(state: WorkspaceRegistryState = { workspaces: [TEST_MAIN], activeId: TEST_MAIN.id }) {
     this.#state = state;
   }
 
@@ -152,6 +158,17 @@ export class MemoryWorkspaceRegistry implements WorkspaceRegistryInterface {
 
   async create(workspace: Workspace): Promise<Result<void>> {
     this.#state = { ...this.#state, workspaces: [...this.#state.workspaces, workspace] };
+    return ok(undefined);
+  }
+
+  async createAll(workspaces: Workspace[]): Promise<Result<void>> {
+    const refused = workspaces.some(
+      (workspace) => isMainWorkspace(workspace) && workspace.id !== TEST_MAIN.id,
+    );
+    if (refused) {
+      return fail('sync-permission-denied');
+    }
+    this.#state = { ...this.#state, workspaces: [...this.#state.workspaces, ...workspaces] };
     return ok(undefined);
   }
 

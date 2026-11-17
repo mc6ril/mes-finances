@@ -2,7 +2,7 @@ import { fail, ok, type Result } from '@/core/shared/errors';
 import type { PendingInvitationInterface, SharingGatewayInterface } from '@/core/partage/interface';
 import type { Invitation, NewInvitation } from '@/core/partage/model';
 import type { Workspace } from '@/core/espaces/workspaces';
-import { DEFAULT_WORKSPACE } from '@/core/espaces/workspaces';
+import { TEST_MAIN } from '../../support/memoryAdapters';
 import { createSharingUseCases } from '@/core/usecases/sharing';
 
 const NOW = new Date('2026-11-14T10:00:00.000Z');
@@ -94,7 +94,7 @@ describe('inviter dans un espace commun', () => {
 
   it('refuse d’inviter dans un espace perso, d’un autre, ou déjà partagé', async () => {
     const { useCases, created } = setup();
-    expect(await useCases.invite(DEFAULT_WORKSPACE)).toEqual(fail('workspace-not-owner'));
+    expect(await useCases.invite(TEST_MAIN)).toEqual(fail('workspace-not-owner'));
     expect(await useCases.invite(asGuest)).toEqual(fail('workspace-not-owner'));
     expect(await useCases.invite(shared)).toEqual(fail('workspace-already-shared'));
     expect(created).toEqual([]);

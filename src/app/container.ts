@@ -2,6 +2,7 @@ import { createFirebaseAuthGateway } from '@/adapters/auth/firebaseAuth';
 import { firebaseApp } from '@/adapters/firebase/firebaseApp';
 import { BrowserFileSaver } from '@/adapters/files/BrowserFileSaver';
 import { BrowserTextFileReader } from '@/adapters/files/BrowserTextFileReader';
+import { WebCryptoBackupCipher } from '@/adapters/crypto/WebCryptoBackupCipher';
 import { closeBrowserFirestore, openBrowserFirestore } from '@/adapters/firestore/browserFirestore';
 import { watchBrowserNetwork } from '@/adapters/firestore/sync/browserNetwork';
 import { FirestoreBackend } from '@/adapters/firestore/FirestoreBackend';
@@ -54,6 +55,7 @@ export const createContainer = (): Container => {
     saver: new BrowserFileSaver(),
     workspaces: store,
     backups: backend.backups,
+    cipher: new WebCryptoBackupCipher(),
   });
   const finance = createFinanceUseCases({ gateway: store, newId: randomId, now: () => new Date() });
   const sharing = createSharingUseCases({

@@ -6,7 +6,6 @@ import { FirestoreFinanceRepository } from '@/adapters/firestore/store/Firestore
 import { FirestoreSharing } from '@/adapters/firestore/partage/FirestoreSharing';
 import { FirestoreWorkspaceRegistry } from '@/adapters/firestore/espaces/FirestoreWorkspaceRegistry';
 import { SyncMonitor } from '@/adapters/firestore/sync/SyncMonitor';
-import { toDocumentId } from '@/adapters/firestore/espaces/workspaceIds';
 import { randomToken } from '@/adapters/ids/randomToken';
 import { FinanceStore } from '@/core/store/FinanceStore';
 import { createSharingUseCases } from '@/core/usecases/sharing';
@@ -29,7 +28,7 @@ const device = (uid: string) => {
   const db = env.authenticatedContext(uid, { email_verified: true }).firestore() as unknown as Firestore;
   const monitor = new SyncMonitor();
   const store = new FinanceStore(
-    (workspaceId) => new FirestoreFinanceRepository(db, toDocumentId(workspaceId, uid), monitor),
+    (workspaceId) => new FirestoreFinanceRepository(db, workspaceId, monitor),
     new FirestoreWorkspaceRegistry(db, uid, monitor, memoryStorage()),
     () => `id-${Math.random().toString(36).slice(2)}`,
   );

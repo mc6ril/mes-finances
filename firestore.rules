@@ -47,7 +47,14 @@ service cloud.firestore {
           && data.ownerId == uid()
           && data.memberIds == [uid()]
           && data.kind in ['perso', 'commun']
-          && data.createdAt == request.time;
+          && data.createdAt == request.time
+          && mainIdOwnedByCaller();
+      }
+
+      // L'espace principal porte l'uid de son propriétaire : « perso-<uid> » n'est créé que par <uid>.
+      // Une sauvegarde d'un autre compte ne peut donc ni viser ni recréer son espace principal.
+      function mainIdOwnedByCaller() {
+        return !workspaceId.matches('perso-.*') || workspaceId == 'perso-' + uid();
       }
 
       // Nom, réglages, version du schéma, découpage en paquets : tout membre.

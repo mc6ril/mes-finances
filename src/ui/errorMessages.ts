@@ -1,3 +1,4 @@
+import { MIN_BACKUP_PASSWORD_LENGTH } from '@/core/sauvegarde/encryptedBackup';
 import { MIN_PASSWORD_LENGTH } from '@/core/auth/validation';
 import type { AppError, AppErrorCode } from '@/core/shared/errors';
 
@@ -18,6 +19,15 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
       ? `la sauvegarde est corrompue (collection « ${detail} » invalide).`
       : 'la sauvegarde est corrompue.',
   'backup-missing-main': () => 'La sauvegarde ne contient pas l’espace principal.',
+  'backup-password-required': () => 'Cette sauvegarde est protégée par un mot de passe.',
+  'backup-wrong-password': () =>
+    'Mot de passe incorrect, ou fichier abîmé. Sans le bon mot de passe, la sauvegarde ne peut pas être ouverte.',
+  'backup-password-too-short': () =>
+    `Le mot de passe doit contenir au moins ${MIN_BACKUP_PASSWORD_LENGTH} caractères.`,
+  'backup-encryption-failed': () =>
+    'Le chiffrement de la sauvegarde a échoué : aucun fichier n’a été enregistré.',
+  'backup-not-complete': () =>
+    'Seule une sauvegarde complète peut être restaurée. Le fichier d’un espace sert uniquement à importer des réglages.',
   'broker-not-recognized': () => 'Ce fichier ne ressemble pas à un export de transactions Trade Republic.',
   'workspace-name-empty': () => 'Donne un nom à l’espace.',
   'workspace-name-taken': () => 'Un espace porte déjà ce nom.',

@@ -16,12 +16,25 @@ export type Workspace = {
 
 export type WorkspaceRegistryState = { workspaces: Workspace[]; activeId: string };
 
-export const DEFAULT_WORKSPACE: Workspace = {
-  id: 'perso',
+/**
+ * L'espace principal de chaque compte porte son uid : `perso-<uid>`. Aucun identifiant générique,
+ * pour qu'une sauvegarde ne puisse jamais viser l'espace d'un autre compte que celui qui l'a exportée
+ * (les règles Firestore n'acceptent un espace perso que sous l'identifiant de son propriétaire).
+ */
+const MAIN_WORKSPACE_PREFIX = 'perso-';
+
+export const mainWorkspaceId = (userId: string): string => `${MAIN_WORKSPACE_PREFIX}${userId}`;
+
+export const mainWorkspace = (userId: string): Workspace => ({
+  id: mainWorkspaceId(userId),
   name: 'Mon espace',
   kind: 'perso',
   role: 'owner',
-};
+});
+
+/** Espace principal d'un compte (le sien dans sa liste ; celui de son auteur dans une sauvegarde). */
+export const isMainWorkspace = (workspace: Pick<Workspace, 'id'>): boolean =>
+  workspace.id.startsWith(MAIN_WORKSPACE_PREFIX);
 
 export type WorkspaceNameError = Extract<AppErrorCode, 'workspace-name-empty' | 'workspace-name-taken'>;
 
@@ -51,20 +64,20 @@ export const resolveActiveId = (workspaces: Workspace[], activeId: string | null
   if (activeId && workspaces.some((workspace) => workspace.id === activeId)) {
     return activeId;
   }
-  return DEFAULT_WORKSPACE.id;
+  return (workspaces.find(isMainWorkspace) ?? workspaces[0])?.id ?? '';
 };
 
 /** Espace principal d'abord, puis les autres par nom. */
 export const sortWorkspaces = (workspaces: Workspace[]): Workspace[] =>
   [...workspaces].sort((a, b) => {
-    if (a.id === DEFAULT_WORKSPACE.id || b.id === DEFAULT_WORKSPACE.id) {
-      return a.id === DEFAULT_WORKSPACE.id ? -1 : 1;
+    if (isMainWorkspace(a) !== isMainWorkspace(b)) {
+      return isMainWorkspace(a) ? -1 : 1;
     }
     return a.name.localeCompare(b.name, 'fr');
   });
 
 export const canDelete = (workspace: Workspace): boolean =>
-  workspace.role === 'owner' && workspace.id !== DEFAULT_WORKSPACE.id;
+  workspace.role === 'owner' && !isMainWorkspace(workspace);
 
 export const canInvite = (workspace: Workspace): boolean =>
   workspace.role === 'owner' && workspace.kind === 'commun';
@@ -77,8 +90,8 @@ export const workspaceFileSlug = (name: string): string =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || 'espace';
 
-export const activeIn = (workspaces: Workspace[], activeId: string): Workspace =>
-  workspaces.find((item) => item.id === activeId) ?? workspaces[0] ?? DEFAULT_WORKSPACE;
+export const activeIn = (workspaces: Workspace[], activeId: string, main: Workspace): Workspace =>
+  workspaces.find((item) => item.id === activeId) ?? workspaces.find(isMainWorkspace) ?? main;
 
 export const newWorkspace = (
   name: string,
