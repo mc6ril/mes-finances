@@ -1,4 +1,5 @@
 import {
+  validateSavingsAccount,
   activeSavingsAccounts,
   groupOfKind,
   isSavingsAccount,
@@ -45,5 +46,29 @@ describe('comptes d’épargne suivis', () => {
       anAccount({ id: 'ancien', kind: 'livret', group: 'securise', archived: true }),
     ];
     expect(activeSavingsAccounts(accounts).map((account) => account.id)).toEqual(['livret', 'pea', 'immo']);
+  });
+});
+
+describe('saisie d’un compte d’épargne', () => {
+  it('nettoie le nom et lit le solde et la date de départ', () => {
+    expect(validateSavingsAccount({ name: '  Livret A ', balance: '1 500,50', date: '01/02/2026' })).toEqual({
+      name: 'Livret A',
+      openingBalance: 150050,
+      openingDate: '2026-02-01',
+    });
+  });
+
+  it('prend un solde vide pour 0', () => {
+    expect(validateSavingsAccount({ name: 'PEL', balance: '  ', date: '2026-02-01' })?.openingBalance).toBe(
+      0,
+    );
+  });
+
+  it('refuse un nom vide, une date invalide ou un solde négatif ou illisible', () => {
+    const valid = { name: 'PEL', balance: '10', date: '2026-02-01' };
+    expect(validateSavingsAccount({ ...valid, name: '  ' })).toBeNull();
+    expect(validateSavingsAccount({ ...valid, date: 'demain' })).toBeNull();
+    expect(validateSavingsAccount({ ...valid, balance: '-10' })).toBeNull();
+    expect(validateSavingsAccount({ ...valid, balance: 'dix' })).toBeNull();
   });
 });
