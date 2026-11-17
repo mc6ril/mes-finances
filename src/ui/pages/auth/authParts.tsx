@@ -18,7 +18,7 @@ export const emailFrom = (state: unknown): string =>
 export const Divider = () => (
   <div className="flex items-center gap-3" role="separator">
     <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
-    <span className="text-xs text-stone-400 dark:text-stone-500">ou</span>
+    <span className="text-xs text-stone-550 dark:text-stone-400">ou</span>
     <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
   </div>
 );

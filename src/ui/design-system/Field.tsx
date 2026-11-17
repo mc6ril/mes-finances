@@ -17,7 +17,7 @@ export const Field = ({ label, children, hint, error, className }: FieldProps) =
   <label className={cx('flex flex-col gap-1.5', className)}>
     <span className="text-xs font-medium text-stone-600 dark:text-stone-300">{label}</span>
     {children}
-    {hint && !error && <span className="text-[11px] text-stone-400">{hint}</span>}
+    {hint && !error && <span className="text-[11px] text-stone-550 dark:text-stone-400">{hint}</span>}
     {error && <span className="text-[11px] text-red-600 dark:text-red-400">{error}</span>}
   </label>
 );

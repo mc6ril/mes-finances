@@ -6,6 +6,11 @@ describe('cx', () => {
     expect(cx('h-10 px-3 text-sm', 'h-8 text-xs')).toBe('px-3 h-8 text-xs');
   });
 
+  it('traite stone-550 (couleur ajoutée au thème) comme une couleur', () => {
+    expect(cx('text-sm text-stone-550', 'text-brand-600')).toBe('text-sm text-brand-600');
+    expect(cx('text-[11px] text-stone-550', 'text-xs')).toBe('text-stone-550 text-xs');
+  });
+
   it('distingue couleur de texte et taille', () => {
     expect(cx('text-sm text-stone-900', 'text-brand-600')).toBe('text-sm text-brand-600');
   });

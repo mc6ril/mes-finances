@@ -5,11 +5,11 @@ type TextVariant = 'body' | 'muted' | 'small' | 'label' | 'strong' | 'caption';
 
 const VARIANTS: Record<TextVariant, string> = {
   body: 'text-sm text-stone-700 dark:text-stone-200',
-  muted: 'text-sm text-stone-500 dark:text-stone-400',
-  small: 'text-xs text-stone-500 dark:text-stone-400',
-  label: 'text-xs font-medium uppercase tracking-wide text-stone-500 dark:text-stone-400',
+  muted: 'text-sm text-stone-550 dark:text-stone-400',
+  small: 'text-xs text-stone-550 dark:text-stone-400',
+  label: 'text-xs font-medium uppercase tracking-wide text-stone-550 dark:text-stone-400',
   strong: 'text-sm font-semibold text-stone-900 dark:text-stone-50',
-  caption: 'text-[11px] text-stone-400 dark:text-stone-500',
+  caption: 'text-[11px] text-stone-550 dark:text-stone-400',
 };
 
 type TextProps = {
