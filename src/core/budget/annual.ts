@@ -123,6 +123,17 @@ export const depositsInMonth = (
     .filter((movement) => !isMirrored(movement, transactions))
     .reduce((total, movement) => total + movement.amount, 0);
 
+/**
+ * Épargne d'un mois : virements vers les catégories d'épargne, plus les versements saisis
+ * directement dans Épargne et patrimoine (sans double comptage d'un versement déjà viré).
+ */
+export const savedInMonth = (
+  fromTransactions: Cents,
+  movements: SavingsMovement[],
+  transactions: Transaction[],
+  month: MonthKey,
+): Cents => fromTransactions + depositsInMonth(movements, transactions, month);
+
 export const yearSummary = ({
   transactions,
   categories,
@@ -136,10 +147,13 @@ export const yearSummary = ({
   const transfers = monthKeys.map((month) => uncategorizedSavings(transactions, categories, accounts, month));
   const months = monthKeys.map((month, index) => {
     const totals = monthTotals(transactions, categories, month);
-    const saved = depositsInMonth(movements, transactions, month) + sumOf(transfers[index]!);
+    const transferred = sumOf(transfers[index]!);
     return {
       month,
-      totals: { ...totals, epargne: totals.epargne + saved },
+      totals: {
+        ...totals,
+        epargne: savedInMonth(totals.epargne, movements, transactions, month) + transferred,
+      },
       hasData: hasCountedTransactions(transactions, month),
     };
   });

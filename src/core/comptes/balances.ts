@@ -1,5 +1,5 @@
-import { addDays } from '../shared/dates';
-import type { Account, Cents, IsoDate, Transaction, TransactionType } from '../shared/model';
+import { addDays, addMonths, monthEnd, monthStart } from '../shared/dates';
+import type { Account, Cents, IsoDate, MonthKey, Transaction, TransactionType } from '../shared/model';
 
 export const isCounted = (transaction: Transaction): boolean => transaction.status !== 'prevu';
 
@@ -172,4 +172,31 @@ export const balanceSeries = (
     points.push({ date, balance });
   }
   return points;
+};
+
+/** Point de la courbe de solde : réel jusqu'à la date de référence, projection (prévus compris) ensuite. */
+export type BalanceChartPoint = { date: IsoDate; reel: Cents | null; projete: Cents | null };
+
+const CHART_MONTHS = 3;
+
+/**
+ * Courbe de solde du tableau de bord : les trois derniers mois jusqu'à la fin du mois affiché,
+ * à partir de l'ouverture du compte si elle est plus récente. Les deux séries se rejoignent à `date`.
+ */
+export const balanceChartPoints = (
+  account: Account,
+  transactions: Transaction[],
+  month: MonthKey,
+  date: IsoDate,
+): BalanceChartPoint[] => {
+  const windowStart = monthStart(addMonths(month, 1 - CHART_MONTHS));
+  const from = [windowStart, account.openingDate].sort().at(-1) ?? windowStart;
+  const to = monthEnd(month);
+  const real = balanceSeries(account, transactions, from, to);
+  const projected = balanceSeries(account, transactions, from, to, { includePlanned: true });
+  return real.map((point, index) => ({
+    date: point.date,
+    reel: point.date <= date ? point.balance : null,
+    projete: point.date >= date ? (projected[index]?.balance ?? null) : null,
+  }));
 };

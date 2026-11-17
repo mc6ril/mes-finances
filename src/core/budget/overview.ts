@@ -8,12 +8,15 @@ import {
   plaisirBudgetOf,
   plaisirSpent,
   type BudgetLine,
+  type MonthTotals,
   effectiveBudget,
   effectiveYearBudget,
 } from '@/core/budget/budget';
 import { addMonths, monthEnd, monthKeyOf } from '@/core/shared/dates';
 import { patrimoineAt, type PatrimoineContext } from '@/core/patrimoine/patrimoine';
+import { savedInMonth } from '@/core/budget/annual';
 import type {
+  Cents,
   CategoryGroup,
   Dataset,
   IsoDate,
@@ -137,6 +140,44 @@ export const spendingSlices = (dataset: Dataset, month: MonthKey): SpendingSlice
 };
 
 export type MonthOverview = ReturnType<typeof monthOverview>;
+
+/** Ce que les chiffres du tableau de bord lisent dans la synthèse du mois. */
+type FiguresSource = {
+  totals: Pick<MonthTotals, 'epargne' | 'plaisir' | 'nonCategorise'>;
+  patrimoine: { personalTotal: Cents; contributions: Cents };
+  previousPatrimoine: { personalTotal: Cents; contributions: Cents };
+  plaisirBudget: Cents;
+  spent: Cents;
+};
+
+export type DashboardFigures = {
+  /** Virements d'épargne et versements saisis dans le mois. */
+  saved: Cents;
+  /** Dépenses personnelles et non catégorisées. */
+  variable: Cents;
+  /** Un compte était déjà suivi à la fin du mois précédent : l'évolution du patrimoine a un sens. */
+  hasPreviousMonth: boolean;
+  patrimoineDelta: Cents;
+  contributionsDelta: Cents;
+  /** Reste du budget mensuel des dépenses personnelles (négatif s'il est dépassé). */
+  remainingPlaisir: Cents;
+};
+
+export const dashboardFigures = (
+  dataset: Dataset,
+  overview: FiguresSource,
+  month: MonthKey,
+): DashboardFigures => {
+  const previousMonthEnd = monthEnd(addMonths(month, -1));
+  return {
+    saved: savedInMonth(overview.totals.epargne, dataset.savingsMovements, dataset.transactions, month),
+    variable: overview.totals.plaisir + overview.totals.nonCategorise,
+    hasPreviousMonth: dataset.accounts.some((account) => account.openingDate <= previousMonthEnd),
+    patrimoineDelta: overview.patrimoine.personalTotal - overview.previousPatrimoine.personalTotal,
+    contributionsDelta: overview.patrimoine.contributions - overview.previousPatrimoine.contributions,
+    remainingPlaisir: overview.plaisirBudget - overview.spent,
+  };
+};
 
 /** Ce que l'espace contient déjà : le tableau de bord n'affiche que ce qui a été saisi. */
 export const dashboardContent = (dataset: Dataset) => {
