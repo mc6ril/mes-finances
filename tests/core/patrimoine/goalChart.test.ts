@@ -15,7 +15,11 @@ const goal: Goal = {
   startAmount: 100000,
 };
 
-const scenario = (annualRate: number, monthsToTarget: number | null, series: number[]): ProjectionScenario => ({
+const scenario = (
+  annualRate: number,
+  monthsToTarget: number | null,
+  series: number[],
+): ProjectionScenario => ({
   annualRate,
   monthsToTarget,
   reachedMonth: null,
