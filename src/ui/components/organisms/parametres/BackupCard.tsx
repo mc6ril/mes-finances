@@ -9,7 +9,6 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { lastBackupText } from '@/hooks/parametres/backupMessages';
 import { useBackupActions } from '@/hooks/parametres/useBackupActions';
 import { useBackupHistory } from '@/hooks/useBackupHistory';
 import Button from '@/ui/components/atoms/Button';
@@ -18,6 +17,7 @@ import Card from '@/ui/components/molecules/cards/Card';
 import FilePickerButton from '@/ui/components/molecules/form/FilePickerButton';
 import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog';
 import BackupPasswordDialog from '@/ui/components/organisms/modals/BackupPasswordDialog';
+import { lastBackupText } from '@/ui/labels/parametres/backup';
 
 type BackupRowProps = { icon: LucideIcon; title: string; description: string; children: ReactNode };
 

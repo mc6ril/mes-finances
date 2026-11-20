@@ -17,7 +17,8 @@
 ## Checklist
 
 - [ ] La PR cible `main-dev`
-- [ ] `npm run typecheck` et `npm test` passent
+- [ ] `npm run lint`, `npm run typecheck`, `npm test` et `npm run build` passent
 - [ ] Schéma modifié : `SCHEMA_VERSION` incrémenté, migration et test ajoutés
 - [ ] Sauvegarde / restauration toujours compatibles
-- [ ] README à jour si le comportement change
+- [ ] Décision prise : ajoutée à `docs/decisions-a-valider.md`
+- [ ] `docs/` à jour si le comportement ou l'exploitation change
