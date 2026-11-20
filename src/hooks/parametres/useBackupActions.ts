@@ -15,8 +15,8 @@ import {
 import { useReport } from '@/hooks/useReport';
 import { useToast } from '@/hooks/useToast';
 import { errorMessage } from '@/ui/errorMessages';
+import { restoreMessage, settingsMessage } from '@/ui/labels/parametres/backup';
 import { type BackupDialog, backupDialogsReducer, type FilePurpose, NO_BACKUP_DIALOG } from './backupDialogs';
-import { restoreMessage, settingsMessage } from './backupMessages';
 
 /**
  * Actions de la carte Sauvegardes : lecture d'un fichier (avec son mot de passe s'il est protégé),

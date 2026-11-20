@@ -2,11 +2,11 @@ import { PiggyBank, Receipt, ShoppingBag, TrendingUp, Wallet } from 'lucide-reac
 import type { YearSummary } from '@/core/budget/annual';
 import type { PatrimoineEvolution } from '@/core/patrimoine/patrimoine';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { evolutionPeriod } from '@/hooks/bilan/bilanLabels';
 import Amount from '@/ui/components/atoms/Amount';
 import Text from '@/ui/components/atoms/Text';
 import StatCard from '@/ui/components/molecules/cards/StatCard';
 import { groupLabel } from '@/ui/constants';
+import { evolutionPeriod } from '@/ui/labels/bilan/patrimoine';
 
 type EvolutionProps = { evolution: PatrimoineEvolution | null };
 

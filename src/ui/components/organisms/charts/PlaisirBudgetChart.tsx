@@ -12,7 +12,7 @@ import {
 import type { MonthlyChartPoint, YearSummary } from '@/core/budget/annual';
 import { capitalize, monthLabel, monthShortLabel } from '@/core/shared/format';
 import type { WorkspaceKind } from '@/core/shared/model';
-import { overBudgetOpacity } from '@/hooks/bilan/bilanLabels';
+import { overBudgetOpacity } from '@/hooks/bilan/budgetChart';
 import { useChartTheme } from '@/hooks/useTheme';
 import Card from '@/ui/components/molecules/cards/Card';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';

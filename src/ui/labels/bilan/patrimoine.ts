@@ -1,7 +1,7 @@
 import { PATRIMOINE_START_KEY, type PatrimoineEvolution } from '@/core/patrimoine/patrimoine';
 import { monthKeyOf } from '@/core/shared/dates';
 import { formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
-import type { Cents, IsoDate } from '@/core/shared/model';
+import type { IsoDate } from '@/core/shared/model';
 
 /** Période couverte par l'évolution du patrimoine (carte du bilan). */
 export const evolutionPeriod = (evolution: PatrimoineEvolution): string => {
@@ -42,12 +42,4 @@ export const pointLabel = (key: string, evolution: PatrimoineEvolution | null, t
     return `Au ${formatDateFr(today)}`;
   }
   return `Fin ${monthLabel(key)}`;
-};
-
-/** Barre pleine pour un mois au-delà du budget, atténuée sinon. */
-export const overBudgetOpacity = (spent: Cents, budget: Cents | null): number => {
-  if (budget !== null && spent > budget) {
-    return 1;
-  }
-  return 0.75;
 };

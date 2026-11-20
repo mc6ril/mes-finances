@@ -1,11 +1,11 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { PatrimoineEvolution, PatrimoinePoint } from '@/core/patrimoine/patrimoine';
 import type { IsoDate } from '@/core/shared/model';
-import { patrimoineSubtitle, pointLabel, pointTick } from '@/hooks/bilan/bilanLabels';
 import { useChartTheme } from '@/hooks/useTheme';
 import Card from '@/ui/components/molecules/cards/Card';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
 import ChartTooltip from '@/ui/components/molecules/charts/ChartTooltip';
+import { patrimoineSubtitle, pointLabel, pointTick } from '@/ui/labels/bilan/patrimoine';
 
 type PatrimoineChartProps = {
   points: PatrimoinePoint[];

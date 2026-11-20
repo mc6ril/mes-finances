@@ -1,12 +1,11 @@
 import { PATRIMOINE_START_KEY, type PatrimoineEvolution } from '@/core/patrimoine/patrimoine';
 import {
   evolutionPeriod,
-  overBudgetOpacity,
   patrimoineSubtitle,
   pointLabel,
   pointTick,
   startLabel,
-} from '@/hooks/bilan/bilanLabels';
+} from '@/ui/labels/bilan/patrimoine';
 
 const fullYear: PatrimoineEvolution = {
   from: '2025-12-31',
@@ -52,16 +51,5 @@ describe('axe et infobulle de la courbe', () => {
     expect(pointTick('2026-02', fullYear)).toBe('févr.');
     expect(pointLabel('2026-02', fullYear, '2026-03-10')).toBe('Fin février 2026');
     expect(pointLabel('2026-03', fullYear, '2026-03-10')).toBe('Au 10/03/2026');
-  });
-});
-
-describe('overBudgetOpacity', () => {
-  it('fonce la barre d’un mois au-delà du budget', () => {
-    expect(overBudgetOpacity(12000, 10000)).toBe(1);
-  });
-
-  it('atténue les mois dans le budget ou sans budget', () => {
-    expect(overBudgetOpacity(10000, 10000)).toBe(0.75);
-    expect(overBudgetOpacity(12000, null)).toBe(0.75);
   });
 });

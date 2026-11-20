@@ -1,11 +1,6 @@
 import { mainWorkspace, type Workspace } from '@/core/espaces/workspaces';
 import { createInitialDataset } from '@/core/shared/seed';
-import {
-  changesLine,
-  lastBackupText,
-  restoreMessage,
-  settingsMessage,
-} from '@/hooks/parametres/backupMessages';
+import { changesLine, lastBackupText, restoreMessage, settingsMessage } from '@/ui/labels/parametres/backup';
 
 const none = { added: 0, updated: 0 };
 const emptySummary = { rules: none, categories: none, accounts: none, household: false };
