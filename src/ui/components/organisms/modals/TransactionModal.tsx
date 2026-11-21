@@ -57,7 +57,7 @@ const EXPENSE_FOR_HINT =
   'À la charge de : payé par le commun, déduit de sa part. Avancé par : payé de sa poche, remboursé.';
 
 const REFUND_FOR_HINT =
-  'Remboursement pour : arrivé sur le commun pour une dépense qu’il a payée lui-même, reversé à lui. Reçu par : arrivé sur son compte pour une dépense du commun, il le doit au commun.';
+  'Remboursement pour : arrivé sur le commun pour une dépense qu’il a payée lui-même, reversé à lui. Reçu par : arrivé sur son compte pour une dépense du commun, il le doit au commun ; saisi sur un livret, il l’a versé à l’épargne.';
 
 /** Libellé d'un choix « Pour qui » d'une dépense (ou d'un remboursement). */
 const OUTSIDE_OPTION = { value: '', label: 'Aucun (hors de l’appli)' };

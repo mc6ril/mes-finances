@@ -113,6 +113,8 @@ describe('mois du commun', () => {
         { accountId: 'acc-immo', rate: 0.2, amount: 85000 },
       ],
       savingsTotal: 127500,
+      savedRefunds: 0,
+      totalSaved: 127500,
       available: 304551,
       expenses: 153000,
       balance: 151551,
@@ -388,6 +390,61 @@ describe('épargne versée par un membre', () => {
     expect(memberSettlement(paidBySam, '2026-10', 'm1').due).toBe(
       memberSettlement(base, '2026-10', 'm1').due,
     );
+  });
+});
+
+describe('remboursement reçu par un membre et placé sur un livret', () => {
+  const livret = anAccount({
+    id: 'acc-vacances',
+    name: 'Livret vacances',
+    kind: 'livret',
+    group: 'securise',
+  });
+  const refund = (accountId: string) =>
+    aTransaction({
+      id: 'maif',
+      date: '2026-10-22',
+      amount: 10500,
+      type: 'depense',
+      accountId,
+      label: 'MAIF vol vélos',
+      imputation: { kind: 'avance', memberId: 'm2' },
+    });
+  const withRefund = (accountId: string) => {
+    const base = dataset();
+    return {
+      ...base,
+      accounts: [...base.accounts, livret],
+      settings: { ...base.settings, household: { ...base.settings.household!, savingsPaidBy: 'm2' } },
+      transactions: [...base.transactions, refund(accountId)],
+    };
+  };
+
+  it('ne change rien au règlement du membre : il l’a reçu et l’a versé au livret', () => {
+    const before = memberSettlement(withRefund('acc-courant'), '2026-10', 'm2');
+    const after = memberSettlement(withRefund('acc-vacances'), '2026-10', 'm2');
+    expect(after.due).toBe(before.due + 10500);
+    expect(after.lines).toContainEqual({
+      kind: 'savings',
+      label: 'MAIF vol vélos',
+      amount: 10500,
+      transactionId: 'maif',
+    });
+    const withoutRefund = memberSettlement(
+      { ...withRefund('acc-vacances'), transactions: dataset().transactions },
+      '2026-10',
+      'm2',
+    );
+    expect(after.due).toBe(withoutRefund.due);
+  });
+
+  it('compte dans l’épargne du commun, pas dans son disponible', () => {
+    const summary = commonMonthSummary(withRefund('acc-vacances'), '2026-10');
+    const onCommon = commonMonthSummary(withRefund('acc-courant'), '2026-10');
+    expect(summary.savedRefunds).toBe(10500);
+    expect(summary.totalSaved).toBe(summary.savingsTotal + 10500);
+    expect(summary.expenses).toBe(onCommon.expenses);
+    expect(summary.balance).toBe(onCommon.balance - 10500);
   });
 });
 

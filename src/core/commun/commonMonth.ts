@@ -27,7 +27,7 @@ export const commonBudgetSummary = (
     plannedIncome: summary.envelope,
     spending: summary.expenses,
     plannedSpending,
-    saving: summary.savingsTotal,
+    saving: summary.totalSaved,
     plannedSaving: summary.savingsTotal,
     balance: summary.balance,
     plannedBalance: summary.envelope + summary.carriedOver - summary.savingsTotal - plannedSpending,

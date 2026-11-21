@@ -12,6 +12,8 @@ const summary: CommonMonthSummary = {
   inflows: 16659,
   savings: [{ accountId: 'livret', rate: 0.1, amount: 27000 }],
   savingsTotal: 27000,
+  savedRefunds: 0,
+  totalSaved: 27000,
   available: 270000 - 8600 + 16659 - 27000,
   expenses: 251676,
   balance: 270000 - 8600 + 16659 - 27000 - 251676,
@@ -33,5 +35,10 @@ describe('bandeau du mois du commun', () => {
       balance: summary.balance,
       plannedBalance: 270000 - 8600 - 27000 - 240000,
     });
+  });
+
+  it('compte dans l’épargne réelle un remboursement placé sur un livret, pas dans le prévu', () => {
+    const withRefund = { ...summary, savedRefunds: 10500, totalSaved: 37500 };
+    expect(commonBudgetSummary(withRefund, [], 0)).toMatchObject({ saving: 37500, plannedSaving: 27000 });
   });
 });

@@ -173,6 +173,7 @@ const GROUP_LABELS: Record<SettlementGroupKey, (name: string) => string> = {
   contribution: () => 'Part du commun',
   savings: () => 'Épargne versée sur les livrets',
   avance: () => 'Payé pour le commun depuis son compte',
+  receivedByMember: () => 'Reçu sur son compte',
   charge: (name) => `Payé par le commun pour ${name}`,
   received: (name) => `Reçu sur le commun pour ${name}`,
   adjustment: () => 'Ajustements hors compte',

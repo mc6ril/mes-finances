@@ -54,6 +54,7 @@ export type SettlementGroupKey =
   | 'contribution'
   | 'savings'
   | 'avance'
+  | 'receivedByMember'
   | 'charge'
   | 'received'
   | 'adjustment';
@@ -72,14 +73,28 @@ type GroupRule = {
   kind: SettlementLine['kind'];
   keep?: (line: SettlementLine) => boolean;
   always: (owes: boolean) => boolean;
-  detailed: boolean;
+  detailed: boolean | ((lines: SettlementLine[]) => boolean);
 };
 
 const GROUP_RULES: GroupRule[] = [
   { key: 'income', kind: 'income', always: (owes) => !owes, detailed: false },
   { key: 'contribution', kind: 'contribution', always: () => true, detailed: false },
-  { key: 'savings', kind: 'savings', always: () => false, detailed: false },
-  { key: 'avance', kind: 'avance', always: () => true, detailed: true },
+  // Détaillée seulement quand un remboursement a été placé sur un livret.
+  {
+    key: 'savings',
+    kind: 'savings',
+    always: () => false,
+    detailed: (lines) => lines.some((line) => line.transactionId),
+  },
+  // Dépenses avancées par le membre, puis remboursements reçus sur son compte.
+  { key: 'avance', kind: 'avance', keep: (line) => line.amount >= 0, always: () => true, detailed: true },
+  {
+    key: 'receivedByMember',
+    kind: 'avance',
+    keep: (line) => line.amount < 0,
+    always: () => false,
+    detailed: true,
+  },
   // Charges payées par le commun pour le membre, puis sommes reçues sur le commun pour lui.
   { key: 'charge', kind: 'charge', keep: (line) => line.amount < 0, always: () => true, detailed: true },
   { key: 'received', kind: 'charge', keep: (line) => line.amount > 0, always: () => false, detailed: true },
@@ -97,7 +112,7 @@ export const settlementGroups = (lines: SettlementLine[], owes: boolean): Settle
         kept.reduce((sum, line) => sum + line.amount, 0),
         owes,
       ),
-      detailed: rule.detailed,
+      detailed: typeof rule.detailed === 'function' ? rule.detailed(kept) : rule.detailed,
       always: rule.always(owes),
     };
   })

@@ -1,3 +1,4 @@
+import { isSavingsAccount } from '../comptes/accounts';
 import { isCounted } from '../comptes/balances';
 import { addMonths } from '../shared/dates';
 import type {
@@ -127,6 +128,25 @@ const otherInflows = (transactions: Transaction[], month: MonthKey): Cents =>
     .filter((transaction) => !transaction.imputation)
     .reduce((sum, transaction) => sum + transaction.amount, 0);
 
+/**
+ * Remboursements reçus par un membre sur son compte et saisis sur un livret du commun : il les a
+ * versés directement à l'épargne, rien n'arrive sur le compte commun.
+ */
+const savedRefunds = (dataset: Dataset, month: MonthKey): Transaction[] => {
+  const savingsAccounts = new Set(
+    dataset.accounts.filter((account) => isSavingsAccount(account)).map((account) => account.id),
+  );
+  return dataset.transactions.filter(
+    (transaction) =>
+      transaction.type === 'depense' &&
+      transaction.amount > 0 &&
+      transaction.imputation?.kind === 'avance' &&
+      isCounted(transaction) &&
+      inMonth(transaction, month) &&
+      savingsAccounts.has(transaction.accountId),
+  );
+};
+
 const commonExpenses = (transactions: Transaction[], month: MonthKey): Cents =>
   0 -
   transactions
@@ -148,7 +168,12 @@ export type CommonMonthSummary = {
   carriedOver: Cents;
   inflows: Cents;
   savings: (SavingsRate & { amount: Cents })[];
+  /** Épargne du mois selon les taux, à verser sur les livrets. */
   savingsTotal: Cents;
+  /** Remboursements reçus par un membre et placés directement sur un livret. */
+  savedRefunds: Cents;
+  /** Toute l'épargne du mois : taux et remboursements placés. */
+  totalSaved: Cents;
   available: Cents;
   expenses: Cents;
   balance: Cents;
@@ -170,7 +195,8 @@ const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): Com
     amount: Math.round(envelope * line.rate),
   }));
   const savingsTotal = savings.reduce((sum, line) => sum + line.amount, 0);
-  const available = envelope + carriedOver + inflows - savingsTotal;
+  const refunds = savedRefunds(dataset, month).reduce((sum, transaction) => sum + transaction.amount, 0);
+  const available = envelope + carriedOver + inflows - savingsTotal - refunds;
   const expenses = commonExpenses(dataset.transactions, month);
   return {
     incomes,
@@ -182,6 +208,8 @@ const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): Com
     inflows,
     savings,
     savingsTotal,
+    savedRefunds: refunds,
+    totalSaved: savingsTotal + refunds,
     available,
     expenses,
     balance: available - expenses,
@@ -244,6 +272,15 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
     ...(savingsPayerOf(dataset.settings.household) === member.id && summary.savingsTotal > 0
       ? [{ kind: 'savings' as const, label: 'Épargne versée sur les livrets', amount: summary.savingsTotal }]
       : []),
+    // Remboursement reçu sur son compte et versé au livret : il ne le doit plus au commun.
+    ...savedRefunds(dataset, month)
+      .filter((transaction) => transaction.imputation?.memberId === member.id)
+      .map((transaction) => ({
+        kind: 'savings' as const,
+        label: transaction.label,
+        amount: transaction.amount,
+        transactionId: transaction.id,
+      })),
     ...imputed('charge').map((transaction) => ({
       kind: 'charge' as const,
       label: transaction.label,

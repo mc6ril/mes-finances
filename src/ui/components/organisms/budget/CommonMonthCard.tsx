@@ -381,7 +381,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
             <RecapLine label="Enveloppe commune" amount={summary.envelope} strong />
             <RecapLine label="Report du mois précédent" amount={summary.carriedOver} sign="+" />
             <RecapLine label="Autres entrées" amount={summary.inflows} sign="+" />
-            <RecapLine label="Épargne" amount={summary.savingsTotal} sign="−" />
+            <RecapLine label="Épargne" amount={summary.totalSaved} sign="−" />
             <Divider />
             <RecapLine label="Disponible" amount={summary.available} strong />
             <RecapLine label="Dépenses du mois" amount={summary.expenses} sign="−" />
