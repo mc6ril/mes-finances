@@ -131,6 +131,26 @@ describe('récapitulatif du règlement', () => {
     expect(detailed?.total).toBe(-38500);
   });
 
+  it('détaille les retraits d’épargne, juste après l’épargne versée', () => {
+    const groups = settlementGroups(
+      [
+        { kind: 'savings', label: 'Épargne versée sur les livrets', amount: 27500 },
+        { kind: 'withdrawal', label: 'Barcelone', amount: -90000, movementId: 'r1' },
+      ],
+      true,
+    );
+    expect(groups.map((group) => group.key)).toEqual([
+      'contribution',
+      'savings',
+      'withdrawal',
+      'avance',
+      'charge',
+    ]);
+    const withdrawal = groups.find((group) => group.key === 'withdrawal');
+    expect(withdrawal?.detailed).toBe(true);
+    expect(withdrawal?.total).toBe(90000);
+  });
+
   it('inverse totaux et lignes pour un membre qui doit au commun', () => {
     const avance = settlementGroups(lines, true).find((group) => group.key === 'avance');
     expect(avance?.total).toBe(-6000);

@@ -1,5 +1,6 @@
 import { isSavingsAccount } from '../comptes/accounts';
 import { isCounted } from '../comptes/balances';
+import { isMirrored } from '../comptes/mirror';
 import { addMonths } from '../shared/dates';
 import type {
   Cents,
@@ -8,6 +9,7 @@ import type {
   Household,
   HouseholdMember,
   MonthKey,
+  SavingsMovement,
   SavingsRate,
   Settlement,
   Transaction,
@@ -122,7 +124,7 @@ const incomesByMember = (dataset: Dataset, month: MonthKey, members: HouseholdMe
     ]),
   ) as Record<string, Cents>;
 
-/** Autres entrées : revenus du commun, rattachés à personne (intérêts, retrait d'épargne…). */
+/** Autres entrées : revenus du commun, rattachés à personne (intérêts…). */
 const otherInflows = (transactions: Transaction[], month: MonthKey): Cents =>
   revenuesIn(transactions, month)
     .filter((transaction) => !transaction.imputation)
@@ -146,6 +148,29 @@ const savedRefunds = (dataset: Dataset, month: MonthKey): Transaction[] => {
       savingsAccounts.has(transaction.accountId),
   );
 };
+
+/**
+ * Retraits faits sur un livret par le membre qui détient l'épargne : l'argent arrive sur son
+ * compte, il le doit au commun. Un retrait viré directement sur le commun (opération miroir) n'est
+ * pas dû. Rien quand l'épargne part du compte commun.
+ */
+const savingsWithdrawals = (dataset: Dataset, month: MonthKey): SavingsMovement[] => {
+  if (!savingsPayerOf(dataset.settings.household)) {
+    return [];
+  }
+  const savingsAccounts = new Set(
+    dataset.accounts.filter((account) => isSavingsAccount(account)).map((account) => account.id),
+  );
+  return dataset.savingsMovements.filter(
+    (movement) =>
+      movement.kind === 'retrait' &&
+      movement.date.startsWith(month) &&
+      savingsAccounts.has(movement.accountId) &&
+      !isMirrored(movement, dataset.transactions),
+  );
+};
+
+const WITHDRAWAL_LABEL = 'Retrait d’épargne';
 
 const commonExpenses = (transactions: Transaction[], month: MonthKey): Cents =>
   0 -
@@ -172,6 +197,8 @@ export type CommonMonthSummary = {
   savingsTotal: Cents;
   /** Remboursements reçus par un membre et placés directement sur un livret. */
   savedRefunds: Cents;
+  /** Retraits d'épargne du mois, dus au commun par le membre qui détient les livrets. */
+  withdrawals: Cents;
   /** Toute l'épargne du mois : taux et remboursements placés. */
   totalSaved: Cents;
   available: Cents;
@@ -196,7 +223,8 @@ const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): Com
   }));
   const savingsTotal = savings.reduce((sum, line) => sum + line.amount, 0);
   const refunds = savedRefunds(dataset, month).reduce((sum, transaction) => sum + transaction.amount, 0);
-  const available = envelope + carriedOver + inflows - savingsTotal - refunds;
+  const withdrawals = savingsWithdrawals(dataset, month).reduce((sum, movement) => sum + movement.amount, 0);
+  const available = envelope + carriedOver + inflows + withdrawals - savingsTotal - refunds;
   const expenses = commonExpenses(dataset.transactions, month);
   return {
     incomes,
@@ -209,6 +237,7 @@ const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): Com
     savings,
     savingsTotal,
     savedRefunds: refunds,
+    withdrawals,
     totalSaved: savingsTotal + refunds,
     available,
     expenses,
@@ -230,11 +259,12 @@ export const commonMonthSummary = (dataset: Dataset, month: MonthKey): CommonMon
 };
 
 export type SettlementLine = {
-  kind: 'income' | 'contribution' | 'savings' | 'charge' | 'avance' | 'adjustment';
+  kind: 'income' | 'contribution' | 'savings' | 'withdrawal' | 'charge' | 'avance' | 'adjustment';
   label: string;
   /** Positif : le commun doit au membre ; négatif : le membre doit au commun. */
   amount: Cents;
   transactionId?: string;
+  movementId?: string;
   adjustmentId?: string;
 };
 
@@ -281,6 +311,15 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
         amount: transaction.amount,
         transactionId: transaction.id,
       })),
+    // Retrait d'épargne arrivé sur son compte : il le doit au commun.
+    ...(savingsPayerOf(dataset.settings.household) === member.id
+      ? savingsWithdrawals(dataset, month).map((movement) => ({
+          kind: 'withdrawal' as const,
+          label: movement.comment.trim() || WITHDRAWAL_LABEL,
+          amount: -movement.amount,
+          movementId: movement.id,
+        }))
+      : []),
     ...imputed('charge').map((transaction) => ({
       kind: 'charge' as const,
       label: transaction.label,

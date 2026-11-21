@@ -27,11 +27,10 @@ import SavingsAccountForm from './SavingsAccountForm';
 
 type AccountModalProps = { account: Account; months: MonthKey[]; endDate: IsoDate; onClose: () => void };
 
-/** Libellé d'une ligne : nature du mouvement, valorisation, ou libellé de l'opération. */
+/** Libellé d'une ligne : nature et libellé du mouvement, valorisation, ou libellé de l'opération. */
 const entryLabel = (entry: HistoryEntry): string => {
   if (entry.kind === 'movement') {
-    const { kind, comment } = entry.movement;
-    return `${MOVEMENT_LABELS[kind]}${comment ? ` · ${comment}` : ''}`;
+    return `${MOVEMENT_LABELS[entry.movement.kind]}${entry.label ? ` · ${entry.label}` : ''}`;
   }
   return entry.kind === 'valuation' ? 'Valorisation' : entry.label;
 };
@@ -117,16 +116,18 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
 
       <div className="mt-5 rounded-xl border border-line p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <Text variant="strong">Ajouter</Text>
-          <Segmented
-            value={form.formKind}
-            onChange={(formKind) => form.change({ formKind })}
-            label="Type de saisie"
-            options={[
-              { value: 'movement', label: 'Mouvement' },
-              { value: 'valuation', label: 'Valorisation' },
-            ]}
-          />
+          <Text variant="strong">{form.editingId ? 'Modifier le mouvement' : 'Ajouter'}</Text>
+          {!form.editingId && (
+            <Segmented
+              value={form.formKind}
+              onChange={(formKind) => form.change({ formKind })}
+              label="Type de saisie"
+              options={[
+                { value: 'movement', label: 'Mouvement' },
+                { value: 'valuation', label: 'Valorisation' },
+              ]}
+            />
+          )}
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
           <Field label="Date">
@@ -161,7 +162,8 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
             : 'Les virements depuis le compte courant sont déjà comptés comme versements : ne les ressaisis pas ici.'}
         </Text>
         {form.error && <Text className="mt-2 text-negative">{form.error}</Text>}
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex justify-end gap-2">
+          {form.editingId && <Button onClick={form.cancelEdit}>Annuler</Button>}
           <Button variant="primary" onClick={() => void form.save()}>
             Enregistrer
           </Button>
@@ -193,6 +195,15 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
                     </Badge>
                   ) : (
                     <Amount cents={line.amount} signed colored />
+                  )}
+                  {line.kind === 'movement' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Pencil}
+                      label="Modifier"
+                      onClick={() => form.edit(line.movement)}
+                    />
                   )}
                   {line.kind !== 'transfer' && (
                     <Button

@@ -12,7 +12,8 @@ export const incomeShare = (summary: CommonMonthSummary, memberId: string): numb
 
 /**
  * Bandeau du mois du commun, au format du perso : les chiffres du récapitulatif face au prévu.
- * Revenus = enveloppe + autres entrées (la part de chacun, pas les salaires entiers) ; le report
+ * Revenus = enveloppe + autres entrées + retraits d'épargne (la part de chacun, pas les salaires
+ * entiers) ; le report
  * du mois précédent ne joue que sur le solde.
  */
 export const commonBudgetSummary = (
@@ -23,7 +24,7 @@ export const commonBudgetSummary = (
   const plannedSpending =
     provision + groupTotal(lines, 'fixe', 'available') + groupTotal(lines, 'plaisir', 'available');
   return {
-    income: summary.envelope + summary.inflows,
+    income: summary.envelope + summary.inflows + summary.withdrawals,
     plannedIncome: summary.envelope,
     spending: summary.expenses,
     plannedSpending,

@@ -12,7 +12,7 @@ import {
 import { accountBalanceAt } from '@/core/comptes/balances';
 import type { CommonMonth, Dataset } from '@/core/shared/model';
 import { createInitialDataset, DEFAULT_HOUSEHOLD } from '@/core/shared/seed';
-import { aCategory, anAccount, aTransaction } from '../fixtures';
+import { aCategory, aMovement, anAccount, aTransaction } from '../fixtures';
 
 const members = [
   { id: 'm1', name: 'Alex', salaryOnCommon: true },
@@ -114,6 +114,7 @@ describe('mois du commun', () => {
       ],
       savingsTotal: 127500,
       savedRefunds: 0,
+      withdrawals: 0,
       totalSaved: 127500,
       available: 304551,
       expenses: 153000,
@@ -445,6 +446,88 @@ describe('remboursement reçu par un membre et placé sur un livret', () => {
     expect(summary.totalSaved).toBe(summary.savingsTotal + 10500);
     expect(summary.expenses).toBe(onCommon.expenses);
     expect(summary.balance).toBe(onCommon.balance - 10500);
+  });
+});
+
+describe('retrait d’épargne par le membre qui détient les livrets', () => {
+  const livret = anAccount({
+    id: 'acc-vacances',
+    name: 'Livret vacances',
+    kind: 'livret',
+    group: 'securise',
+  });
+  const retrait = aMovement({
+    id: 'retrait',
+    accountId: 'acc-vacances',
+    kind: 'retrait',
+    amount: 90000,
+    date: '2026-10-28',
+    comment: 'Barcelone',
+  });
+  const withWithdrawal = (savingsPaidBy: string, movements = [retrait]) => {
+    const base = dataset();
+    return {
+      ...base,
+      accounts: [...base.accounts, livret],
+      settings: { ...base.settings, household: { ...base.settings.household!, savingsPaidBy } },
+      savingsMovements: movements,
+    };
+  };
+
+  it('est dû au commun par ce membre : l’argent arrive sur son compte', () => {
+    const without = memberSettlement(withWithdrawal('m2', []), '2026-10', 'm2');
+    const after = memberSettlement(withWithdrawal('m2'), '2026-10', 'm2');
+    expect(after.due).toBe(without.due - 90000);
+    expect(after.lines).toContainEqual({
+      kind: 'withdrawal',
+      label: 'Barcelone',
+      amount: -90000,
+      movementId: 'retrait',
+    });
+    expect(memberSettlement(withWithdrawal('m2'), '2026-10', 'm1').due).toBe(
+      memberSettlement(withWithdrawal('m2', []), '2026-10', 'm1').due,
+    );
+  });
+
+  it('alimente le disponible du commun comme retrait d’épargne, pas comme autre entrée', () => {
+    const without = commonMonthSummary(withWithdrawal('m2', []), '2026-10');
+    const summary = commonMonthSummary(withWithdrawal('m2'), '2026-10');
+    expect(summary.withdrawals).toBe(90000);
+    expect(summary.inflows).toBe(without.inflows);
+    expect(summary.available).toBe(without.available + 90000);
+  });
+
+  it('nomme la ligne « Retrait d’épargne » quand le retrait n’a pas de commentaire', () => {
+    const lines = memberSettlement(
+      withWithdrawal('m2', [{ ...retrait, comment: ' ' }]),
+      '2026-10',
+      'm2',
+    ).lines;
+    expect(lines).toContainEqual(expect.objectContaining({ kind: 'withdrawal', label: 'Retrait d’épargne' }));
+  });
+
+  it('ignore le retrait d’un autre mois, les autres mouvements et un retrait viré sur le commun', () => {
+    const others = [
+      { ...retrait, id: 'novembre', date: '2026-11-02' },
+      { ...retrait, id: 'interets', kind: 'interets' as const },
+    ];
+    expect(commonMonthSummary(withWithdrawal('m2', others), '2026-10').withdrawals).toBe(0);
+    const mirrored = withWithdrawal('m2');
+    const toCommon = aTransaction({
+      date: '2026-10-28',
+      amount: 90000,
+      type: 'virement',
+      accountId: 'acc-courant',
+      counterpartAccountId: 'acc-vacances',
+    });
+    expect(
+      commonMonthSummary({ ...mirrored, transactions: [...mirrored.transactions, toCommon] }, '2026-10')
+        .withdrawals,
+    ).toBe(0);
+  });
+
+  it('ne compte rien quand l’épargne part du compte commun', () => {
+    expect(commonMonthSummary(withWithdrawal('commun'), '2026-10').withdrawals).toBe(0);
   });
 });
 

@@ -53,6 +53,7 @@ export type SettlementGroupKey =
   | 'income'
   | 'contribution'
   | 'savings'
+  | 'withdrawal'
   | 'avance'
   | 'receivedByMember'
   | 'charge'
@@ -86,6 +87,7 @@ const GROUP_RULES: GroupRule[] = [
     always: () => false,
     detailed: (lines) => lines.some((line) => line.transactionId),
   },
+  { key: 'withdrawal', kind: 'withdrawal', always: () => false, detailed: true },
   // Dépenses avancées par le membre, puis remboursements reçus sur son compte.
   { key: 'avance', kind: 'avance', keep: (line) => line.amount >= 0, always: () => true, detailed: true },
   {

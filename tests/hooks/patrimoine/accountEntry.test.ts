@@ -1,5 +1,5 @@
 import { accountEntryReducer, initialAccountEntry } from '@/hooks/patrimoine/accountEntry';
-import { anAccount } from '../../core/fixtures';
+import { aMovement, anAccount } from '../../core/fixtures';
 
 const livret = anAccount({ id: 'livret', kind: 'livret', group: 'securise' });
 const av = anAccount({ id: 'av', kind: 'assurance-vie', group: 'investissement' });
@@ -44,6 +44,34 @@ describe('saisie dans un compte d’épargne', () => {
       kind: 'retrait',
       comment: '',
       error: null,
+    });
+  });
+
+  it('charge un mouvement existant pour le modifier, puis revient à l’ajout une fois enregistré', () => {
+    const movement = aMovement({
+      id: 'r1',
+      date: '2026-02-28',
+      kind: 'retrait',
+      amount: 90000,
+      comment: 'Projet',
+    });
+    const editing = accountEntryReducer(initialAccountEntry(livret, '2026-03-10'), {
+      type: 'edit',
+      movement,
+    });
+    expect(editing).toMatchObject({
+      formKind: 'movement',
+      date: '2026-02-28',
+      kind: 'retrait',
+      amount: '900,00',
+      comment: 'Projet',
+      editingId: 'r1',
+    });
+    expect(accountEntryReducer(editing, { type: 'saved' }).editingId).toBeUndefined();
+    expect(accountEntryReducer(editing, { type: 'cancelEdit' })).toMatchObject({
+      amount: '',
+      comment: '',
+      editingId: undefined,
     });
   });
 });

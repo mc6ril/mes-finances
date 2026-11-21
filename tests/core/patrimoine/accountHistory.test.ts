@@ -17,6 +17,8 @@ const data = (overrides: Partial<Parameters<typeof accountHistory>[1]> = {}) => 
   transactions: [],
   savingsMovements: [],
   valuations: [],
+  commonMonths: [],
+  settings: { household: null },
   ...overrides,
 });
 
@@ -153,5 +155,56 @@ describe('saisie d’un mouvement ou d’une valorisation', () => {
   it('refuse un mouvement de 0 €, mais accepte une valorisation à 0 € (compte vidé)', () => {
     expect(validateSavingsEntry('movement', '2026-03-10', '0')).toBeNull();
     expect(validateSavingsEntry('valuation', '2026-03-10', '0')).toEqual({ date: '2026-03-10', cents: 0 });
+  });
+});
+
+describe('libellé des versements de l’épargne du commun', () => {
+  const versement = aMovement({
+    id: 'v-fev',
+    accountId: 'livret',
+    kind: 'versement',
+    amount: 27500,
+    date: '2026-02-28',
+    comment: 'Épargne du commun · versée par Membre 2',
+  });
+  const source = (label?: string) =>
+    data({
+      savingsMovements: [versement, aMovement({ id: 'autre', accountId: 'livret', comment: 'Prime' })],
+      commonMonths: [
+        {
+          month: '2026-02',
+          envelope: null,
+          savingsRates: [{ accountId: 'livret', rate: 0.1, ...(label ? { label } : {}) }],
+          savingsTransfer: { date: '2026-02-28', transactionIds: [], movementIds: ['v-fev'] },
+        },
+      ],
+      settings: {
+        household: {
+          members: [
+            { id: 'm1', name: 'Jean', salaryOnCommon: true },
+            { id: 'm2', name: 'Marie', salaryOnCommon: false },
+          ],
+          contributionRate: 0.75,
+          savingsPaidBy: 'm2',
+        },
+      },
+    });
+  const labelOf = (history: ReturnType<typeof accountHistory>, id: string) => {
+    const entry = history.find((candidate) => candidate.id === id);
+    return entry?.kind === 'movement' ? entry.label : undefined;
+  };
+
+  it('reprend le nom actuel de la ligne d’épargne et du membre qui l’a versée', () => {
+    expect(labelOf(accountHistory(livret, source('Vacances et projets')), 'v-fev')).toBe(
+      'Vacances et projets · versée par Marie',
+    );
+  });
+
+  it('reprend le nom du compte quand la ligne n’est pas nommée', () => {
+    expect(labelOf(accountHistory(livret, source()), 'v-fev')).toBe('Livret A · versée par Marie');
+  });
+
+  it('garde le commentaire d’un mouvement saisi à la main', () => {
+    expect(labelOf(accountHistory(livret, source()), 'autre')).toBe('Prime');
   });
 });

@@ -1,7 +1,8 @@
 import type { SavingsEntryKind } from '@/core/patrimoine/accountHistory';
-import type { Account, IsoDate, SavingsMovementKind } from '@/core/shared/model';
+import type { Account, IsoDate, SavingsMovement, SavingsMovementKind } from '@/core/shared/model';
+import { centsToInput } from '@/core/shared/money';
 
-/** Formulaire « Ajouter » d'un compte d'épargne : mouvement ou valorisation. */
+/** Formulaire d'un compte d'épargne : ajout d'un mouvement ou d'une valorisation, ou modification d'un mouvement. */
 export type AccountEntryState = {
   formKind: SavingsEntryKind;
   date: string;
@@ -9,15 +10,19 @@ export type AccountEntryState = {
   kind: SavingsMovementKind;
   comment: string;
   error: string | null;
+  /** Mouvement en cours de modification ; absent pour un ajout. */
+  editingId?: string;
 };
 
-export type AccountEntryField = Omit<AccountEntryState, 'error'>;
+export type AccountEntryField = Omit<AccountEntryState, 'error' | 'editingId'>;
 
 export type AccountEntryAction =
   | { type: 'change'; patch: Partial<AccountEntryField> }
   | { type: 'invalid' }
   | { type: 'validated' }
-  | { type: 'saved' };
+  | { type: 'saved' }
+  | { type: 'edit'; movement: SavingsMovement }
+  | { type: 'cancelEdit' };
 
 export const INVALID_ENTRY = 'Renseigne une date et un montant positif.';
 
@@ -43,7 +48,18 @@ export const accountEntryReducer = (
     case 'validated':
       return { ...state, error: null };
     case 'saved':
+    case 'cancelEdit':
       // La date et la nature restent : on enchaîne souvent plusieurs saisies du même genre.
-      return { ...state, amount: '', comment: '', error: null };
+      return { ...state, amount: '', comment: '', error: null, editingId: undefined };
+    case 'edit':
+      return {
+        formKind: 'movement',
+        date: action.movement.date,
+        amount: centsToInput(action.movement.amount),
+        kind: action.movement.kind,
+        comment: action.movement.comment,
+        error: null,
+        editingId: action.movement.id,
+      };
   }
 };

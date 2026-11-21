@@ -1,12 +1,12 @@
 import { useCallback, useReducer } from 'react';
 import { validateSavingsEntry } from '@/core/patrimoine/accountHistory';
-import type { Account } from '@/core/shared/model';
+import type { Account, SavingsMovement } from '@/core/shared/model';
 import { useFinanceUseCases } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
 import { type AccountEntryField, accountEntryReducer, initialAccountEntry } from './accountEntry';
 
-/** Saisie d'un mouvement ou d'une valorisation dans un compte d'épargne, et son enregistrement. */
+/** Saisie ou modification d'un mouvement, ou saisie d'une valorisation, dans un compte d'épargne. */
 export const useAccountEntry = (account: Account) => {
   const finance = useFinanceUseCases();
   const report = useReport();
@@ -16,6 +16,8 @@ export const useAccountEntry = (account: Account) => {
   );
 
   const change = useCallback((patch: Partial<AccountEntryField>) => dispatch({ type: 'change', patch }), []);
+  const edit = useCallback((movement: SavingsMovement) => dispatch({ type: 'edit', movement }), []);
+  const cancelEdit = useCallback(() => dispatch({ type: 'cancelEdit' }), []);
 
   const save = async () => {
     const entry = validateSavingsEntry(state.formKind, state.date, state.amount);
@@ -32,6 +34,7 @@ export const useAccountEntry = (account: Account) => {
           )
         : await report(
             finance.saveMovement({
+              ...(state.editingId ? { id: state.editingId } : {}),
               accountId: account.id,
               date: entry.date,
               kind: state.kind,
@@ -45,5 +48,5 @@ export const useAccountEntry = (account: Account) => {
     }
   };
 
-  return { ...state, change, save };
+  return { ...state, change, edit, cancelEdit, save };
 };
