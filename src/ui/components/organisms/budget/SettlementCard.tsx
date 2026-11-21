@@ -172,6 +172,7 @@ const GROUP_LABELS: Record<SettlementGroupKey, (name: string) => string> = {
   income: () => 'Revenus arrivés sur le commun',
   contribution: () => 'Part du commun',
   savings: () => 'Épargne versée sur les livrets',
+  withdrawal: () => 'Retraits d’épargne à reverser',
   avance: () => 'Payé pour le commun depuis son compte',
   receivedByMember: () => 'Reçu sur son compte',
   charge: (name) => `Payé par le commun pour ${name}`,
@@ -207,7 +208,7 @@ const SettlementLines = ({
         {group.detailed &&
           group.lines.map((line, index) => (
             <Text
-              key={line.transactionId ?? line.adjustmentId ?? index}
+              key={line.transactionId ?? line.movementId ?? line.adjustmentId ?? index}
               variant="small"
               as="span"
               className="flex items-center justify-between gap-2 pl-3"

@@ -1,12 +1,16 @@
+import { effectiveSavingsRates, memberName, savingsPayerOf } from '../commun/household';
+import { savingsLineName } from '../commun/savingsRates';
 import { isInternalMove } from '../comptes/balances';
 import { monthEnd, parseFlexibleDate } from '../shared/dates';
 import type {
   Account,
   Cents,
+  CommonMonth,
   IsoDate,
   MonthKey,
   SavingsMovement,
   SavingsMovementKind,
+  Settings,
   Transaction,
   Valuation,
 } from '../shared/model';
@@ -25,7 +29,7 @@ type EntryBase = { id: string; date: IsoDate; amount: Cents };
 
 /** Ligne de l'historique d'un compte d'épargne : seuls mouvements et valorisations se suppriment ici. */
 export type HistoryEntry =
-  | (EntryBase & { kind: 'movement'; movement: SavingsMovement })
+  | (EntryBase & { kind: 'movement'; movement: SavingsMovement; label: string })
   | (EntryBase & { kind: 'valuation'; valuation: Valuation })
   | (EntryBase & { kind: 'transfer'; label: string });
 
@@ -34,6 +38,27 @@ type HistorySource = {
   transactions: Transaction[];
   savingsMovements: SavingsMovement[];
   valuations: Valuation[];
+  commonMonths: CommonMonth[];
+  settings: Pick<Settings, 'household'>;
+};
+
+/**
+ * Libellé d'un mouvement : pour l'épargne du commun versée par un membre, le nom actuel de la ligne
+ * d'épargne et du membre (ils peuvent être renommés après coup) ; sinon le commentaire saisi.
+ */
+const movementLabel = (account: Account, movement: SavingsMovement, source: HistorySource): string => {
+  const month = source.commonMonths.find((entry) =>
+    entry.savingsTransfer?.movementIds?.includes(movement.id),
+  )?.month;
+  const household = source.settings.household;
+  const payer = savingsPayerOf(household);
+  const line = month
+    ? effectiveSavingsRates(source.commonMonths, month).find((rate) => rate.accountId === movement.accountId)
+    : undefined;
+  if (!line || !household || !payer) {
+    return movement.comment;
+  }
+  return `${savingsLineName(line, account)} · versée par ${memberName(household.members, payer)}`;
 };
 
 /** Libellé d'une opération : un virement nomme l'autre compte (d'où vient ou où va l'argent). */
@@ -63,6 +88,7 @@ export const accountHistory = (account: Account, source: HistorySource): History
       date: movement.date,
       amount: MOVEMENT_SIGN[movement.kind] * movement.amount,
       movement,
+      label: movementLabel(account, movement, source),
     }));
   const valuations: HistoryEntry[] = source.valuations
     .filter((valuation) => valuation.accountId === account.id)
