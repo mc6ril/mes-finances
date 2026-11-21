@@ -399,7 +399,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
           </div>
           <Text variant="small" className="mt-3 leading-relaxed">
             Salaire versé sur le commun : opérations de type Revenu. Salaire versé ailleurs : saisi ici,
-            repris le mois suivant. Le reste est reporté sur le mois suivant, à l’euro près.
+            repris le mois suivant. Le reste est reporté sur le mois suivant.
           </Text>
         </aside>
       </div>

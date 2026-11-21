@@ -119,13 +119,13 @@ describe('mois du commun', () => {
     });
   });
 
-  it('reporte le bilan du mois précédent arrondi à l’euro et reprend ses taux d’épargne', () => {
+  it('reporte le bilan exact du mois précédent et reprend ses taux d’épargne', () => {
     expect(commonMonthSummary(dataset(), '2026-11')).toMatchObject({
       envelope: 400000,
-      carriedOver: 151600,
+      carriedOver: 151551,
       savingsTotal: 120000,
       expenses: 0,
-      balance: 431600,
+      balance: 431551,
     });
   });
 
