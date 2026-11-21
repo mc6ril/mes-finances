@@ -60,6 +60,9 @@ const REFUND_FOR_HINT =
   'Remboursement pour : arrivé sur le commun pour une dépense qu’il a payée lui-même, reversé à lui. Reçu par : arrivé sur son compte pour une dépense du commun, il le doit au commun.';
 
 /** Libellé d'un choix « Pour qui » d'une dépense (ou d'un remboursement). */
+const OUTSIDE_OPTION = { value: '', label: 'Aucun (hors de l’appli)' };
+const OUTSIDE_HINT = 'Aucun : l’argent vient de l’extérieur ou y part (autre banque, une personne).';
+
 const expenseChoiceLabel = (choice: ImputationChoice, isRefund: boolean, name: string): string => {
   if (choice.kind === 'charge') {
     return isRefund ? `Remboursement pour ${name}` : `À la charge de ${name}`;
@@ -209,19 +212,15 @@ const TransactionModal = ({
           <Select
             value={form.accountId}
             onChange={(accountId) => update({ accountId })}
-            options={accountOptions}
+            options={isInternalMoveType(form.type) ? [OUTSIDE_OPTION, ...accountOptions] : accountOptions}
           />
         </Field>
         {isInternalMoveType(form.type) && (
-          <Field
-            label="Compte crédité"
-            hint="Sans compte : virement vers l’extérieur (autre banque, une personne)."
-            error={fieldError('counterpartAccountId')}
-          >
+          <Field label="Compte crédité" hint={OUTSIDE_HINT} error={fieldError('counterpartAccountId')}>
             <Select
               value={form.counterpartAccountId}
               onChange={(counterpartAccountId) => update({ counterpartAccountId })}
-              options={[{ value: '', label: 'Aucun (hors de l’appli)' }, ...accountOptions]}
+              options={[OUTSIDE_OPTION, ...accountOptions]}
             />
           </Field>
         )}

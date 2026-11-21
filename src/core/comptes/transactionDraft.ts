@@ -73,12 +73,26 @@ export const categoryChoices = (
 export const typeChoiceOf = (form: Pick<TransactionForm, 'type' | 'isRefund'>): TypeChoice =>
   form.type === 'depense' && form.isRefund ? 'remboursement' : form.type;
 
+/**
+ * Comptes débité et crédité d'un virement tels que le formulaire les montre. Venu de l'extérieur
+ * (montant positif, sans compte crédité), il est enregistré sur le compte qui le reçoit : débité vide.
+ */
+export const moveSidesOf = (
+  transaction: Pick<Transaction, 'type' | 'accountId' | 'counterpartAccountId' | 'amount'>,
+): Pick<TransactionForm, 'accountId' | 'counterpartAccountId'> =>
+  isInternalMoveType(transaction.type) && transaction.counterpartAccountId === null && transaction.amount > 0
+    ? { accountId: '', counterpartAccountId: transaction.accountId }
+    : { accountId: transaction.accountId, counterpartAccountId: transaction.counterpartAccountId ?? '' };
+
 /** Changement de type : passer d'une dépense à son remboursement garde la catégorie, sinon elle est vidée. */
 export const changeType = <Form extends TransactionForm>(form: Form, choice: TypeChoice): Form => {
   const refund = choice === 'remboursement';
   const staysExpense = form.type === 'depense' && (refund || choice === 'depense');
+  // Hors virement, le compte débité vide n'existe pas : on garde le compte qui recevait l'argent.
+  const incomingLeft = form.accountId === '' && !isInternalMoveType(refund ? 'depense' : choice);
   return {
     ...form,
+    ...(incomingLeft ? { accountId: form.counterpartAccountId, counterpartAccountId: '' } : {}),
     type: refund ? 'depense' : choice,
     isRefund: refund,
     categoryId: staysExpense ? form.categoryId : '',
@@ -159,7 +173,7 @@ export const draftFromForm = (form: TransactionForm, context: DraftContext): Dra
   if (amount === null || amount === 0) {
     errors.amount = 'transaction-amount-invalid';
   }
-  // Sans compte crédité, l'argent part hors de l'appli (autre banque, une personne).
+  // Un côté vide = hors de l'appli (autre banque, une personne) ; les deux vides ou égaux : refusé.
   if (internalMove && form.counterpartAccountId === form.accountId) {
     errors.counterpartAccountId = 'transaction-counterpart-invalid';
   }
@@ -170,16 +184,18 @@ export const draftFromForm = (form: TransactionForm, context: DraftContext): Dra
     ? moveCategoryId(form.counterpartAccountId, context.accounts, context.categories)
     : form.categoryId || null;
   const imputation = imputationOf(form, context.members);
+  // Venu de l'extérieur : enregistré en entrée sur le compte qui le reçoit.
+  const incoming = internalMove && form.accountId === '';
   return {
     ok: true,
     value: {
       date,
       label: form.label.trim(),
-      amount: Math.abs(amount) * signFor(form),
+      amount: Math.abs(amount) * (incoming ? 1 : signFor(form)),
       type: form.type,
       categoryId,
-      accountId: form.accountId,
-      counterpartAccountId: internalMove ? form.counterpartAccountId || null : null,
+      accountId: incoming ? form.counterpartAccountId : form.accountId,
+      counterpartAccountId: internalMove && !incoming ? form.counterpartAccountId || null : null,
       paymentMethod: form.paymentMethod,
       status: form.status,
       ...(form.status === 'realise' && form.verified ? { verified: true } : {}),
