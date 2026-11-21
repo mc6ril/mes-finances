@@ -6,6 +6,7 @@ import {
   draftFromForm,
   markVerified,
   moveCategoryId,
+  moveSidesOf,
   recategorize,
   type TransactionForm,
   typeChoiceOf,
@@ -92,6 +93,15 @@ describe('changement de type', () => {
     });
     expect(changeType(form({ type: 'revenu', categoryId: 'salaire' }), 'depense').categoryId).toBe('');
   });
+
+  it('quitter un virement venu de l’extérieur garde le compte crédité comme compte', () => {
+    const incoming = form({ type: 'virement', accountId: '', counterpartAccountId: 'courant' });
+    expect(changeType(incoming, 'revenu')).toMatchObject({ accountId: 'courant', counterpartAccountId: '' });
+    expect(changeType(incoming, 'investissement')).toMatchObject({
+      accountId: '',
+      counterpartAccountId: 'courant',
+    });
+  });
 });
 
 describe('brouillon d’une opération', () => {
@@ -120,6 +130,38 @@ describe('brouillon d’une opération', () => {
       ok: true,
       value: { amount: -4590, counterpartAccountId: null },
     });
+  });
+
+  it('enregistre un virement venu de l’extérieur sur le compte crédité, en entrée', () => {
+    expect(
+      draftFromForm(form({ type: 'virement', accountId: '', counterpartAccountId: 'courant' }), context),
+    ).toMatchObject({ ok: true, value: { accountId: 'courant', amount: 4590, counterpartAccountId: null } });
+  });
+
+  it('montre un virement venu de l’extérieur avec le compte débité vide', () => {
+    const base = { type: 'virement' as const, accountId: 'courant', counterpartAccountId: null };
+    expect(moveSidesOf(aTransaction({ ...base, amount: 34711 }))).toEqual({
+      accountId: '',
+      counterpartAccountId: 'courant',
+    });
+    expect(moveSidesOf(aTransaction({ ...base, amount: -34711 }))).toEqual({
+      accountId: 'courant',
+      counterpartAccountId: '',
+    });
+    expect(moveSidesOf(aTransaction({ ...base, amount: -500, counterpartAccountId: 'livret' }))).toEqual({
+      accountId: 'courant',
+      counterpartAccountId: 'livret',
+    });
+    expect(moveSidesOf(aTransaction({ ...base, type: 'revenu', amount: 34711 }))).toEqual({
+      accountId: 'courant',
+      counterpartAccountId: '',
+    });
+  });
+
+  it('refuse un virement sans aucun compte de l’appli', () => {
+    expect(
+      draftFromForm(form({ type: 'virement', accountId: '', counterpartAccountId: '' }), context),
+    ).toMatchObject({ ok: false, errors: { counterpartAccountId: 'transaction-counterpart-invalid' } });
   });
 
   it('nettoie les textes et met le signe selon le type', () => {

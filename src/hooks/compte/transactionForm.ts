@@ -1,4 +1,4 @@
-import type { TransactionForm } from '@/core/comptes/transactionDraft';
+import { moveSidesOf, type TransactionForm } from '@/core/comptes/transactionDraft';
 import type { Transaction } from '@/core/shared/model';
 import { centsToInput } from '@/core/shared/money';
 
@@ -12,8 +12,7 @@ export const formFromTransaction = (transaction: Transaction): TransactionFormSt
   type: transaction.type,
   isRefund: transaction.type === 'depense' && transaction.amount > 0,
   categoryId: transaction.categoryId ?? '',
-  accountId: transaction.accountId,
-  counterpartAccountId: transaction.counterpartAccountId ?? '',
+  ...moveSidesOf(transaction),
   paymentMethod: transaction.paymentMethod,
   status: transaction.status,
   verified: transaction.verified === true,

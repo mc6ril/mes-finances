@@ -53,7 +53,7 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'transaction-date-invalid': () => 'Date invalide',
   'transaction-label-empty': () => 'Le libellé est obligatoire',
   'transaction-amount-invalid': () => 'Montant invalide (ex. 45,90)',
-  'transaction-counterpart-invalid': () => 'Choisis un compte de destination différent',
+  'transaction-counterpart-invalid': () => 'Choisis deux comptes différents, dont au moins un de l’appli',
   'auth-not-configured': () =>
     'La connexion n’est pas configurée : renseigne les variables VITE_FIREBASE_* (voir .env.example).',
   'auth-name-empty': () => 'Indique ton prénom.',
