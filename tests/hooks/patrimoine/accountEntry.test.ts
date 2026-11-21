@@ -12,6 +12,7 @@ describe('saisie dans un compte d’épargne', () => {
       amount: '',
       kind: 'versement',
       comment: '',
+      receivedBy: '',
       error: null,
     });
     expect(initialAccountEntry(livret, '2026-03-10').formKind).toBe('movement');
@@ -43,6 +44,7 @@ describe('saisie dans un compte d’épargne', () => {
       amount: '',
       kind: 'retrait',
       comment: '',
+      receivedBy: '',
       error: null,
     });
   });
@@ -73,5 +75,19 @@ describe('saisie dans un compte d’épargne', () => {
       comment: '',
       editingId: undefined,
     });
+  });
+
+  it('reprend le compte où est arrivé un retrait, et revient au détenteur après l’enregistrement', () => {
+    const movement = aMovement({ id: 'r2', kind: 'retrait', receivedBy: 'm1' });
+    const editing = accountEntryReducer(initialAccountEntry(livret, '2026-03-10'), {
+      type: 'edit',
+      movement,
+    });
+    expect(editing.receivedBy).toBe('m1');
+    expect(accountEntryReducer(editing, { type: 'saved' }).receivedBy).toBe('');
+    expect(
+      accountEntryReducer(initialAccountEntry(livret, '2026-03-10'), { type: 'edit', movement: aMovement() })
+        .receivedBy,
+    ).toBe('');
   });
 });

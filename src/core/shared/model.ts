@@ -74,6 +74,11 @@ export type SavingsMovement = {
   kind: SavingsMovementKind;
   amount: Cents;
   comment: string;
+  /**
+   * Retrait d'un livret du commun : membre sur le compte duquel l'argent est arrivé, ou `commun`.
+   * Absent : le membre qui détient l'épargne (ou le commun si un virement miroir le montre).
+   */
+  receivedBy?: string;
   /** Identifiant chez un courtier (ancien import Trade Republic, retiré) : conservé dans les données existantes. */
   externalId?: string;
 };
@@ -237,4 +242,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;

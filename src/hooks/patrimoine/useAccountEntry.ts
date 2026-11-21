@@ -40,6 +40,7 @@ export const useAccountEntry = (account: Account) => {
               kind: state.kind,
               amount: entry.cents,
               comment: state.comment.trim(),
+              ...(state.kind === 'retrait' && state.receivedBy ? { receivedBy: state.receivedBy } : {}),
             }),
             'Mouvement enregistré',
           );
