@@ -1,11 +1,11 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { patrimoineContext } from '@/core/budget/overview';
 import { accountHistory, accountSeries, type HistoryEntry } from '@/core/patrimoine/accountHistory';
 import { accountPosition } from '@/core/patrimoine/patrimoine';
 import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
-import type { Account, IsoDate, MonthKey, SavingsMovementKind } from '@/core/shared/model';
+import type { Account, IsoDate, MonthKey, SavingsMovement, SavingsMovementKind } from '@/core/shared/model';
 import { useAccountEntry } from '@/hooks/patrimoine/useAccountEntry';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog'
 import { Modal } from '@/ui/components/molecules/overlays/Modal';
 import Segmented from '@/ui/components/molecules/Segmented';
 import { ACCOUNT_KIND_LABELS, MOVEMENT_LABELS } from '@/ui/constants';
+import { cx } from '@/ui/design-system/cx';
 import SavingsAccountForm from './SavingsAccountForm';
 
 type AccountModalProps = { account: Account; months: MonthKey[]; endDate: IsoDate; onClose: () => void };
@@ -44,6 +45,16 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
   const { series, ink } = useChartTheme();
   const form = useAccountEntry(account);
   const [confirm, setConfirm] = useState<HistoryEntry | null>(null);
+  const entryForm = useRef<HTMLDivElement>(null);
+
+  // Le formulaire est au-dessus de l'historique : on y remonte pour que la modification se voie.
+  const editMovement = (movement: SavingsMovement) => {
+    form.edit(movement);
+    entryForm.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    entryForm.current
+      ?.querySelector<HTMLInputElement>('input[inputmode="decimal"]')
+      ?.focus({ preventScroll: true });
+  };
   const context = useMemo(() => patrimoineContext(dataset), [dataset]);
   const position = accountPosition(account, context, endDate);
   const chart = useMemo(() => accountSeries(account, context, months), [account, context, months]);
@@ -114,7 +125,10 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-5 rounded-xl border border-line p-4">
+      <div
+        ref={entryForm}
+        className={cx('mt-5 rounded-xl border p-4', form.editingId ? 'border-accent-bright' : 'border-line')}
+      >
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <Text variant="strong">{form.editingId ? 'Modifier le mouvement' : 'Ajouter'}</Text>
           {!form.editingId && (
@@ -183,7 +197,13 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
         ) : (
           <ul className="divide-y divide-line">
             {history.map((line) => (
-              <li key={line.id} className="flex items-center justify-between gap-3 py-2">
+              <li
+                key={line.id}
+                className={cx(
+                  'flex items-center justify-between gap-3 py-2',
+                  line.id === form.editingId && 'rounded-lg bg-surface-muted px-2',
+                )}
+              >
                 <div className="min-w-0">
                   <Text className="truncate">{entryLabel(line)}</Text>
                   <Text variant="caption">{formatDateFr(line.date)}</Text>
@@ -202,7 +222,7 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
                       size="sm"
                       icon={Pencil}
                       label="Modifier"
-                      onClick={() => form.edit(line.movement)}
+                      onClick={() => editMovement(line.movement)}
                     />
                   )}
                   {line.kind !== 'transfer' && (
