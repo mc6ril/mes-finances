@@ -159,7 +159,8 @@ export const draftFromForm = (form: TransactionForm, context: DraftContext): Dra
   if (amount === null || amount === 0) {
     errors.amount = 'transaction-amount-invalid';
   }
-  if (internalMove && (form.counterpartAccountId === '' || form.counterpartAccountId === form.accountId)) {
+  // Sans compte crédité, l'argent part hors de l'appli (autre banque, une personne).
+  if (internalMove && form.counterpartAccountId === form.accountId) {
     errors.counterpartAccountId = 'transaction-counterpart-invalid';
   }
   if (!date || amount === null || Object.keys(errors).length > 0) {
@@ -178,7 +179,7 @@ export const draftFromForm = (form: TransactionForm, context: DraftContext): Dra
       type: form.type,
       categoryId,
       accountId: form.accountId,
-      counterpartAccountId: internalMove ? form.counterpartAccountId : null,
+      counterpartAccountId: internalMove ? form.counterpartAccountId || null : null,
       paymentMethod: form.paymentMethod,
       status: form.status,
       ...(form.status === 'realise' && form.verified ? { verified: true } : {}),
