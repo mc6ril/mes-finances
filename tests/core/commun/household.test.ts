@@ -506,12 +506,15 @@ describe('retrait d’épargne par le membre qui détient les livrets', () => {
     expect(lines).toContainEqual(expect.objectContaining({ kind: 'withdrawal', label: 'Retrait d’épargne' }));
   });
 
-  it('ignore le retrait d’un autre mois, les autres mouvements et un retrait viré sur le commun', () => {
+  it('ignore le retrait d’un autre mois et les autres mouvements', () => {
     const others = [
       { ...retrait, id: 'novembre', date: '2026-11-02' },
       { ...retrait, id: 'interets', kind: 'interets' as const },
     ];
     expect(commonMonthSummary(withWithdrawal('m2', others), '2026-10').withdrawals).toBe(0);
+  });
+
+  it('viré sur le commun (opération miroir) : rien de dû, mais il alimente le disponible', () => {
     const mirrored = withWithdrawal('m2');
     const toCommon = aTransaction({
       date: '2026-10-28',
@@ -520,10 +523,60 @@ describe('retrait d’épargne par le membre qui détient les livrets', () => {
       accountId: 'acc-courant',
       counterpartAccountId: 'acc-vacances',
     });
-    expect(
-      commonMonthSummary({ ...mirrored, transactions: [...mirrored.transactions, toCommon] }, '2026-10')
-        .withdrawals,
-    ).toBe(0);
+    const withTransfer = { ...mirrored, transactions: [...mirrored.transactions, toCommon] };
+    expect(commonMonthSummary(withTransfer, '2026-10').withdrawals).toBe(90000);
+    expect(memberSettlement(withTransfer, '2026-10', 'm2').lines).not.toContainEqual(
+      expect.objectContaining({ kind: 'withdrawal' }),
+    );
+  });
+
+  describe('arrivé sur un autre compte que celui du détenteur', () => {
+    const due = (data: Dataset, memberId: string) => memberSettlement(data, '2026-10', memberId).due;
+
+    it('arrivé chez l’autre membre : c’est lui qui le doit au commun, pas le détenteur', () => {
+      const toAlex = withWithdrawal('m2', [{ ...retrait, receivedBy: 'm1' }]);
+      const none = withWithdrawal('m2', []);
+      expect(due(toAlex, 'm2')).toBe(due(none, 'm2'));
+      expect(due(toAlex, 'm1')).toBe(due(none, 'm1') - 90000);
+      expect(memberSettlement(toAlex, '2026-10', 'm1').lines).toContainEqual({
+        kind: 'withdrawal',
+        label: 'Barcelone',
+        amount: -90000,
+        movementId: 'retrait',
+      });
+      expect(commonMonthSummary(toAlex, '2026-10').withdrawals).toBe(90000);
+    });
+
+    it('remboursant une dépense qu’il a avancée, ce membre ne doit ni ne reçoit rien', () => {
+      const base = withWithdrawal('m2', [{ ...retrait, receivedBy: 'm1' }]);
+      const advanced = aTransaction({
+        date: '2026-10-28',
+        amount: -90000,
+        accountId: 'acc-courant',
+        type: 'depense',
+        label: 'Barcelone',
+        imputation: { kind: 'avance', memberId: 'm1' },
+      });
+      const data = { ...base, transactions: [...base.transactions, advanced] };
+      const none = withWithdrawal('m2', []);
+      expect(due(data, 'm1')).toBe(due(none, 'm1'));
+      expect(commonMonthSummary(data, '2026-10').balance).toBe(commonMonthSummary(none, '2026-10').balance);
+    });
+
+    it('arrivé sur le compte commun : rien de dû, il alimente le disponible', () => {
+      const toCommon = withWithdrawal('m2', [{ ...retrait, receivedBy: 'commun' }]);
+      const none = withWithdrawal('m2', []);
+      expect(due(toCommon, 'm1')).toBe(due(none, 'm1'));
+      expect(due(toCommon, 'm2')).toBe(due(none, 'm2'));
+      expect(commonMonthSummary(toCommon, '2026-10').available).toBe(
+        commonMonthSummary(none, '2026-10').available + 90000,
+      );
+    });
+
+    it('revient au détenteur quand le membre indiqué n’est plus dans le foyer', () => {
+      const gone = withWithdrawal('m2', [{ ...retrait, receivedBy: 'ancien' }]);
+      expect(due(gone, 'm2')).toBe(due(withWithdrawal('m2'), 'm2'));
+    });
   });
 
   it('ne compte rien quand l’épargne part du compte commun', () => {

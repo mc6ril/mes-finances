@@ -2,10 +2,24 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { patrimoineContext } from '@/core/budget/overview';
+import {
+  memberName,
+  membersOf,
+  RECEIVED_ON_COMMON,
+  savingsPayerOf,
+  tracksWithdrawalRecipient,
+} from '@/core/commun/household';
 import { accountHistory, accountSeries, type HistoryEntry } from '@/core/patrimoine/accountHistory';
 import { accountPosition } from '@/core/patrimoine/patrimoine';
 import { capitalize, formatDateFr, monthLabel, monthShortLabel } from '@/core/shared/format';
-import type { Account, IsoDate, MonthKey, SavingsMovement, SavingsMovementKind } from '@/core/shared/model';
+import type {
+  Account,
+  Dataset,
+  IsoDate,
+  MonthKey,
+  SavingsMovement,
+  SavingsMovementKind,
+} from '@/core/shared/model';
 import { useAccountEntry } from '@/hooks/patrimoine/useAccountEntry';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -35,6 +49,21 @@ const entryLabel = (entry: HistoryEntry): string => {
   }
   return entry.kind === 'valuation' ? 'Valorisation' : entry.label;
 };
+
+/** Choix « Arrivé sur » d'un retrait : le détenteur de l'épargne par défaut, l'autre membre, le commun. */
+const recipientOptions = (dataset: Dataset) => {
+  const members = membersOf(dataset);
+  const holder = savingsPayerOf(dataset.settings.household) ?? '';
+  return [
+    { value: '', label: `Compte de ${memberName(members, holder)}` },
+    ...members
+      .filter((member) => member.id !== holder)
+      .map((member) => ({ value: member.id, label: `Compte de ${memberName(members, member.id)}` })),
+    { value: RECEIVED_ON_COMMON, label: 'Compte commun' },
+  ];
+};
+
+const RECIPIENT_HINT = 'Qui le reçoit le doit au commun ; arrivé sur le compte commun, rien n’est dû.';
 
 const AccountModal = ({ account: initial, months, endDate, onClose }: AccountModalProps) => {
   const dataset = useDataset();
@@ -169,6 +198,17 @@ const AccountModal = ({ account: initial, months, endDate, onClose }: AccountMod
               <Input value={form.comment} onChange={(comment) => form.change({ comment })} />
             </Field>
           )}
+          {form.formKind === 'movement' &&
+            form.kind === 'retrait' &&
+            tracksWithdrawalRecipient(dataset, account) && (
+              <Field label="Arrivé sur" hint={RECIPIENT_HINT} className="sm:col-span-2">
+                <Select
+                  value={form.receivedBy}
+                  onChange={(receivedBy) => form.change({ receivedBy })}
+                  options={recipientOptions(dataset)}
+                />
+              </Field>
+            )}
         </div>
         <Text variant="caption" className="mt-2">
           {form.formKind === 'valuation'

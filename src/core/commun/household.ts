@@ -3,6 +3,7 @@ import { isCounted } from '../comptes/balances';
 import { isMirrored } from '../comptes/mirror';
 import { addMonths } from '../shared/dates';
 import type {
+  Account,
   Cents,
   CommonMonth,
   Dataset,
@@ -149,10 +150,12 @@ const savedRefunds = (dataset: Dataset, month: MonthKey): Transaction[] => {
   );
 };
 
+/** Valeur de « Arrivé sur » quand un retrait d'épargne arrive directement sur le compte commun. */
+export const RECEIVED_ON_COMMON = 'commun';
+
 /**
- * Retraits faits sur un livret par le membre qui détient l'épargne : l'argent arrive sur son
- * compte, il le doit au commun. Un retrait viré directement sur le commun (opération miroir) n'est
- * pas dû. Rien quand l'épargne part du compte commun.
+ * Retraits du mois sur un livret, quand un membre détient l'épargne. Rien quand l'épargne part du
+ * compte commun.
  */
 const savingsWithdrawals = (dataset: Dataset, month: MonthKey): SavingsMovement[] => {
   if (!savingsPayerOf(dataset.settings.household)) {
@@ -165,10 +168,31 @@ const savingsWithdrawals = (dataset: Dataset, month: MonthKey): SavingsMovement[
     (movement) =>
       movement.kind === 'retrait' &&
       movement.date.startsWith(month) &&
-      savingsAccounts.has(movement.accountId) &&
-      !isMirrored(movement, dataset.transactions),
+      savingsAccounts.has(movement.accountId),
   );
 };
+
+/**
+ * Membre sur le compte duquel un retrait est arrivé : il le doit au commun. Null : arrivé sur le
+ * compte commun, rien de dû. Par défaut, le détenteur de l'épargne, ou le commun si un virement
+ * miroir le montre.
+ */
+export const withdrawalRecipient = (dataset: Dataset, movement: SavingsMovement): string | null => {
+  const { receivedBy } = movement;
+  if (receivedBy === RECEIVED_ON_COMMON) {
+    return null;
+  }
+  if (receivedBy && membersOf(dataset).some((member) => member.id === receivedBy)) {
+    return receivedBy;
+  }
+  return isMirrored(movement, dataset.transactions) ? null : savingsPayerOf(dataset.settings.household);
+};
+
+/** « Arrivé sur » se renseigne pour un retrait d'un livret, quand un membre détient l'épargne du commun. */
+export const tracksWithdrawalRecipient = (dataset: Dataset, account: { group: Account['group'] }): boolean =>
+  dataset.settings.kind === 'commun' &&
+  isSavingsAccount(account) &&
+  savingsPayerOf(dataset.settings.household) !== null;
 
 const WITHDRAWAL_LABEL = 'Retrait d’épargne';
 
@@ -312,14 +336,14 @@ const settlementLines = (dataset: Dataset, month: MonthKey, member: HouseholdMem
         transactionId: transaction.id,
       })),
     // Retrait d'épargne arrivé sur son compte : il le doit au commun.
-    ...(savingsPayerOf(dataset.settings.household) === member.id
-      ? savingsWithdrawals(dataset, month).map((movement) => ({
-          kind: 'withdrawal' as const,
-          label: movement.comment.trim() || WITHDRAWAL_LABEL,
-          amount: -movement.amount,
-          movementId: movement.id,
-        }))
-      : []),
+    ...savingsWithdrawals(dataset, month)
+      .filter((movement) => withdrawalRecipient(dataset, movement) === member.id)
+      .map((movement) => ({
+        kind: 'withdrawal' as const,
+        label: movement.comment.trim() || WITHDRAWAL_LABEL,
+        amount: -movement.amount,
+        movementId: movement.id,
+      })),
     ...imputed('charge').map((transaction) => ({
       kind: 'charge' as const,
       label: transaction.label,

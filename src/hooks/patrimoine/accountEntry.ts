@@ -9,6 +9,8 @@ export type AccountEntryState = {
   amount: string;
   kind: SavingsMovementKind;
   comment: string;
+  /** Retrait : membre ou `commun` où l'argent est arrivé ; vide pour le détenteur de l'épargne. */
+  receivedBy: string;
   error: string | null;
   /** Mouvement en cours de modification ; absent pour un ajout. */
   editingId?: string;
@@ -33,6 +35,7 @@ export const initialAccountEntry = (account: Account, today: IsoDate): AccountEn
   amount: '',
   kind: 'versement',
   comment: '',
+  receivedBy: '',
   error: null,
 });
 
@@ -50,7 +53,7 @@ export const accountEntryReducer = (
     case 'saved':
     case 'cancelEdit':
       // La date et la nature restent : on enchaîne souvent plusieurs saisies du même genre.
-      return { ...state, amount: '', comment: '', error: null, editingId: undefined };
+      return { ...state, amount: '', comment: '', receivedBy: '', error: null, editingId: undefined };
     case 'edit':
       return {
         formKind: 'movement',
@@ -58,6 +61,7 @@ export const accountEntryReducer = (
         amount: centsToInput(action.movement.amount),
         kind: action.movement.kind,
         comment: action.movement.comment,
+        receivedBy: action.movement.receivedBy ?? '',
         error: null,
         editingId: action.movement.id,
       };

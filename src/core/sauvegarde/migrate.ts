@@ -329,6 +329,12 @@ const toVersion14 = (dataset: Dataset): Dataset => {
   };
 };
 
+/**
+ * v15 : un retrait d'épargne peut indiquer où l'argent est arrivé (`receivedBy`). Rien à convertir ;
+ * la version empêche une ancienne appli, qui l'ignorerait, de modifier l'espace.
+ */
+const toVersion15 = (dataset: Dataset): Dataset => dataset;
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -344,6 +350,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 12, apply: toVersion12 },
   { version: 13, apply: toVersion13 },
   { version: 14, apply: toVersion14 },
+  { version: 15, apply: toVersion15 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {
