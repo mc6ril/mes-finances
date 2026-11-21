@@ -213,11 +213,15 @@ const TransactionModal = ({
           />
         </Field>
         {isInternalMoveType(form.type) && (
-          <Field label="Compte crédité" error={fieldError('counterpartAccountId')}>
+          <Field
+            label="Compte crédité"
+            hint="Sans compte : virement vers l’extérieur (autre banque, une personne)."
+            error={fieldError('counterpartAccountId')}
+          >
             <Select
               value={form.counterpartAccountId}
               onChange={(counterpartAccountId) => update({ counterpartAccountId })}
-              options={[{ value: '', label: 'Choisir…' }, ...accountOptions]}
+              options={[{ value: '', label: 'Aucun (hors de l’appli)' }, ...accountOptions]}
             />
           </Field>
         )}

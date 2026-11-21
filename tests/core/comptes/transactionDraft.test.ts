@@ -115,6 +115,13 @@ describe('brouillon d’une opération', () => {
     });
   });
 
+  it('accepte un virement sans compte crédité : il part hors de l’appli', () => {
+    expect(draftFromForm(form({ type: 'virement', counterpartAccountId: '' }), context)).toMatchObject({
+      ok: true,
+      value: { amount: -4590, counterpartAccountId: null },
+    });
+  });
+
   it('nettoie les textes et met le signe selon le type', () => {
     const result = draftFromForm(form({ amount: '-45,90' }), context);
     expect(result).toEqual({
