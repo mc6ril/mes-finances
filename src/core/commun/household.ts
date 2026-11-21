@@ -188,9 +188,6 @@ const singleMonth = (dataset: Dataset, month: MonthKey, carriedOver: Cents): Com
   };
 };
 
-/** Le report d'un mois sur l'autre se fait à l'euro près. */
-const toWholeEuros = (cents: Cents): Cents => Math.round(cents / 100) * 100;
-
 /** Mois du commun ; le bilan de chaque mois est reporté sur le suivant depuis le premier mois suivi. */
 export const commonMonthSummary = (dataset: Dataset, month: MonthKey): CommonMonthSummary => {
   const first = firstTrackedMonth(dataset);
@@ -199,7 +196,7 @@ export const commonMonthSummary = (dataset: Dataset, month: MonthKey): CommonMon
   }
   let carried = 0;
   for (let current = first; current < month; current = addMonths(current, 1)) {
-    carried = toWholeEuros(singleMonth(dataset, current, carried).balance);
+    carried = singleMonth(dataset, current, carried).balance;
   }
   return singleMonth(dataset, month, carried);
 };
