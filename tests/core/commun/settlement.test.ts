@@ -88,6 +88,7 @@ describe('récapitulatif du règlement', () => {
     { kind: 'avance', label: 'Courses', amount: 6000, transactionId: 'a1' },
     { kind: 'charge', label: 'Pharmacie', amount: -2000, transactionId: 'c1' },
     { kind: 'charge', label: 'Remboursement', amount: 500, transactionId: 'c2' },
+    { kind: 'avance', label: 'Mutuelle', amount: -700, transactionId: 'a2' },
   ];
 
   it('lit les montants du côté de ce que le commun doit, ou de ce que le membre doit', () => {
@@ -97,9 +98,9 @@ describe('récapitulatif du règlement', () => {
 
   it('affiche toujours les groupes de base, et les autres seulement s’ils ont des lignes', () => {
     const owed = settlementGroups(lines, false).map((group) => group.key);
-    expect(owed).toEqual(['income', 'contribution', 'avance', 'charge', 'received']);
+    expect(owed).toEqual(['income', 'contribution', 'avance', 'receivedByMember', 'charge', 'received']);
     const owes = settlementGroups(lines, true).map((group) => group.key);
-    expect(owes).toEqual(['contribution', 'avance', 'charge', 'received']);
+    expect(owes).toEqual(['contribution', 'avance', 'receivedByMember', 'charge', 'received']);
   });
 
   it('sépare les charges payées par le commun et les sommes reçues pour le membre', () => {
@@ -108,6 +109,26 @@ describe('récapitulatif du règlement', () => {
     const received = groups.find((group) => group.key === 'received');
     expect(charge?.lines.map((line) => line.transactionId)).toEqual(['c1']);
     expect(received?.lines.map((line) => line.transactionId)).toEqual(['c2']);
+  });
+
+  it('sépare les dépenses avancées par le membre et les remboursements reçus sur son compte', () => {
+    const groups = settlementGroups(lines, false);
+    const avance = groups.find((group) => group.key === 'avance');
+    const receivedByMember = groups.find((group) => group.key === 'receivedByMember');
+    expect(avance?.lines.map((line) => line.transactionId)).toEqual(['a1']);
+    expect(receivedByMember?.lines.map((line) => line.transactionId)).toEqual(['a2']);
+  });
+
+  it('détaille l’épargne quand un remboursement y a été placé', () => {
+    const savings = (extra: SettlementLine[]) =>
+      settlementGroups(
+        [{ kind: 'savings', label: 'Épargne versée sur les livrets', amount: 28000 }, ...extra],
+        true,
+      ).find((group) => group.key === 'savings');
+    expect(savings([])?.detailed).toBe(false);
+    const detailed = savings([{ kind: 'savings', label: 'MAIF', amount: 10500, transactionId: 'm' }]);
+    expect(detailed?.detailed).toBe(true);
+    expect(detailed?.total).toBe(-38500);
   });
 
   it('inverse totaux et lignes pour un membre qui doit au commun', () => {

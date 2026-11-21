@@ -69,7 +69,7 @@ const CommonStats = ({ dataset, month, overview }: CommonStatsProps) => {
       <StatCard
         label="Épargne du mois"
         icon={PiggyBank}
-        value={<Amount cents={summary.savingsTotal} />}
+        value={<Amount cents={summary.totalSaved} />}
         hint={transferred ? 'Virée sur les comptes d’épargne' : 'À virer en fin de mois'}
         accent="text-positive-ink bg-positive-soft"
       />
