@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { type BudgetLine, budgetUsage, monthBudgetSummary, spendingStatus } from '@/core/budget/budget';
-import type { Cents } from '@/core/shared/model';
+import { budgetUsage, type MonthBudgetSummary, spendingStatus } from '@/core/budget/budget';
 import Amount from '@/ui/components/atoms/Amount';
 import ProgressBar, { type ProgressTone } from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
@@ -34,11 +33,10 @@ const BudgetFigure = ({ label, actual, budget, progress }: BudgetFigureProps) =>
   </div>
 );
 
-type BudgetSummaryProps = { lines: BudgetLine[]; provision: Cents; annualSpent: Cents };
+type BudgetSummaryProps = { summary: MonthBudgetSummary };
 
-/** Résumé du mois (espace perso) : revenus, dépenses, épargne et solde, réel face au prévu. */
-const BudgetSummary = ({ lines, provision, annualSpent }: BudgetSummaryProps) => {
-  const summary = monthBudgetSummary(lines, provision, annualSpent);
+/** Résumé du mois : revenus, dépenses, épargne et solde, réel face au prévu. */
+const BudgetSummary = ({ summary }: BudgetSummaryProps) => {
   return (
     <Card>
       <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-4">

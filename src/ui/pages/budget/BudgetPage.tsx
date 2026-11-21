@@ -23,8 +23,7 @@ const BudgetPage = () => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const [noteMonth, setNoteMonth] = useState<MonthKey | null>(null);
-  const { kind, isCommon, lines, budget, origin, prefill, provision, annualSpent, groups } =
-    useBudgetMonth(month);
+  const { kind, isCommon, lines, summary, budget, origin, prefill, groups } = useBudgetMonth(month);
 
   return (
     <div className="flex flex-col gap-5">
@@ -49,14 +48,13 @@ const BudgetPage = () => {
         <BudgetOrigin month={month} origin={origin} isDefined={budget !== null} />
       </div>
       {prefill && <PrefillBudgetCard month={month} planned={prefill} />}
-      {isCommon ? (
+      {isCommon && (
         <>
           <CommonMonthCard month={month} />
           <SettlementCard month={month} />
         </>
-      ) : (
-        <BudgetSummary lines={lines} provision={provision} annualSpent={annualSpent} />
       )}
+      <BudgetSummary summary={summary} />
       {groups.map((group) => (
         <BudgetGroupTable key={group} group={group} lines={lines} month={month} />
       ))}
