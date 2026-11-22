@@ -1,4 +1,4 @@
-import { type BudgetLine, groupTotal, type MonthBudgetSummary } from '../budget/budget';
+import { type BudgetLine, groupTotal } from '../budget/budget';
 import type { Cents } from '../shared/model';
 import type { CommonMonthSummary } from './household';
 
@@ -10,27 +10,21 @@ export const envelopeOverride = (cents: Cents, suggested: Cents): Cents | null =
 export const incomeShare = (summary: CommonMonthSummary, memberId: string): number | null =>
   summary.totalIncome > 0 ? (summary.incomes[memberId] ?? 0) / summary.totalIncome : null;
 
+/** Répartition du budget du commun : ce qu'il y a à répartir, ce qui est prévu, ce qu'il reste à prévoir. */
+export type CommonBudgetPlan = { toAllocate: Cents; planned: Cents; remaining: Cents };
+
 /**
- * Bandeau du mois du commun, au format du perso : les chiffres du récapitulatif face au prévu.
- * Revenus = enveloppe + autres entrées + retraits d'épargne (la part de chacun, pas les salaires
- * entiers) ; le report
- * du mois précédent ne joue que sur le solde.
+ * À répartir = enveloppe + report + autres entrées − épargne prévue ; les retraits d'épargne en sont
+ * exclus, ils financent des dépenses précises. Prévu = budgets des dépenses fixes et communes +
+ * provision des budgets annuels.
  */
-export const commonBudgetSummary = (
+export const commonBudgetPlan = (
   summary: CommonMonthSummary,
   lines: BudgetLine[],
   provision: Cents,
-): MonthBudgetSummary => {
-  const plannedSpending =
+): CommonBudgetPlan => {
+  const toAllocate = summary.envelope + summary.carriedOver + summary.inflows - summary.savingsTotal;
+  const planned =
     provision + groupTotal(lines, 'fixe', 'available') + groupTotal(lines, 'plaisir', 'available');
-  return {
-    income: summary.envelope + summary.inflows + summary.withdrawals,
-    plannedIncome: summary.envelope,
-    spending: summary.expenses,
-    plannedSpending,
-    saving: summary.totalSaved,
-    plannedSaving: summary.savingsTotal,
-    balance: summary.balance,
-    plannedBalance: summary.envelope + summary.carriedOver - summary.savingsTotal - plannedSpending,
-  };
+  return { toAllocate, planned, remaining: toAllocate - planned };
 };

@@ -1,5 +1,5 @@
 import type { BudgetLine } from '@/core/budget/budget';
-import { commonBudgetSummary } from '@/core/commun/commonMonth';
+import { commonBudgetPlan } from '@/core/commun/commonMonth';
 import type { CommonMonthSummary } from '@/core/commun/household';
 
 const summary: CommonMonthSummary = {
@@ -23,31 +23,18 @@ const summary: CommonMonthSummary = {
 const line = (group: BudgetLine['group'], available: number): BudgetLine =>
   ({ categoryId: group, name: group, group, available, actual: 0 }) as BudgetLine;
 
-describe('bandeau du mois du commun', () => {
-  it('compare au prévu les chiffres du récapitulatif', () => {
+describe('répartition du budget du commun', () => {
+  it('répartit enveloppe, report et autres entrées moins l’épargne prévue', () => {
     const lines = [line('fixe', 200000), line('plaisir', 30000), line('epargne', 99999)];
-    expect(commonBudgetSummary(summary, lines, 10000)).toEqual({
-      income: 270000 + 16659,
-      plannedIncome: 270000,
-      spending: 251676,
-      plannedSpending: 240000,
-      saving: 27000,
-      plannedSaving: 27000,
-      balance: summary.balance,
-      plannedBalance: 270000 - 8600 - 27000 - 240000,
+    expect(commonBudgetPlan(summary, lines, 10000)).toEqual({
+      toAllocate: 270000 - 8600 + 16659 - 27000,
+      planned: 240000,
+      remaining: 270000 - 8600 + 16659 - 27000 - 240000,
     });
   });
 
-  it('compte dans l’épargne réelle un remboursement placé sur un livret, pas dans le prévu', () => {
-    const withRefund = { ...summary, savedRefunds: 10500, totalSaved: 37500 };
-    expect(commonBudgetSummary(withRefund, [], 0)).toMatchObject({ saving: 37500, plannedSaving: 27000 });
-  });
-
-  it('compte un retrait d’épargne dans les revenus réels, pas dans le prévu', () => {
-    const withWithdrawal = { ...summary, withdrawals: 90000 };
-    expect(commonBudgetSummary(withWithdrawal, [], 0)).toMatchObject({
-      income: 270000 + 16659 + 90000,
-      plannedIncome: 270000,
-    });
+  it('laisse hors de la répartition les retraits d’épargne et les remboursements placés', () => {
+    const withMoves = { ...summary, withdrawals: 90000, savedRefunds: 10500, totalSaved: 37500 };
+    expect(commonBudgetPlan(withMoves, [], 0).toAllocate).toBe(270000 - 8600 + 16659 - 27000);
   });
 });
