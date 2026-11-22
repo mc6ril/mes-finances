@@ -1,5 +1,5 @@
 import { Menu, X } from 'lucide-react';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router';
 import { useSyncErrorNotice } from '@/hooks/useSyncErrorNotice';
 import Brand from '@/ui/components/atoms/Brand';
@@ -53,11 +53,28 @@ const SidebarFooter = () => (
 
 type AppShellProps = { children: ReactNode };
 
+/** Hauteur de l'en-tête collant, suivie quand il passe sur deux lignes : les blocs collants se placent dessous. */
+const useHeaderHeight = () => {
+  const ref = useRef<HTMLElement>(null);
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    const header = ref.current;
+    if (!header) {
+      return;
+    }
+    const observer = new ResizeObserver(() => setHeight(header.offsetHeight));
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, height };
+};
+
 const AppShell = ({ children }: AppShellProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   useSyncErrorNotice();
   const current = navItemOf(location.pathname);
+  const header = useHeaderHeight();
   // biome-ignore lint/correctness/useExhaustiveDependencies: on remonte en haut de page à chaque changement de page.
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -92,8 +109,14 @@ const AppShell = ({ children }: AppShellProps) => {
           </div>
         )}
         {/* overflow-x-clip : filet de sécurité contre le défilement latéral, sans casser l’en-tête collant. */}
-        <div className="min-w-0 flex-1 overflow-x-clip">
-          <header className="sticky top-0 z-30 border-b border-line-header bg-page/85 backdrop-blur-sm">
+        <div
+          className="min-w-0 flex-1 overflow-x-clip"
+          style={{ '--header-height': `${header.height}px` } as CSSProperties}
+        >
+          <header
+            ref={header.ref}
+            className="sticky top-0 z-30 border-b border-line-header bg-page/85 backdrop-blur-sm"
+          >
             <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
               <div className="flex items-center gap-2">
                 <Button

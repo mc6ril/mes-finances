@@ -12,6 +12,7 @@ import AnnualBudgetCard from '@/ui/components/organisms/budget/AnnualBudgetCard'
 import BudgetGroupTable from '@/ui/components/organisms/budget/BudgetGroupTable';
 import BudgetOrigin from '@/ui/components/organisms/budget/BudgetOrigin';
 import BudgetSummary from '@/ui/components/organisms/budget/BudgetSummary';
+import CommonBudgetPlan from '@/ui/components/organisms/budget/CommonBudgetPlan';
 import CommonMonthCard from '@/ui/components/organisms/budget/CommonMonthCard';
 import PrefillBudgetCard from '@/ui/components/organisms/budget/PrefillBudgetCard';
 import SettlementCard from '@/ui/components/organisms/budget/SettlementCard';
@@ -23,7 +24,7 @@ const BudgetPage = () => {
   const finance = useFinanceUseCases();
   const report = useReport();
   const [noteMonth, setNoteMonth] = useState<MonthKey | null>(null);
-  const { kind, isCommon, lines, summary, budget, origin, prefill, groups } = useBudgetMonth(month);
+  const { kind, isCommon, lines, summary, plan, budget, origin, prefill, groups } = useBudgetMonth(month);
 
   return (
     <div className="flex flex-col gap-5">
@@ -54,7 +55,8 @@ const BudgetPage = () => {
           <SettlementCard month={month} />
         </>
       )}
-      <BudgetSummary summary={summary} />
+      {plan && <CommonBudgetPlan plan={plan} />}
+      {summary && <BudgetSummary summary={summary} />}
       {groups.map((group) => (
         <BudgetGroupTable key={group} group={group} lines={lines} month={month} />
       ))}
