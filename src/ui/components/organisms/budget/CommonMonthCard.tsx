@@ -206,7 +206,7 @@ const CommonMonthCard = ({ month }: { month: MonthKey }) => {
               icon={Wallet}
               tone="brand"
               title="Enveloppe commune"
-              hint={`${formatRate(rate)} des revenus du mois (${formatEuros(summary.totalIncome)}), arrondi aux 50 € supérieurs.`}
+              hint={`${formatRate(rate)} des revenus du mois (${formatEuros(summary.totalIncome)}), arrondi aux 50 € les plus proches.`}
             />
             <Indented>
               <div className="flex flex-wrap items-center gap-3">

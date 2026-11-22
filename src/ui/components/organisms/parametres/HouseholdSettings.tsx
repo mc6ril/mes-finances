@@ -123,7 +123,7 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
       </SettingRow>
       <SettingRow
         label="Part des revenus versée au commun"
-        hint="Chacun contribue au prorata de ses revenus. L’enveloppe est arrondie aux 50 € supérieurs."
+        hint="Chacun contribue au prorata de ses revenus. L’enveloppe est arrondie aux 50 € les plus proches."
       >
         <span className="relative inline-block w-28">
           <Input

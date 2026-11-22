@@ -83,8 +83,10 @@ const dataset = (overrides: Partial<Dataset> = {}): Dataset => {
 };
 
 describe('enveloppe commune', () => {
-  it('propose x % des revenus, arrondi aux 50 € supérieurs', () => {
-    expect(suggestedEnvelope(562000, 0.75)).toBe(425000);
+  it('propose x % des revenus, arrondi aux 50 € les plus proches', () => {
+    expect(suggestedEnvelope(562000, 0.75)).toBe(420000);
+    expect(suggestedEnvelope(754000, 0.75)).toBe(565000);
+    expect(suggestedEnvelope(760000, 0.75)).toBe(570000);
     expect(suggestedEnvelope(560000, 0.75)).toBe(420000);
     expect(suggestedEnvelope(0, 0.75)).toBe(0);
   });
@@ -103,32 +105,32 @@ describe('mois du commun', () => {
     expect(commonMonthSummary(dataset(), '2026-10')).toEqual({
       incomes: { m1: 300000, m2: 262000 },
       totalIncome: 562000,
-      suggestedEnvelope: 425000,
-      envelope: 425000,
-      contributions: { m1: 226868, m2: 198132 },
+      suggestedEnvelope: 420000,
+      envelope: 420000,
+      contributions: { m1: 224199, m2: 195801 },
       carriedOver: 0,
       inflows: 7051,
       savings: [
-        { accountId: 'acc-vacances', rate: 0.1, amount: 42500 },
-        { accountId: 'acc-immo', rate: 0.2, amount: 85000 },
+        { accountId: 'acc-vacances', rate: 0.1, amount: 42000 },
+        { accountId: 'acc-immo', rate: 0.2, amount: 84000 },
       ],
-      savingsTotal: 127500,
+      savingsTotal: 126000,
       savedRefunds: 0,
       withdrawals: 0,
-      totalSaved: 127500,
-      available: 304551,
+      totalSaved: 126000,
+      available: 301051,
       expenses: 153000,
-      balance: 151551,
+      balance: 148051,
     });
   });
 
   it('reporte le bilan exact du mois précédent et reprend ses taux d’épargne', () => {
     expect(commonMonthSummary(dataset(), '2026-11')).toMatchObject({
       envelope: 400000,
-      carriedOver: 151551,
+      carriedOver: 148051,
       savingsTotal: 120000,
       expenses: 0,
-      balance: 431551,
+      balance: 428051,
     });
   });
 
@@ -146,19 +148,19 @@ describe('règlement de fin de mois', () => {
     const settlement = memberSettlement(dataset(), '2026-10', 'm1');
     expect(settlement.lines.map((line) => [line.kind, line.amount])).toEqual([
       ['income', 300000],
-      ['contribution', -226868],
+      ['contribution', -224199],
       ['charge', -5000],
     ]);
-    expect(settlement).toMatchObject({ due: 68132, carriedOver: 0, settled: 0, toSettle: 68132 });
+    expect(settlement).toMatchObject({ due: 70801, carriedOver: 0, settled: 0, toSettle: 70801 });
   });
 
   it('fait verser sa part à l’autre, moins ce qu’il a avancé', () => {
     const settlement = memberSettlement(dataset(), '2026-10', 'm2');
     expect(settlement.lines.map((line) => [line.kind, line.amount])).toEqual([
-      ['contribution', -198132],
+      ['contribution', -195801],
       ['avance', 3000],
     ]);
-    expect(settlement.toSettle).toBe(-195132);
+    expect(settlement.toSettle).toBe(-192801);
   });
 
   it('reverse au membre un remboursement arrivé sur le commun pour lui, hors dépenses du commun', () => {
@@ -246,13 +248,13 @@ describe('règlement de fin de mois', () => {
         },
       ],
     });
-    expect(memberSettlement(data, '2026-10', 'm1')).toMatchObject({ settled: 60000, toSettle: 8132 });
+    expect(memberSettlement(data, '2026-10', 'm1')).toMatchObject({ settled: 60000, toSettle: 10801 });
     expect(memberSettlement(data, '2026-11', 'm1')).toMatchObject({
       due: 300000 - 213523,
-      carriedOver: 8132,
-      toSettle: 300000 - 213523 + 8132,
+      carriedOver: 10801,
+      toSettle: 300000 - 213523 + 10801,
     });
-    expect(memberSettlement(data, '2026-11', 'm2').carriedOver).toBe(-195132);
+    expect(memberSettlement(data, '2026-11', 'm2').carriedOver).toBe(-192801);
   });
 });
 
@@ -314,7 +316,7 @@ describe('remboursement reçu pour un membre et charge hors compte', () => {
     const account = anAccount({ id: 'acc-courant', openingDate: '2026-10-01' });
     expect(accountBalanceAt(account, [outside], '2026-10-31')).toBe(0);
     const data = dataset({ transactions: [...dataset().transactions, outside] });
-    expect(memberSettlement(data, '2026-10', 'm1').due).toBe(68132 - 15400);
+    expect(memberSettlement(data, '2026-10', 'm1').due).toBe(70801 - 15400);
   });
 });
 
