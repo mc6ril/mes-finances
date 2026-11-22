@@ -18,9 +18,9 @@ import type {
 
 const ROUNDING = 5000;
 
-/** x % des revenus du couple, arrondi aux 50 € supérieurs. */
+/** x % des revenus du couple, arrondi aux 50 € les plus proches. */
 export const suggestedEnvelope = (totalIncome: Cents, rate: number): Cents =>
-  Math.ceil(Math.round(totalIncome * rate) / ROUNDING) * ROUNDING;
+  Math.round(Math.round(totalIncome * rate) / ROUNDING) * ROUNDING;
 
 /** Part de chacun au prorata de ses revenus ; le dernier membre absorbe l'arrondi. */
 export const contributionsFor = (
