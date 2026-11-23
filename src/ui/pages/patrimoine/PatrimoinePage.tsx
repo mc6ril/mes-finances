@@ -38,7 +38,11 @@ const PatrimoinePage = () => {
         }
       />
 
-      <PatrimoineStats snapshot={view.snapshot} change={view.change} />
+      <PatrimoineStats
+        snapshot={view.snapshot}
+        hasJointAccount={accounts.joint.length > 0}
+        change={view.change}
+      />
 
       <EvolutionChart points={view.evolution} range={range} onRangeChange={setRange} />
 
