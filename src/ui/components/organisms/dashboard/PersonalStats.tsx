@@ -15,16 +15,7 @@ import type { WorkspaceKind } from '@/core/shared/model';
 import Amount from '@/ui/components/atoms/Amount';
 import StatCard from '@/ui/components/molecules/cards/StatCard';
 import { groupLabel } from '@/ui/constants';
-
-const patrimoineHint = (hasJointAccount: boolean, shareMissing: boolean): string => {
-  if (!hasJointAccount) {
-    return 'Épargne et placements';
-  }
-  if (shareMissing) {
-    return 'Hors épargne commune (quote-part à renseigner)';
-  }
-  return 'Avec ta part de l’épargne commune';
-};
+import { patrimoineHint } from '@/ui/labels/patrimoine/stats';
 
 type PersonalSpendingHintProps = { totals: MonthTotals };
 
