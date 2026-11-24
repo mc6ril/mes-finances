@@ -5,9 +5,15 @@ type TabLink = { id: string; label: string; to: string };
 
 type TabsProps = { tabs: TabLink[]; active: string; label: string };
 
-/** Onglets sous forme de liens : l'onglet actif vit dans l'URL, on peut donc y renvoyer directement. */
+/**
+ * Onglets sous forme de liens : l'onglet actif vit dans l'URL, on peut donc y renvoyer directement.
+ * Sur téléphone, un fondu au bord droit signale qu'ils défilent.
+ */
 const Tabs = ({ tabs, active, label }: TabsProps) => (
-  <nav aria-label={label} className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+  <nav
+    aria-label={label}
+    className="-mx-4 overflow-x-auto px-4 max-sm:[mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:mx-0 sm:px-0"
+  >
     <div className="inline-flex gap-1 rounded-xl bg-surface p-1 shadow-card">
       {tabs.map((tab) => (
         <Link

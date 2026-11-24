@@ -1,5 +1,13 @@
 import { statusLabel } from '@/core/comptes/csvImport';
-import { matchesStatus, needsCategory, toClassify } from '@/core/comptes/filters';
+import {
+  ALL,
+  activeFilterCount,
+  matchesStatus,
+  needsCategory,
+  TO_CLASSIFY,
+  type TransactionFilters,
+  toClassify,
+} from '@/core/comptes/filters';
 import { anAccount, aTransaction } from '../fixtures';
 
 const planned = aTransaction({ status: 'prevu' });
@@ -48,5 +56,39 @@ describe('opérations à classer', () => {
   it('ne signale rien quand tout est classé', () => {
     expect(toClassify([aTransaction()], accounts)).toEqual({ count: 0, accountId: null });
     expect(needsCategory(aTransaction({ categoryId: null, status: 'prevu' }))).toBe(false);
+  });
+});
+
+describe('nombre de filtres actifs', () => {
+  const base: TransactionFilters = {
+    from: '2026-03-01',
+    to: '2026-03-31',
+    search: '',
+    categoryId: ALL,
+    type: ALL,
+    status: ALL,
+    minAmount: '',
+    maxAmount: '',
+  };
+
+  it('vaut zéro tant que rien ne s’écarte des filtres de départ', () => {
+    expect(activeFilterCount(base, base)).toBe(0);
+  });
+
+  it('compte chaque critère modifié, la période pour un seul, sans la recherche', () => {
+    const changed = {
+      ...base,
+      from: '2026-03-10',
+      to: '2026-03-20',
+      search: 'loyer',
+      categoryId: TO_CLASSIFY,
+      status: 'prevu',
+      minAmount: '10',
+    };
+    expect(activeFilterCount(changed, base)).toBe(4);
+  });
+
+  it('ignore un montant fait d’espaces', () => {
+    expect(activeFilterCount({ ...base, maxAmount: '  ' }, base)).toBe(0);
   });
 });

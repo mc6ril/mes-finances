@@ -71,6 +71,20 @@ export type TransactionFilters = {
   maxAmount: string;
 };
 
+/**
+ * Critères qui s'écartent des filtres de départ, période comptée pour un seul.
+ * La recherche n'en fait pas partie : elle reste visible quand les filtres sont repliés.
+ */
+export const activeFilterCount = (filters: TransactionFilters, initial: TransactionFilters): number =>
+  [
+    filters.from !== initial.from || filters.to !== initial.to,
+    filters.categoryId !== initial.categoryId,
+    filters.type !== initial.type,
+    filters.status !== initial.status,
+    filters.minAmount.trim() !== initial.minAmount.trim(),
+    filters.maxAmount.trim() !== initial.maxAmount.trim(),
+  ].filter(Boolean).length;
+
 /** Minuscules sans accents, pour une recherche tolérante. */
 const normalize = (text: string): string =>
   text

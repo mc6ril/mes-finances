@@ -1,8 +1,10 @@
 import { Plus, Wallet } from 'lucide-react';
-import type { TransactionFilters } from '@/core/comptes/filters';
+import { useState } from 'react';
+import { activeFilterCount, type TransactionFilters } from '@/core/comptes/filters';
 import type { Account, Dataset } from '@/core/shared/model';
 import { useLedger } from '@/hooks/compte/useLedger';
 import { useFileUseCases, useFinanceUseCases } from '@/hooks/useFinance';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { usePeriod } from '@/hooks/usePeriod';
 import { useReport } from '@/hooks/useReport';
 import { useToast } from '@/hooks/useToast';
@@ -15,6 +17,7 @@ import TransactionModal from '@/ui/components/organisms/modals/TransactionModal'
 import { errorMessage } from '@/ui/errorMessages';
 import BulkBar from './BulkBar';
 import LedgerFilters from './LedgerFilters';
+import LedgerList from './LedgerList';
 import LedgerTable from './LedgerTable';
 import LedgerToolbar from './LedgerToolbar';
 import RuleSuggestionBanner from './RuleSuggestionBanner';
@@ -37,6 +40,9 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
     },
   );
   const { filters, sort, selection, editing, importOpen, pendingDelete, ruleToSuggest } = state;
+  const isMobile = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filterCount = activeFilterCount(filters, initialFilters);
 
   const exportCsv = () => {
     const saved = files.exportOperationsCsv({
@@ -72,8 +78,28 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
             onExport={exportCsv}
             canExport={rows.length > 0}
             onCreate={actions.create}
+            filterToggle={
+              isMobile
+                ? { count: filterCount, open: filtersOpen, onToggle: () => setFiltersOpen((open) => !open) }
+                : undefined
+            }
           />
-          <LedgerFilters filters={filters} categories={dataset.categories} onChange={actions.updateFilters} />
+          {(!isMobile || filtersOpen) && (
+            <LedgerFilters
+              filters={filters}
+              categories={dataset.categories}
+              onChange={actions.updateFilters}
+            />
+          )}
+          {isMobile && filtersOpen && filterCount > 0 && (
+            <button
+              type="button"
+              onClick={() => actions.updateFilters({ ...initialFilters, search: filters.search })}
+              className="self-start text-xs font-medium text-accent"
+            >
+              Effacer les filtres
+            </button>
+          )}
           <BulkBar
             selected={selected}
             categories={dataset.categories}
@@ -96,6 +122,20 @@ const Ledger = ({ dataset, account, initialFilters }: LedgerProps) => {
               }
             />
           </div>
+        ) : isMobile ? (
+          <LedgerList
+            rows={rows}
+            dataset={dataset}
+            accountId={account.id}
+            categoryNames={categoryNames}
+            accountNames={accountNames}
+            selection={selection}
+            allSelected={allSelected}
+            onSelectAll={actions.selectAll}
+            onClearSelection={actions.clearSelection}
+            onToggle={actions.toggleSelection}
+            onEdit={actions.modify}
+          />
         ) : (
           <LedgerTable
             rows={rows}

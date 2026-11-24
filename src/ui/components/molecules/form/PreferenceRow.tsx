@@ -14,7 +14,7 @@ const SettingRow = ({ label, hint, children }: SettingRowProps) => (
         </Text>
       )}
     </div>
-    <div className="flex shrink-0 justify-end">{children}</div>
+    <div className="flex shrink-0 justify-end max-sm:w-full">{children}</div>
   </div>
 );
 
