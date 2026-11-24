@@ -10,7 +10,10 @@ type LedgerFiltersProps = {
   onChange: (patch: Partial<TransactionFilters>) => void;
 };
 
-/** Critères de la liste : période, catégorie, type, statut et fourchette de montant. */
+/**
+ * Critères de la liste : période, catégorie, type, statut et fourchette de montant.
+ * Sur téléphone, la catégorie (libellés longs) prend la ligne : les autres vont par paires.
+ */
 const LedgerFilters = ({ filters, categories, onChange }: LedgerFiltersProps) => (
   <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
     <Input type="date" value={filters.from} onChange={(from) => onChange({ from })} label="Du" />
@@ -19,6 +22,7 @@ const LedgerFilters = ({ filters, categories, onChange }: LedgerFiltersProps) =>
       value={filters.categoryId}
       onChange={(categoryId) => onChange({ categoryId })}
       label="Catégorie"
+      className="max-sm:col-span-2"
       options={[
         { value: ALL, label: 'Toutes catégories' },
         { value: TO_CLASSIFY, label: 'À classer' },

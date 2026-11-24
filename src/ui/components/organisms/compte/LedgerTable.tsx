@@ -1,24 +1,16 @@
 import { ArrowDownUp, Copy, Pencil, Trash2 } from 'lucide-react';
 import { memo } from 'react';
 import { memberLabel } from '@/core/commun/household';
-import { isOutsideAccount, isVerified, signedEffectOn } from '@/core/comptes/balances';
 import { statusLabel, TYPE_LABELS } from '@/core/comptes/csvImport';
 import { imputationHint, transferHint } from '@/core/comptes/hints';
 import type { SortKey, SortState } from '@/core/comptes/sort';
 import { formatDateFr } from '@/core/shared/format';
 import type { Dataset, Transaction } from '@/core/shared/model';
-import Amount from '@/ui/components/atoms/Amount';
-import Badge, { type BadgeTone } from '@/ui/components/atoms/Badge';
+import Badge from '@/ui/components/atoms/Badge';
 import Button from '@/ui/components/atoms/Button';
 import { Checkbox } from '@/ui/components/atoms/form/Checkbox';
 import Text from '@/ui/components/atoms/Text';
-
-const statusTone = (transaction: Transaction): BadgeTone => {
-  if (transaction.status === 'prevu') {
-    return 'info';
-  }
-  return isVerified(transaction) ? 'good' : 'neutral';
-};
+import { RowAmount, statusTone } from './LedgerCells';
 
 type SortHeaderProps = {
   label: string;
@@ -106,13 +98,7 @@ const LedgerRow = memo(
         <Badge tone={statusTone(row)}>{statusLabel(row)}</Badge>
       </td>
       <td className="text-right font-medium">
-        {isOutsideAccount(row) ? (
-          <span title="Hors du compte : ne change pas le solde">
-            <Amount cents={row.amount} className="text-ink-muted" />
-          </span>
-        ) : (
-          <Amount cents={signedEffectOn(accountId, row)} colored />
-        )}
+        <RowAmount row={row} accountId={accountId} />
       </td>
       <td>
         <div className="flex justify-end gap-0.5">

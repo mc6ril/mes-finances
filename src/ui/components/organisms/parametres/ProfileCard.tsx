@@ -14,6 +14,7 @@ const ThemePicker = () => {
   return (
     <PreferenceRow label="Thème">
       <Segmented<ThemePreference>
+        fillOnMobile
         value={settings.theme}
         label="Thème"
         onChange={(theme) => void report(finance.updateSettings({ theme }, null))}
@@ -44,6 +45,7 @@ const ProfileCard = () => {
       <div className="divide-y divide-line">
         <PreferenceRow label="Type d’espace" hint="Un compte commun se partage entre deux personnes.">
           <Segmented<WorkspaceKind>
+            fillOnMobile
             value={settings.kind}
             label="Type d’espace"
             onChange={changeKind}

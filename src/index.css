@@ -62,6 +62,18 @@ body {
   }
 }
 
+/* Safari iOS donne aux champs date une largeur minimale propre : ils débordaient de leur colonne. */
+@media (max-width: 639.98px) {
+  input[type='date'] {
+    min-width: 0;
+    -webkit-appearance: none;
+  }
+
+  input[type='date']::-webkit-date-and-time-value {
+    text-align: left;
+  }
+}
+
 .recharts-wrapper .recharts-surface:focus,
 .recharts-wrapper *:focus {
   outline: none;

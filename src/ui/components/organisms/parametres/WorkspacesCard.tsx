@@ -63,7 +63,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete, onSharing }: WorkspaceRow
   };
 
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-line px-4 py-3">
+    <li className="flex flex-wrap items-center gap-3 rounded-xl border border-line px-4 py-3 max-sm:flex-col max-sm:items-stretch max-sm:gap-2 max-sm:rounded-none max-sm:border-0 max-sm:px-0">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         {draft === null ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -88,7 +88,7 @@ const WorkspaceRow = ({ workspace, isActive, onDelete, onSharing }: WorkspaceRow
           />
         )}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 max-sm:-mr-2 max-sm:justify-end">
         {!isActive && draft === null && (
           <Button size="sm" onClick={() => void report(store.switchWorkspace(workspace.id))}>
             Ouvrir
@@ -177,7 +177,8 @@ const WorkspacesCard = () => {
       title="Espaces de suivi"
       subtitle="Chaque espace est indépendant : comptes, catégories, budgets et réglages propres. Un espace commun peut être partagé avec une seule personne, sur invitation."
     >
-      <ul className="flex flex-col gap-2">
+      {/* Sur téléphone, de simples traits séparent les espaces : pas d'encadré dans la carte. */}
+      <ul className="flex flex-col gap-2 max-sm:gap-0 max-sm:divide-y max-sm:divide-line">
         {workspaces.map((workspace) => (
           <WorkspaceRow
             key={workspace.id}

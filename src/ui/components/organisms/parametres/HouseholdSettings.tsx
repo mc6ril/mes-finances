@@ -107,6 +107,7 @@ const HouseholdSettings = ({ household }: { household: Household }) => {
         hint="Le compte d’où partent les virements vers les livrets. Versée par une personne : elle compte dans sa part."
       >
         <Segmented<string>
+          fillOnMobile
           value={savingsPayerOf(household) ?? SAVINGS_FROM_COMMON}
           label="Épargne du mois versée depuis"
           onChange={(payer) =>

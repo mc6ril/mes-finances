@@ -7,10 +7,25 @@ type SegmentedProps<T extends string> = {
   options: SegmentedOption<T>[];
   onChange: (value: T) => void;
   label: string;
+  /** Sur téléphone, prend toute la largeur (options de même taille) au lieu de déborder. */
+  fillOnMobile?: boolean;
 };
 
-const Segmented = <T extends string>({ value, options, onChange, label }: SegmentedProps<T>) => (
-  <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg bg-surface-muted p-0.5">
+const Segmented = <T extends string>({
+  value,
+  options,
+  onChange,
+  label,
+  fillOnMobile,
+}: SegmentedProps<T>) => (
+  <div
+    role="radiogroup"
+    aria-label={label}
+    className={cx(
+      'inline-flex rounded-lg bg-surface-muted p-0.5',
+      fillOnMobile && 'max-sm:flex max-sm:w-full',
+    )}
+  >
     {options.map((option) => (
       // biome-ignore lint/a11y/useSemanticElements: boutons au rôle radio, motif ARIA valide pour un sélecteur segmenté.
       <button
@@ -21,6 +36,7 @@ const Segmented = <T extends string>({ value, options, onChange, label }: Segmen
         onClick={() => onChange(option.value)}
         className={cx(
           'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+          fillOnMobile && 'max-sm:flex-1 max-sm:py-1.5',
           option.value === value
             ? 'bg-surface-thumb text-ink-max shadow-xs'
             : 'text-ink-subtle hover:text-ink-emphasis',
