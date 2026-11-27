@@ -1,20 +1,17 @@
 import { addDays, addMonths, monthEnd, monthKeyOf, monthsBetween } from '../shared/dates';
 import type { Account, Cents, Goal, IsoDate, MonthKey } from '../shared/model';
-import { monthlyRateOf } from './goals';
 import { linkedValueAt } from './goalTracking';
+import type { Band } from './marketSimulation';
 import type { PatrimoineContext } from './patrimoine';
 
 /**
  * Investissement régulier (PEA…) : on juge la régularité des versements, ce qu'on maîtrise ;
- * le marché n'est montré qu'en fourchette.
+ * le marché n'est montré qu'en zones de probabilité (voir marketSimulation).
  */
 export const isRegularInvesting = (goal: Goal): boolean => goal.kind === 'investissement-regulier';
 
 /** Montant cible facultatif pour un investissement régulier : 0 = sans cible. */
 export const hasTarget = (goal: Goal): boolean => goal.targetAmount > 0;
-
-/** Hypothèses de rendement d'un placement en actions, présentées comme une fourchette. */
-export const REGULAR_RATE_HYPOTHESES = [0.02, 0.06, 0.09];
 
 /** Sous ce seuil, une baisse est du bruit de marché : rien à signaler. */
 const DIP_THRESHOLD = -0.05;
@@ -143,41 +140,6 @@ export const marketDip = (months: DepositMonth[]): MarketDip | null => {
   };
 };
 
-type HorizonInput = {
-  current: Cents;
-  invested: Cents;
-  monthly: Cents;
-  months: number;
-  annualRates: number[];
-};
-
-export type HorizonRange = {
-  months: number;
-  /** Total versé à l'horizon si les versements continuent. */
-  invested: Cents;
-  values: { annualRate: number; value: Cents }[];
-};
-
-/** Valeur à l'horizon par hypothèse de rendement, versements continués chaque mois. */
-export const horizonRange = ({
-  current,
-  invested,
-  monthly,
-  months,
-  annualRates,
-}: HorizonInput): HorizonRange => ({
-  months,
-  invested: invested + monthly * months,
-  values: annualRates.map((annualRate) => {
-    const rate = monthlyRateOf(annualRate);
-    let value = current;
-    for (let month = 1; month <= months; month += 1) {
-      value = Math.round(value * (1 + rate)) + monthly;
-    }
-    return { annualRate, value };
-  }),
-});
-
 /** Cinq ans après l'ouverture du plus ancien compte bourse lié ; null sans compte bourse. */
 export const fiveYearMark = (goal: Goal, accounts: Account[]): MonthKey | null => {
   const opening = accounts
@@ -192,48 +154,35 @@ export type RegularChartRow = { month: MonthKey } & Record<string, number | null
 type RegularChartInput = {
   goal: Goal;
   months: DepositMonth[];
-  /** Mois courant : les projections partent de lui. */
+  /** Mois courant : les bandes simulées partent de lui. */
   month: MonthKey;
-  /** Valeur actuelle, point de départ des projections. */
-  current: Cents;
-  annualRates: number[];
+  /** Une bande par mois, du mois courant à l'horizon. */
+  bands: Band[];
 };
 
 /**
- * Lignes du graphique : valeur réelle et total versé jusqu'au mois courant, puis versé prolongé et une
- * colonne `r<taux>` par hypothèse jusqu'à l'horizon, comme la fourchette affichée sur la carte.
+ * Lignes du graphique : valeur réelle et total versé jusqu'au mois courant, puis versé prolongé et
+ * bandes simulées (`p10` à `p90`) jusqu'à l'horizon.
  */
-export const regularChartRows = ({
-  goal,
-  months,
-  month,
-  current,
-  annualRates,
-}: RegularChartInput): RegularChartRow[] => {
+export const regularChartRows = ({ goal, months, month, bands }: RegularChartInput): RegularChartRow[] => {
   const firstMonth = months[0]?.month ?? month;
-  const targetMonth = monthKeyOf(goal.targetDate);
-  const end = targetMonth > month ? targetMonth : month;
+  const end = addMonths(month, Math.max(0, bands.length - 1));
   const byMonth = new Map(months.map((point) => [point.month, point]));
   const investedNow = months.at(-1)?.invested ?? 0;
-  const projected = new Map(annualRates.map((rate) => [rate, current]));
-  const rates = new Map(annualRates.map((rate) => [rate, monthlyRateOf(rate)]));
   return Array.from({ length: monthsBetween(firstMonth, end) + 1 }, (_, index): RegularChartRow => {
     const key = addMonths(firstMonth, index);
     const fromNow = monthsBetween(month, key);
     const point = byMonth.get(key);
-    if (fromNow > 0) {
-      for (const rate of annualRates) {
-        const value = projected.get(rate) ?? 0;
-        projected.set(rate, Math.round(value * (1 + (rates.get(rate) ?? 0))) + goal.monthlyContribution);
-      }
-    }
+    const band = fromNow >= 0 ? bands[fromNow] : undefined;
     return {
       month: key,
       actual: point?.value ?? null,
       invested: point?.invested ?? (fromNow > 0 ? investedNow + goal.monthlyContribution * fromNow : null),
-      ...Object.fromEntries(
-        annualRates.map((rate) => [`r${rate}`, fromNow >= 0 ? (projected.get(rate) ?? null) : null]),
-      ),
+      p10: band?.p10 ?? null,
+      p25: band?.p25 ?? null,
+      p50: band?.p50 ?? null,
+      p75: band?.p75 ?? null,
+      p90: band?.p90 ?? null,
     };
   });
 };

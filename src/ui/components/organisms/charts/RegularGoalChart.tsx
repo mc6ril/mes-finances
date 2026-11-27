@@ -9,10 +9,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { scenarioKey } from '@/core/patrimoine/goalChart';
-import type { ProjectionScenario } from '@/core/patrimoine/goals';
 import type { RegularChartRow } from '@/core/patrimoine/regularInvesting';
-import { capitalize, monthLabel, monthShortLabel, rateInput } from '@/core/shared/format';
+import { capitalize, monthLabel, monthShortLabel } from '@/core/shared/format';
 import type { Cents, MonthKey } from '@/core/shared/model';
 import { useChartTheme } from '@/hooks/useTheme';
 import { axisProps, euroTick } from '@/ui/components/molecules/charts/axis';
@@ -21,38 +19,38 @@ import Legend from '@/ui/components/molecules/charts/Legend';
 
 const VALUE = 'Valeur réelle';
 const INVESTED = 'Versé';
+const MEDIAN = 'Médiane';
+const REALISTIC = 'Réaliste';
+const WIDE = 'Pessimiste ↔ meilleur des mondes';
 
 type RegularGoalChartProps = {
   rows: RegularChartRow[];
-  /** Hypothèses basse, médiane, haute. */
-  scenarios: ProjectionScenario[];
   target: Cents | null;
   fiveYearMark: MonthKey | null;
 };
 
-const rangeLabel = (scenarios: ProjectionScenario[]): string => {
-  const low = scenarios[0];
-  const high = scenarios.at(-1);
-  return low && high ? `Fourchette ${rateInput(low.annualRate)} à ${rateInput(high.annualRate)} %/an` : '';
-};
+/** Zone entre deux bandes simulées ; null hors projection. */
+const zone =
+  (low: string, high: string) =>
+  (row: RegularChartRow): [number, number] | null => {
+    const bottom = row[low];
+    const top = row[high];
+    return typeof bottom === 'number' && typeof top === 'number' ? [bottom, top] : null;
+  };
 
-/** Versé en escalier (la partie sûre), valeur réelle, puis fourchette de projection et hypothèse médiane. */
-const RegularGoalChart = ({ rows, scenarios, target, fiveYearMark }: RegularGoalChartProps) => {
+/** Versé en escalier (la partie sûre), valeur réelle, puis zones simulées et médiane. */
+const RegularGoalChart = ({ rows, target, fiveYearMark }: RegularGoalChartProps) => {
   const { series, ink } = useChartTheme();
-  const low = scenarios[0];
-  const median = scenarios[1];
-  const high = scenarios.at(-1);
-  const coneColor = series[1] ?? ink.axis;
+  const zoneColor = series[1] ?? ink.axis;
   return (
     <>
       <Legend
         items={[
           { label: VALUE, color: ink.text },
           { label: INVESTED, color: ink.axis },
-          ...(median
-            ? [{ label: `Hypothèse ${rateInput(median.annualRate)} %/an`, color: coneColor, dashed: true }]
-            : []),
-          { label: rangeLabel(scenarios), color: `${coneColor}55` },
+          { label: MEDIAN, color: zoneColor, dashed: true },
+          { label: REALISTIC, color: `${zoneColor}88` },
+          { label: WIDE, color: `${zoneColor}33` },
         ]}
       />
       <div className="h-56">
@@ -82,32 +80,33 @@ const RegularGoalChart = ({ rows, scenarios, target, fiveYearMark }: RegularGoal
                 label={{ value: '5 ans', fill: ink.axis, fontSize: 11, position: 'insideTopRight' }}
               />
             )}
-            {low && high && (
-              <Area
-                type="monotone"
-                dataKey={(row: RegularChartRow) => {
-                  const bottom = row[scenarioKey(low)];
-                  const top = row[scenarioKey(high)];
-                  return typeof bottom === 'number' && typeof top === 'number' ? [bottom, top] : null;
-                }}
-                name={rangeLabel(scenarios)}
-                stroke="none"
-                fill={coneColor}
-                fillOpacity={0.18}
-                isAnimationActive={false}
-              />
-            )}
-            {median && (
-              <Line
-                type="monotone"
-                dataKey={scenarioKey(median)}
-                name={`Hypothèse ${rateInput(median.annualRate)} %/an`}
-                stroke={coneColor}
-                strokeDasharray="5 4"
-                strokeWidth={1.5}
-                dot={false}
-              />
-            )}
+            <Area
+              type="monotone"
+              dataKey={zone('p10', 'p90')}
+              name={WIDE}
+              stroke="none"
+              fill={zoneColor}
+              fillOpacity={0.12}
+              isAnimationActive={false}
+            />
+            <Area
+              type="monotone"
+              dataKey={zone('p25', 'p75')}
+              name={REALISTIC}
+              stroke="none"
+              fill={zoneColor}
+              fillOpacity={0.3}
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="p50"
+              name={MEDIAN}
+              stroke={zoneColor}
+              strokeDasharray="5 4"
+              strokeWidth={1.5}
+              dot={false}
+            />
             <Line
               type="stepAfter"
               dataKey="invested"

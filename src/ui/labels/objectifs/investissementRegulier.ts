@@ -1,5 +1,5 @@
 import type { MarketDip, Regularity } from '@/core/patrimoine/regularInvesting';
-import { formatRate, monthLabel } from '@/core/shared/format';
+import { formatRate, monthLabel, rateInput } from '@/core/shared/format';
 import type { BadgeTone } from '@/ui/components/atoms/Badge';
 
 /** Le badge juge les versements, jamais le marché. */
@@ -33,3 +33,6 @@ const depositsLabel = (count: number): string => {
 /** Une baisse présentée comme un fait, avec ce qu'elle a d'utile pour qui continue de verser. */
 export const dipMessage = (dip: MarketDip): string =>
   `Marché ${formatRate(dip.drawdown).replace('-', '−')} depuis ${monthLabel(dip.peakMonth)}. ${depositsLabel(dip.depositsSincePeak)}`;
+
+export const annualZoneLabel = (low: number, high: number): string =>
+  `≈ ${rateInput(low)} à ${rateInput(high)} %/an en moyenne`;
