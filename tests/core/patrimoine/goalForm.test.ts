@@ -18,6 +18,7 @@ const goal: Goal = {
 };
 
 const form = (overrides: Partial<GoalForm> = {}): GoalForm => ({
+  kind: 'epargne',
   name: 'Voyage',
   target: '3000',
   targetDate: '2027-06-30',
@@ -40,6 +41,7 @@ describe('formulaire d’un objectif', () => {
 
   it('reprend un objectif existant, montants en euros sans décimales inutiles', () => {
     expect(goalFormFrom(goal, '2026-11-17')).toEqual({
+      kind: 'epargne',
       name: 'Apport immobilier',
       target: '15000',
       targetDate: '2028-12-31',
@@ -59,6 +61,7 @@ describe('brouillon d’un objectif', () => {
     expect(goalDraftFrom(form({ name: '  Voyage ', monthly: '150,5' }), null)).toEqual({
       ok: true,
       value: {
+        kind: 'epargne',
         name: 'Voyage',
         targetAmount: 300000,
         targetDate: '2027-06-30',
@@ -126,6 +129,46 @@ describe('brouillon d’un objectif', () => {
       { id: 'p1', label: 'Famille', amount: 500000 },
       { id: '', label: 'Apport', amount: 20000 },
     ]);
+  });
+});
+
+describe('brouillon d’un investissement régulier', () => {
+  const regular = (overrides: Partial<GoalForm> = {}) =>
+    form({ kind: 'investissement-regulier', target: '', monthly: '200', linked: ['pea'], ...overrides });
+
+  it('accepte une cible vide (0) et ignore apports prévus et montant constitué', () => {
+    const draft = goalDraftFrom(
+      regular({ initial: '500', planned: [{ id: 'p1', label: 'Famille', amount: '100' }] }),
+      150000,
+    );
+    expect(draft).toEqual({
+      ok: true,
+      value: {
+        kind: 'investissement-regulier',
+        name: 'Voyage',
+        targetAmount: 0,
+        targetDate: '2027-06-30',
+        initialAmount: 0,
+        monthlyContribution: 20000,
+        linkedAccountIds: ['pea'],
+        withReturns: true,
+        startDate: '2026-11-01',
+        startAmount: 150000,
+        plannedContributions: [],
+      },
+    });
+  });
+
+  it('garde une cible saisie', () => {
+    const draft = goalDraftFrom(regular({ target: '50000' }), 0);
+    expect(draft.ok && draft.value.targetAmount).toBe(5000000);
+  });
+
+  it('exige un versement mensuel positif et un compte lié', () => {
+    const incomplete = { ok: false, error: { code: 'goal-investing-incomplete' } };
+    expect(goalDraftFrom(regular({ monthly: '' }), 0)).toEqual(incomplete);
+    expect(goalDraftFrom(regular({ linked: [] }), null)).toEqual(incomplete);
+    expect(goalDraftFrom(regular({ target: '-5' }), 0)).toEqual(incomplete);
   });
 });
 

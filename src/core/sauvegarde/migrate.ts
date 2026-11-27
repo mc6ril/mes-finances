@@ -335,6 +335,12 @@ const toVersion14 = (dataset: Dataset): Dataset => {
  */
 const toVersion15 = (dataset: Dataset): Dataset => dataset;
 
+/**
+ * v16 : un objectif peut être un investissement régulier (`kind`), sans cible. Rien à convertir ; la
+ * version empêche une ancienne appli, qui le lirait comme une épargne à cible nulle, de modifier l'espace.
+ */
+const toVersion16 = (dataset: Dataset): Dataset => dataset;
+
 const toVersion6 = (dataset: Dataset): Dataset => ({ ...dataset, monthNotes: dataset.monthNotes ?? [] });
 
 const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
@@ -351,6 +357,7 @@ const STEPS: { version: number; apply: (dataset: Dataset) => Dataset }[] = [
   { version: 13, apply: toVersion13 },
   { version: 14, apply: toVersion14 },
   { version: 15, apply: toVersion15 },
+  { version: 16, apply: toVersion16 },
 ];
 
 const upToVersion2 = (dataset: LegacyDataset): Dataset => {

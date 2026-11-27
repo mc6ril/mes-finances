@@ -49,6 +49,8 @@ const MESSAGES: Record<AppErrorCode, (error: AppError) => string> = {
   'goal-incomplete': () =>
     'Renseigne un nom, un montant cible, une date cible, un départ et des montants valides.',
   'goal-start-after-target': () => 'La date de départ doit précéder la date cible.',
+  'goal-investing-incomplete': () =>
+    'Renseigne un nom, un versement mensuel, un horizon, un départ, au moins un compte lié et des montants valides.',
   'data-not-loaded': () => 'Les données ne sont pas encore chargées. Réessaie dans un instant.',
   'transaction-date-invalid': () => 'Date invalide',
   'transaction-label-empty': () => 'Le libellé est obligatoire',

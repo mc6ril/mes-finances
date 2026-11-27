@@ -107,9 +107,15 @@ export type MonthNote = {
   text: string;
 };
 
+/** Épargne : atteindre une cible à une date. Investissement régulier : verser chaque mois, le marché en fourchette. */
+export type GoalKind = 'epargne' | 'investissement-regulier';
+
 export type Goal = {
   id: string;
   name: string;
+  /** Absent = épargne. */
+  kind?: GoalKind;
+  /** 0 = sans cible (investissement régulier seulement). */
   targetAmount: Cents;
   targetDate: IsoDate;
   initialAmount: Cents;
@@ -242,4 +248,4 @@ export type Dataset = {
 
 export type CollectionName = Exclude<keyof Dataset, 'schemaVersion' | 'settings'>;
 
-export const SCHEMA_VERSION = 15;
+export const SCHEMA_VERSION = 16;
