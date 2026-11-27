@@ -32,6 +32,7 @@ export const APP_ERROR_CODES = [
   'invalid-amount',
   'goal-incomplete',
   'goal-start-after-target',
+  'goal-investing-incomplete',
   'data-not-loaded',
   'transaction-date-invalid',
   'transaction-label-empty',

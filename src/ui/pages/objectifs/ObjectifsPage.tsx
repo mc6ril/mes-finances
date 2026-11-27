@@ -1,5 +1,6 @@
 import { Goal as GoalIcon, Plus } from 'lucide-react';
 import { useState } from 'react';
+import { isRegularInvesting } from '@/core/patrimoine/regularInvesting';
 import type { Goal } from '@/core/shared/model';
 import { useDataset, useFinanceUseCases } from '@/hooks/useFinance';
 import { useReport } from '@/hooks/useReport';
@@ -9,6 +10,7 @@ import { ConfirmDialog } from '@/ui/components/molecules/overlays/ConfirmDialog'
 import PageHeader from '@/ui/components/molecules/PageHeader';
 import GoalModal from '@/ui/components/organisms/modals/GoalModal';
 import GoalCard from '@/ui/components/organisms/objectifs/GoalCard';
+import RegularGoalCard from '@/ui/components/organisms/objectifs/RegularGoalCard';
 
 const ObjectifsPage = () => {
   const dataset = useDataset();
@@ -31,7 +33,7 @@ const ObjectifsPage = () => {
         <EmptyState
           icon={GoalIcon}
           title="Aucun objectif pour le moment"
-          description="Exemples : atteindre 15 000 € d’épargne personnelle, constituer un apport immobilier, financer un voyage."
+          description="Exemples : atteindre 15 000 € d’épargne personnelle, constituer un apport immobilier, verser 200 € par mois sur un PEA."
           action={
             <Button variant="primary" icon={Plus} onClick={() => setEditing('new')}>
               Créer un objectif
@@ -40,14 +42,17 @@ const ObjectifsPage = () => {
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
-          {dataset.goals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              goal={goal}
-              onEdit={() => setEditing(goal)}
-              onDelete={() => setToDelete(goal)}
-            />
-          ))}
+          {dataset.goals.map((goal) => {
+            const Card = isRegularInvesting(goal) ? RegularGoalCard : GoalCard;
+            return (
+              <Card
+                key={goal.id}
+                goal={goal}
+                onEdit={() => setEditing(goal)}
+                onDelete={() => setToDelete(goal)}
+              />
+            );
+          })}
         </div>
       )}
       {editing && <GoalModal goal={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
