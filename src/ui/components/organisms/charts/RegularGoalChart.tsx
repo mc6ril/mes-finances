@@ -94,7 +94,6 @@ const RegularGoalChart = ({ rows, scenarios, target, fiveYearMark }: RegularGoal
                 stroke="none"
                 fill={coneColor}
                 fillOpacity={0.18}
-                tooltipType="none"
                 isAnimationActive={false}
               />
             )}
