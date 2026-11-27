@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
 import { patrimoineContext } from '@/core/budget/overview';
-import { projectionScenarios } from '@/core/patrimoine/goals';
 import { linkedValueAt } from '@/core/patrimoine/goalTracking';
+import { simulateMarket } from '@/core/patrimoine/marketSimulation';
 import {
   depositMonths,
   fiveYearMark,
   hasTarget,
-  horizonRange,
   marketDip,
-  REGULAR_RATE_HYPOTHESES,
   regularChartRows,
   regularity,
 } from '@/core/patrimoine/regularInvesting';
@@ -17,7 +15,7 @@ import type { Goal } from '@/core/shared/model';
 import { useDataset } from '@/hooks/useFinance';
 import { usePeriod } from '@/hooks/usePeriod';
 
-/** Suivi d'un investissement régulier : régularité, valeur, baisse du marché, fourchette et graphique. */
+/** Suivi d'un investissement régulier : régularité, valeur, baisse du marché, simulation et graphique. */
 export const useRegularGoalView = (goal: Goal) => {
   const dataset = useDataset();
   const { today } = usePeriod();
@@ -32,20 +30,19 @@ export const useRegularGoalView = (goal: Goal) => {
   );
   const month = monthKeyOf(today);
   const monthsLeft = Math.max(0, monthsBetween(month, monthKeyOf(goal.targetDate)));
-  const scenarios = useMemo(
+  const simulation = useMemo(
     () =>
-      projectionScenarios({
+      simulateMarket({
         current: now.value,
+        invested: now.contributions,
         monthly: goal.monthlyContribution,
-        target: goal.targetAmount,
-        annualRates: REGULAR_RATE_HYPOTHESES,
-        fromMonth: month,
+        months: monthsLeft,
       }),
-    [now.value, goal.monthlyContribution, goal.targetAmount, month],
+    [now.value, now.contributions, goal.monthlyContribution, monthsLeft],
   );
   const chart = useMemo(
-    () => regularChartRows({ goal, months, month, current: now.value, annualRates: REGULAR_RATE_HYPOTHESES }),
-    [goal, months, month, now.value],
+    () => regularChartRows({ goal, months, month, bands: simulation.bands }),
+    [goal, months, month, simulation.bands],
   );
   const mark = fiveYearMark(goal, dataset.accounts);
   return {
@@ -54,15 +51,9 @@ export const useRegularGoalView = (goal: Goal) => {
     performance: now.performance,
     regularity: regularity(months, goal.monthlyContribution),
     dip: marketDip(months),
-    horizon: horizonRange({
-      current: now.value,
-      invested: now.contributions,
-      monthly: goal.monthlyContribution,
-      months: monthsLeft,
-      annualRates: REGULAR_RATE_HYPOTHESES,
-    }),
+    monthsLeft,
+    simulation,
     withTarget: hasTarget(goal),
-    scenarios,
     chart,
     /** Repère des 5 ans, seulement s'il tombe dans le graphique. */
     fiveYearMark: mark && chart.some((row) => row.month === mark) ? mark : null,

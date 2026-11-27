@@ -2,7 +2,6 @@ import {
   type DepositMonth,
   depositMonths,
   fiveYearMark,
-  horizonRange,
   marketDip,
   regularChartRows,
   regularity,
@@ -160,22 +159,6 @@ describe('baisse du marché', () => {
   });
 });
 
-describe('fourchette à l’horizon', () => {
-  it('projette la valeur par hypothèse et le versé total', () => {
-    const range = horizonRange({
-      current: 100000,
-      invested: 100000,
-      monthly: 10000,
-      months: 12,
-      annualRates: [0, 0.06],
-    });
-    expect(range.invested).toBe(220000);
-    expect(range.values[0]).toEqual({ annualRate: 0, value: 220000 });
-    expect(range.values[1]?.value).toBeGreaterThan(228000);
-    expect(range.values[1]?.value).toBeLessThan(230000);
-  });
-});
-
 describe('repère des 5 ans', () => {
   it('part de l’ouverture du plus ancien compte bourse lié', () => {
     expect(fiveYearMark(goal, [pea])).toBe('2030-01');
@@ -186,35 +169,39 @@ describe('repère des 5 ans', () => {
   });
 });
 
+const band = (value: number) => ({
+  p10: value - 2,
+  p25: value - 1,
+  p50: value,
+  p75: value + 1,
+  p90: value + 2,
+});
+
 describe('graphique d’un investissement régulier', () => {
-  it('montre le réel, le versé, puis les projections jusqu’à l’horizon', () => {
+  it('montre le réel, le versé, puis les bandes simulées jusqu’à l’horizon', () => {
     const rows = regularChartRows({
-      goal: { ...goal, targetDate: '2026-05-31' },
+      goal,
       months: [
         month({ month: '2026-02', invested: 120000, value: 125000 }),
         month({ month: '2026-03', invested: 140000, value: 150000 }),
       ],
       month: '2026-03',
-      current: 150000,
-      annualRates: [0],
+      bands: [band(150000), band(170000), band(190000)],
     });
     expect(rows).toEqual([
-      { month: '2026-02', actual: 125000, invested: 120000, r0: null },
-      { month: '2026-03', actual: 150000, invested: 140000, r0: 150000 },
-      { month: '2026-04', actual: null, invested: 160000, r0: 170000 },
-      { month: '2026-05', actual: null, invested: 180000, r0: 190000 },
+      {
+        month: '2026-02',
+        actual: 125000,
+        invested: 120000,
+        p10: null,
+        p25: null,
+        p50: null,
+        p75: null,
+        p90: null,
+      },
+      { month: '2026-03', actual: 150000, invested: 140000, ...band(150000) },
+      { month: '2026-04', actual: null, invested: 160000, ...band(170000) },
+      { month: '2026-05', actual: null, invested: 180000, ...band(190000) },
     ]);
-  });
-
-  it('va jusqu’à l’horizon, même au-delà de 10 ans', () => {
-    const rows = regularChartRows({
-      goal: { ...goal, targetDate: '2060-12-31' },
-      months: [],
-      month: '2026-03',
-      current: 0,
-      annualRates: [0.02, 0.09],
-    });
-    expect(rows.at(-1)?.month).toBe('2060-12');
-    expect(rows.at(-1)?.['r0.09']).toBeGreaterThan(rows.at(-1)?.['r0.02'] as number);
   });
 });

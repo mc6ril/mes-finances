@@ -1,12 +1,6 @@
 import { Pencil, Trash2, TrendingDown } from 'lucide-react';
-import {
-  capitalize,
-  formatDateFr,
-  formatEuros,
-  formatRate,
-  monthLabel,
-  rateInput,
-} from '@/core/shared/format';
+import { MARKET_GROWTH, MARKET_VOLATILITY, SIMULATED_PATHS } from '@/core/patrimoine/marketSimulation';
+import { capitalize, formatDateFr, formatEuros, monthLabel, rateInput } from '@/core/shared/format';
 import type { Goal } from '@/core/shared/model';
 import { useRegularGoalView } from '@/hooks/objectifs/useRegularGoalView';
 import Amount from '@/ui/components/atoms/Amount';
@@ -16,11 +10,16 @@ import ProgressBar from '@/ui/components/atoms/ProgressBar';
 import Text from '@/ui/components/atoms/Text';
 import Card from '@/ui/components/molecules/cards/Card';
 import RegularGoalChart from '@/ui/components/organisms/charts/RegularGoalChart';
-import { dipMessage, regularityBadge, streakLabel } from '@/ui/labels/objectifs/investissementRegulier';
+import {
+  annualZoneLabel,
+  dipMessage,
+  regularityBadge,
+  streakLabel,
+} from '@/ui/labels/objectifs/investissementRegulier';
 
 type RegularGoalCardProps = { goal: Goal; onEdit: () => void; onDelete: () => void };
 
-/** Investissement régulier : on juge les versements ; le marché n'apparaît qu'en fourchette. */
+/** Investissement régulier : on juge les versements ; le marché n'apparaît qu'en zones de probabilité. */
 const RegularGoalCard = ({ goal, onEdit, onDelete }: RegularGoalCardProps) => {
   const {
     value,
@@ -28,14 +27,14 @@ const RegularGoalCard = ({ goal, onEdit, onDelete }: RegularGoalCardProps) => {
     performance,
     regularity,
     dip,
-    horizon,
+    monthsLeft,
+    simulation,
     withTarget,
-    scenarios,
     chart,
     fiveYearMark,
   } = useRegularGoalView(goal);
+  const final = simulation.bands.at(-1);
   const badge = regularityBadge(regularity);
-  const [low, median, high] = horizon.values;
   const missed = regularity.missedMonths.length;
 
   return (
@@ -106,43 +105,48 @@ const RegularGoalCard = ({ goal, onEdit, onDelete }: RegularGoalCardProps) => {
         </div>
       )}
 
-      {horizon.months > 0 && low && median && high && (
+      {monthsLeft > 0 && final && (
         <div className="mt-4 border-t border-line pt-4">
           <Text variant="label">À l’horizon ({capitalize(monthLabel(goal.targetDate.slice(0, 7)))})</Text>
-          <Text variant="strong" className="mt-0.5">
-            entre <Amount cents={low.value} rounded /> et <Amount cents={high.value} rounded />
+          <div className="mt-1 grid gap-3 sm:grid-cols-2">
+            <div>
+              <Text variant="small">Réaliste</Text>
+              <Text variant="strong" className="mt-0.5">
+                entre <Amount cents={final.p25} rounded /> et <Amount cents={final.p75} rounded />
+              </Text>
+              <Text variant="caption">
+                {annualZoneLabel(simulation.annualReturns.p25, simulation.annualReturns.p75)} · médiane{' '}
+                <Amount cents={final.p50} rounded />
+              </Text>
+            </div>
+            <div>
+              <Text variant="small">Du pessimiste au meilleur des mondes</Text>
+              <Text variant="strong" className="mt-0.5">
+                entre <Amount cents={final.p10} rounded /> et <Amount cents={final.p90} rounded />
+              </Text>
+              <Text variant="caption">
+                {annualZoneLabel(simulation.annualReturns.p10, simulation.annualReturns.p90)}
+              </Text>
+            </div>
+          </div>
+          <Text variant="caption" className="mt-2">
+            pour <Amount cents={simulation.invested} rounded /> versés si tu continues jusqu’au bout
           </Text>
-          <Text variant="caption">
-            <Amount cents={horizon.invested} rounded /> versés si tu continues ·{' '}
-            {rateInput(median.annualRate)} %/an : <Amount cents={median.value} rounded />
-          </Text>
-          {withTarget && (
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {scenarios.map((scenario) => (
-                <li key={scenario.annualRate}>
-                  <Badge>
-                    Cible à {formatRate(scenario.annualRate)}/an :{' '}
-                    {scenario.reachedMonth
-                      ? capitalize(monthLabel(scenario.reachedMonth))
-                      : 'hors d’atteinte'}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       )}
 
       <div className="mt-5">
         <RegularGoalChart
           rows={chart}
-          scenarios={scenarios}
           target={withTarget ? goal.targetAmount : null}
           fiveYearMark={fiveYearMark}
         />
         <Text variant="caption" className="mt-2">
+          Simulation de {SIMULATED_PATHS.toLocaleString('fr-FR')} parcours de marché :{' '}
+          {rateInput(MARKET_GROWTH)} %/an en médiane, volatilité d’un ETF actions monde (
+          {rateInput(MARKET_VOLATILITY)} %/an), krachs compris, un versement chaque mois jusqu’à l’horizon.
           Seuls tes versements dépendent de toi : la valeur passera sous le versé lors des baisses, c’est
-          normal. Les rendements sont des hypothèses, jamais des gains garantis.
+          normal. Des probabilités, jamais des garanties.
           {fiveYearMark
             ? ' Le repère « 5 ans » marque l’ancienneté du compte bourse lié le plus ancien.'
             : ''}

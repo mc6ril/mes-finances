@@ -1,5 +1,10 @@
 import type { Regularity } from '@/core/patrimoine/regularInvesting';
-import { dipMessage, regularityBadge, streakLabel } from '@/ui/labels/objectifs/investissementRegulier';
+import {
+  annualZoneLabel,
+  dipMessage,
+  regularityBadge,
+  streakLabel,
+} from '@/ui/labels/objectifs/investissementRegulier';
 
 const regularity = (overrides: Partial<Regularity>): Regularity => ({
   paidThisMonth: false,
@@ -53,5 +58,11 @@ describe('message de baisse du marché', () => {
     expect(dipMessage({ drawdown: -0.08, peakMonth: '2026-04', depositsSincePeak: 0 })).toBe(
       'Marché −8 % depuis avril 2026. Continuer à verser, c’est acheter moins cher.',
     );
+  });
+});
+
+describe('rendement annuel d’une zone', () => {
+  it('donne la plage au dixième', () => {
+    expect(annualZoneLabel(0.04687, 0.07522)).toBe('≈ 4,7 à 7,5 %/an en moyenne');
   });
 });
