@@ -13,8 +13,11 @@ export const isRegularInvesting = (goal: Goal): boolean => goal.kind === 'invest
 /** Montant cible facultatif pour un investissement régulier : 0 = sans cible. */
 export const hasTarget = (goal: Goal): boolean => goal.targetAmount > 0;
 
-/** Hypothèses de rendement d'un placement en actions, présentées comme une fourchette. */
-export const REGULAR_RATE_HYPOTHESES = [0.02, 0.06, 0.09];
+/**
+ * Hypothèses de rendement d'un placement en actions, en fourchette : 5 à 7 %/an, prudente sur la durée
+ * (frais d'ETF et années sans hausse compris), les intérêts composés amplifiant tout écart à long terme.
+ */
+export const REGULAR_RATE_HYPOTHESES = [0.05, 0.06, 0.07];
 
 /** Sous ce seuil, une baisse est du bruit de marché : rien à signaler. */
 const DIP_THRESHOLD = -0.05;
