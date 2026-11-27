@@ -195,15 +195,8 @@ describe('graphique d’un investissement régulier', () => {
         month({ month: '2026-03', invested: 140000, value: 150000 }),
       ],
       month: '2026-03',
-      scenarios: [
-        {
-          annualRate: 0,
-          monthsToTarget: 0,
-          reachedMonth: '2026-03',
-          series: [150000, 170000, 190000],
-          isHypothesis: true,
-        },
-      ],
+      current: 150000,
+      annualRates: [0],
     });
     expect(rows).toEqual([
       { month: '2026-02', actual: 125000, invested: 120000, r0: null },
@@ -211,5 +204,17 @@ describe('graphique d’un investissement régulier', () => {
       { month: '2026-04', actual: null, invested: 160000, r0: 170000 },
       { month: '2026-05', actual: null, invested: 180000, r0: 190000 },
     ]);
+  });
+
+  it('va jusqu’à l’horizon, même au-delà de 10 ans', () => {
+    const rows = regularChartRows({
+      goal: { ...goal, targetDate: '2060-12-31' },
+      months: [],
+      month: '2026-03',
+      current: 0,
+      annualRates: [0.02, 0.09],
+    });
+    expect(rows.at(-1)?.month).toBe('2060-12');
+    expect(rows.at(-1)?.['r0.09']).toBeGreaterThan(rows.at(-1)?.['r0.02'] as number);
   });
 });

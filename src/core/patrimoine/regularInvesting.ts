@@ -1,7 +1,6 @@
 import { addDays, addMonths, monthEnd, monthKeyOf, monthsBetween } from '../shared/dates';
 import type { Account, Cents, Goal, IsoDate, MonthKey } from '../shared/model';
-import { scenarioKey } from './goalChart';
-import { monthlyRateOf, type ProjectionScenario } from './goals';
+import { monthlyRateOf } from './goals';
 import { linkedValueAt } from './goalTracking';
 import type { PatrimoineContext } from './patrimoine';
 
@@ -195,41 +194,45 @@ type RegularChartInput = {
   months: DepositMonth[];
   /** Mois courant : les projections partent de lui. */
   month: MonthKey;
-  scenarios: ProjectionScenario[];
+  /** Valeur actuelle, point de départ des projections. */
+  current: Cents;
+  annualRates: number[];
 };
 
 /**
  * Lignes du graphique : valeur réelle et total versé jusqu'au mois courant, puis versé prolongé et une
- * colonne `r<taux>` par hypothèse jusqu'à l'horizon (au plus la longueur des projections).
+ * colonne `r<taux>` par hypothèse jusqu'à l'horizon, comme la fourchette affichée sur la carte.
  */
 export const regularChartRows = ({
   goal,
   months,
   month,
-  scenarios,
+  current,
+  annualRates,
 }: RegularChartInput): RegularChartRow[] => {
   const firstMonth = months[0]?.month ?? month;
-  const projectable = Math.max(0, (scenarios[0]?.series.length ?? 1) - 1);
   const targetMonth = monthKeyOf(goal.targetDate);
-  const projectedEnd = addMonths(month, projectable);
-  // Le plus tôt de l'horizon et de la fin des projections, jamais avant le mois courant.
-  const lastMonth = [targetMonth, projectedEnd].sort()[0] ?? month;
-  const end = [lastMonth, month].sort().at(-1) ?? month;
+  const end = targetMonth > month ? targetMonth : month;
   const byMonth = new Map(months.map((point) => [point.month, point]));
   const investedNow = months.at(-1)?.invested ?? 0;
+  const projected = new Map(annualRates.map((rate) => [rate, current]));
+  const rates = new Map(annualRates.map((rate) => [rate, monthlyRateOf(rate)]));
   return Array.from({ length: monthsBetween(firstMonth, end) + 1 }, (_, index): RegularChartRow => {
     const key = addMonths(firstMonth, index);
     const fromNow = monthsBetween(month, key);
     const point = byMonth.get(key);
+    if (fromNow > 0) {
+      for (const rate of annualRates) {
+        const value = projected.get(rate) ?? 0;
+        projected.set(rate, Math.round(value * (1 + (rates.get(rate) ?? 0))) + goal.monthlyContribution);
+      }
+    }
     return {
       month: key,
       actual: point?.value ?? null,
       invested: point?.invested ?? (fromNow > 0 ? investedNow + goal.monthlyContribution * fromNow : null),
       ...Object.fromEntries(
-        scenarios.map((scenario) => [
-          scenarioKey(scenario),
-          fromNow >= 0 ? (scenario.series[fromNow] ?? null) : null,
-        ]),
+        annualRates.map((rate) => [`r${rate}`, fromNow >= 0 ? (projected.get(rate) ?? null) : null]),
       ),
     };
   });

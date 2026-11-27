@@ -113,8 +113,8 @@ const RegularGoalCard = ({ goal, onEdit, onDelete }: RegularGoalCardProps) => {
             entre <Amount cents={low.value} rounded /> et <Amount cents={high.value} rounded />
           </Text>
           <Text variant="caption">
-            {formatEuros(horizon.invested)} versés si tu continues · {rateInput(median.annualRate)} %/an :{' '}
-            {formatEuros(median.value)}
+            <Amount cents={horizon.invested} rounded /> versés si tu continues ·{' '}
+            {rateInput(median.annualRate)} %/an : <Amount cents={median.value} rounded />
           </Text>
           {withTarget && (
             <ul className="mt-2 flex flex-wrap gap-2">

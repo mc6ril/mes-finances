@@ -44,8 +44,8 @@ export const useRegularGoalView = (goal: Goal) => {
     [now.value, goal.monthlyContribution, goal.targetAmount, month],
   );
   const chart = useMemo(
-    () => regularChartRows({ goal, months, month, scenarios }),
-    [goal, months, month, scenarios],
+    () => regularChartRows({ goal, months, month, current: now.value, annualRates: REGULAR_RATE_HYPOTHESES }),
+    [goal, months, month, now.value],
   );
   const mark = fiveYearMark(goal, dataset.accounts);
   return {
